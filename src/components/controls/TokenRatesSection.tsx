@@ -3,7 +3,8 @@ import { SliderInput } from './SliderInput'
 import { HelpTip } from './HelpTip'
 import { strings } from '../../i18n/es'
 import { RANGES } from '../../lib/ranges'
-import { formatPercent, formatUsdPerHour } from '../../lib/format'
+import { formatMoneyPerHour, formatPercent } from '../../lib/format'
+import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import type { TokenCategory, TokenRates } from '../../engine/types'
@@ -42,7 +43,13 @@ const CONTROLS: Array<{
 export function TokenRatesSection() {
   const tokens = useScenarioStore((s) => s.scenario.tokens)
   const setToken = useScenarioStore((s) => s.setToken)
+  const currency = useScenarioStore((s) => s.currency)
+  const fx = useScenarioStore((s) => s.fx)
   const results = useResults()
+
+  // Tasas del motor en USD/h → moneda activa (D3)
+  const rate = (usdPerHour: number) =>
+    formatMoneyPerHour(currency === 'eur' ? usdToEur(usdPerHour, fx) : usdPerHour, currency)
 
   return (
     <Section title={strings.tokens.sectionTitle} hint={strings.tokens.sectionHint}>
@@ -60,7 +67,7 @@ export function TokenRatesSection() {
             onChange={(v) => setToken(field, v)}
             labelExtra={<HelpTip label={strings.tokens.helpButton(copy.label)} text={copy.help} />}
             detail={strings.tokens.categoryDetail(
-              formatUsdPerHour(cost.usdPerHour),
+              rate(cost.usdPerHour),
               formatPercent(cost.share),
             )}
           />

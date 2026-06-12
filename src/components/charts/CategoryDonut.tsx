@@ -2,14 +2,22 @@ import { useMemo } from 'react'
 import { Doughnut } from 'react-chartjs-2'
 import { CATEGORY_LABELS, chartTheme } from './chartSetup'
 import { strings } from '../../i18n/es'
-import { formatPercent, formatUsdPerHour } from '../../lib/format'
+import { CURRENCY_SYMBOL, formatMoneyPerHour, formatPercent } from '../../lib/format'
+import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
+import { useScenarioStore } from '../../store/useScenarioStore'
 import { useTheme } from '../../lib/theme'
 
 /** Desglose del coste por categoría de token (RF-07.1) */
 export function CategoryDonut() {
   const results = useResults()
+  const currency = useScenarioStore((s) => s.currency)
+  const fx = useScenarioStore((s) => s.fx)
   const dark = useTheme((s) => s.dark)
+
+  // Las tasas por categoría son USD/h del motor; se muestran en la moneda activa (D3)
+  const rate = (usdPerHour: number) =>
+    formatMoneyPerHour(currency === 'eur' ? usdToEur(usdPerHour, fx) : usdPerHour, currency)
 
   const { data, options } = useMemo(() => {
     const theme = chartTheme()
@@ -35,7 +43,7 @@ export function CategoryDonut() {
               // Leyenda con valor + % (CA del spec results-display)
               generateLabels: () =>
                 results.byCategory.map((c, i) => ({
-                  text: `${CATEGORY_LABELS[c.category]}: ${formatUsdPerHour(c.usdPerHour)} (${formatPercent(c.share)})`,
+                  text: `${CATEGORY_LABELS[c.category]}: ${rate(c.usdPerHour)} (${formatPercent(c.share)})`,
                   fillStyle: chartTheme().categoryColors[c.category],
                   strokeStyle: chartTheme().categoryColors[c.category],
                   fontColor: chartTheme().ink,
@@ -47,7 +55,7 @@ export function CategoryDonut() {
             callbacks: {
               label: (ctx: { dataIndex: number }) => {
                 const c = results.byCategory[ctx.dataIndex]
-                return `${formatUsdPerHour(c.usdPerHour)} (${formatPercent(c.share)})`
+                return `${rate(c.usdPerHour)} (${formatPercent(c.share)})`
               },
             },
           },
@@ -56,7 +64,7 @@ export function CategoryDonut() {
     }
     // `dark` fuerza releer las CSS variables del tema (CA-07.1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results, dark])
+  }, [results, currency, fx, dark])
 
   return (
     <div className="rounded-lg border border-line bg-raised p-4">
@@ -71,7 +79,7 @@ export function CategoryDonut() {
         <thead>
           <tr>
             <th scope="col">{strings.charts.colCategory}</th>
-            <th scope="col">{strings.charts.colCost}</th>
+            <th scope="col">{strings.charts.colCost(CURRENCY_SYMBOL[currency])}</th>
             <th scope="col">{strings.charts.colShare}</th>
           </tr>
         </thead>
@@ -79,7 +87,7 @@ export function CategoryDonut() {
           {results.byCategory.map((c) => (
             <tr key={c.category}>
               <th scope="row">{CATEGORY_LABELS[c.category]}</th>
-              <td>{formatUsdPerHour(c.usdPerHour)}</td>
+              <td>{rate(c.usdPerHour)}</td>
               <td>{formatPercent(c.share)}</td>
             </tr>
           ))}

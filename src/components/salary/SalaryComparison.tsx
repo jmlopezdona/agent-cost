@@ -7,19 +7,21 @@ import { salaryData } from '../../data'
 import {
   agentEurPerActiveHour,
   employerCost,
+  eurToUsd,
   fteEffectiveHoursPerMonth,
   fteEquivalence,
   hoursRatio,
   usdToEur,
 } from '../../engine/salary'
 import {
-  formatEUR,
-  formatEurPerHour,
   formatFx,
   formatHours,
   formatInt,
+  formatMoney,
+  formatMoneyPerHour,
   formatOneDecimal,
   formatRatio,
+  CURRENCY_SYMBOL,
 } from '../../lib/format'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
@@ -28,6 +30,7 @@ import { useTheme } from '../../lib/theme'
 export function SalaryComparison() {
   const fx = useScenarioStore((s) => s.fx)
   const setFx = useScenarioStore((s) => s.setFx)
+  const currency = useScenarioStore((s) => s.currency)
   const profileGross = useScenarioStore((s) => s.profileGross)
   const setProfileGross = useScenarioStore((s) => s.setProfileGross)
   const results = useResults()
@@ -38,8 +41,14 @@ export function SalaryComparison() {
     effectiveHoursPerYear: salaryData.effectiveHoursPerYear,
   }
 
+  // Coste del agente: USD nativo → moneda activa. Nóminas: EUR nativo → moneda activa (D3).
+  const agentToDisplay = (usd: number) => (currency === 'eur' ? usdToEur(usd, fx) : usd)
+  const eurToDisplay = (eur: number) => (currency === 'usd' ? eurToUsd(eur, fx) : eur)
+
+  // Base EUR para las equivalencias FTE (ratio independiente de la moneda mostrada)
   const agentMonthlyEUR = usdToEur(results.weightedMonthlyUSD, fx)
-  const agentPerHourEUR = agentEurPerActiveHour(agentMonthlyEUR, results.activeHoursMonth)
+  const agentMonthlyDisplay = agentToDisplay(results.weightedMonthlyUSD)
+  const agentPerHourDisplay = agentEurPerActiveHour(agentMonthlyDisplay, results.activeHoursMonth)
 
   const rows = salaryData.profiles.map((profile) => {
     const gross = profileGross[profile.id] ?? profile.grossAnnualEUR
@@ -55,7 +64,7 @@ export function SalaryComparison() {
         labels: [strings.salary.agentBarLabel, ...rows.map((r) => r.profile.name)],
         datasets: [
           {
-            data: [agentMonthlyEUR, ...rows.map((r) => r.cost.monthlyEUR)],
+            data: [agentMonthlyDisplay, ...rows.map((r) => eurToDisplay(r.cost.monthlyEUR))],
             backgroundColor: [theme.agent, ...rows.map(() => theme.human)],
             // Señal secundaria además del color (CA-06.1): la barra del agente lleva borde discontinuo
             borderColor: [theme.ink, ...rows.map(() => theme.human)],
@@ -71,13 +80,16 @@ export function SalaryComparison() {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (ctx: TooltipItem<'bar'>) => formatEUR(Number(ctx.parsed.x)),
+              label: (ctx: TooltipItem<'bar'>) => formatMoney(Number(ctx.parsed.x), currency),
             },
           },
         },
         scales: {
           x: {
-            ticks: { color: theme.muted, callback: (v: string | number) => formatEUR(Number(v)) },
+            ticks: {
+              color: theme.muted,
+              callback: (v: string | number) => formatMoney(Number(v), currency),
+            },
             grid: { color: theme.grid },
           },
           y: { ticks: { color: theme.ink }, grid: { display: false } },
@@ -85,11 +97,11 @@ export function SalaryComparison() {
       },
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentMonthlyEUR, monthlyCostsKey, dark])
+  }, [agentMonthlyDisplay, monthlyCostsKey, currency, fx, dark])
 
   const chartAria = [
-    `${strings.salary.agentBarLabel}: ${formatEUR(agentMonthlyEUR)}`,
-    ...rows.map((r) => `${r.profile.name}: ${formatEUR(r.cost.monthlyEUR)}`),
+    `${strings.salary.agentBarLabel}: ${formatMoney(agentMonthlyDisplay, currency)}`,
+    ...rows.map((r) => `${r.profile.name}: ${formatMoney(eurToDisplay(r.cost.monthlyEUR), currency)}`),
   ].join(', ')
 
   return (
@@ -104,10 +116,10 @@ export function SalaryComparison() {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold tabular-nums">
-            {strings.salary.agentMonthly(formatEUR(agentMonthlyEUR))}
+            {strings.salary.agentMonthly(formatMoney(agentMonthlyDisplay, currency))}
           </p>
           <p className="text-xs text-muted tabular-nums">
-            {strings.salary.agentPerHour(formatEurPerHour(agentPerHourEUR))} ·{' '}
+            {strings.salary.agentPerHour(formatMoneyPerHour(agentPerHourDisplay, currency))} ·{' '}
             {strings.salary.hoursLine(
               formatHours(results.activeHoursMonth),
               formatInt(fteEffectiveHoursPerMonth(config)),
@@ -154,7 +166,7 @@ export function SalaryComparison() {
                 {strings.salary.colEmployerMonth}
               </th>
               <th scope="col" className="py-2 pr-2 text-right">
-                {strings.salary.colPerHour}
+                {strings.salary.colPerHour(CURRENCY_SYMBOL[currency])}
               </th>
               <th scope="col" className="py-2 text-right">
                 {strings.salary.colFte}
@@ -182,10 +194,14 @@ export function SalaryComparison() {
                     className="w-24 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
                   />
                 </td>
-                <td className="py-2 pr-2 text-right">{formatEUR(cost.annualEUR)}</td>
-                <td className="py-2 pr-2 text-right">{formatEUR(cost.monthlyEUR)}</td>
                 <td className="py-2 pr-2 text-right">
-                  {formatEurPerHour(cost.perEffectiveHourEUR)}
+                  {formatMoney(eurToDisplay(cost.annualEUR), currency)}
+                </td>
+                <td className="py-2 pr-2 text-right">
+                  {formatMoney(eurToDisplay(cost.monthlyEUR), currency)}
+                </td>
+                <td className="py-2 pr-2 text-right">
+                  {formatMoneyPerHour(eurToDisplay(cost.perEffectiveHourEUR), currency)}
                 </td>
                 <td className="py-2 text-right font-semibold">
                   {strings.salary.fteValue(formatRatio(fte))}
@@ -202,7 +218,9 @@ export function SalaryComparison() {
         )}
       </p>
 
-      <h3 className="mt-4 text-xs font-semibold text-muted">{strings.salary.chartTitle}</h3>
+      <h3 className="mt-4 text-xs font-semibold text-muted">
+        {strings.salary.chartTitle(currency === 'eur' ? 'EUR' : 'USD')}
+      </h3>
       <div className="mt-2 h-56" role="img" aria-label={chartAria}>
         <Bar data={data} options={options} />
       </div>

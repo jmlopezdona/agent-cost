@@ -4,6 +4,8 @@ import {
   formatEurPerHour,
   formatFx,
   formatHours,
+  formatMoney,
+  formatMoneyPerHour,
   formatPercent,
   formatRatio,
   formatUSD,
@@ -33,5 +35,19 @@ describe('format es-ES', () => {
 
   it('tipo de cambio', () => {
     expect(formatFx(0.92)).toBe('1 USD = 0,92 €')
+  })
+
+  it('formateo consciente de moneda: importes en ambas monedas', () => {
+    // 4 dígitos sin separador de miles
+    expect(formatMoney(6038, 'eur')).toBe('6038 €')
+    expect(formatMoney(6038, 'usd')).toBe('6038 $')
+    // miles con separador
+    expect(formatMoney(10060, 'eur')).toBe('10.060 €')
+    expect(formatMoney(10060, 'usd')).toBe('10.060 $')
+  })
+
+  it('formateo consciente de moneda: tarifas por hora en ambas monedas', () => {
+    expect(formatMoneyPerHour(13.788, 'eur')).toBe('13,8 €/h')
+    expect(formatMoneyPerHour(13.788, 'usd')).toBe('13,8 $/h')
   })
 })

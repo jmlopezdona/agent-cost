@@ -8,8 +8,15 @@ export function Header() {
   const presetId = useScenarioStore((s) => s.presetId)
   const isCustomized = useScenarioStore((s) => s.isCustomized)
   const loadPreset = useScenarioStore((s) => s.loadPreset)
+  const currency = useScenarioStore((s) => s.currency)
+  const setCurrency = useScenarioStore((s) => s.setCurrency)
   const dark = useTheme((s) => s.dark)
   const toggleTheme = useTheme((s) => s.toggle)
+
+  const currencyOptions = [
+    { id: 'eur', label: strings.header.currencyEur, aria: strings.header.currencyEurAria },
+    { id: 'usd', label: strings.header.currencyUsd, aria: strings.header.currencyUsdAria },
+  ] as const
 
   const [copied, setCopied] = useState(false)
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -43,6 +50,29 @@ export function Header() {
           <p className="text-sm text-muted">{strings.app.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
+          <div
+            role="group"
+            aria-label={strings.header.currencyLabel}
+            className="flex overflow-hidden rounded-md border border-line bg-raised"
+          >
+            {currencyOptions.map((opt) => {
+              const active = currency === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-pressed={active}
+                  aria-label={opt.aria}
+                  onClick={() => setCurrency(opt.id)}
+                  className={`px-3 py-1.5 text-sm tabular-nums transition-colors ${
+                    active ? 'bg-accent-soft text-accent' : 'hover:border-accent'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
           <button
             type="button"
             onClick={copyLink}

@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import type { Scenario, TokenRates } from '../engine/types'
 import {
+  DEFAULT_CURRENCY,
   DEFAULT_FX_EUR_PER_USD,
   DEFAULT_PRESET_ID,
   presets,
   pricingTable,
   salaryData,
+  type Currency,
 } from '../data'
 import { clamp, RANGES } from '../lib/ranges'
 import {
@@ -27,6 +29,8 @@ interface ScenarioStore {
   isCustomized: boolean
   /** Tipo de cambio EUR por USD */
   fx: number
+  /** Moneda de presentación global (defecto EUR) */
+  currency: Currency
   /** Versión de precios de una URL compartida cuando difiere de la actual */
   staleVersion: string | null
   /** Brutos anuales editados en sesión (sin persistencia) */
@@ -38,6 +42,7 @@ interface ScenarioStore {
   setSchedule: (field: ScheduleField, value: number) => void
   applyRegime: (hoursPerDay: number, daysPerWeek: number) => void
   setFx: (value: number) => void
+  setCurrency: (c: Currency) => void
   setProfileGross: (profileId: string, value: number) => void
   dismissStaleVersion: () => void
 }
@@ -68,11 +73,12 @@ const initial = deserializeScenario(
   DEFAULT_PRESET_ID,
   DEFAULT_FX_EUR_PER_USD,
   pricingTable.version,
+  DEFAULT_CURRENCY,
 )
 
 export const useScenarioStore = create<ScenarioStore>((set, get) => {
   const syncUrl = () => {
-    const { scenario, presetId, fx } = get()
+    const { scenario, presetId, fx, currency } = get()
     writeUrl(
       serializeScenario(
         scenario,
@@ -81,6 +87,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         DEFAULT_FX_EUR_PER_USD,
         pricingTable.version,
         presetById(presetId),
+        currency,
+        DEFAULT_CURRENCY,
       ),
     )
   }
@@ -95,6 +103,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     presetId: initial.presetId,
     isCustomized: initial.isCustomized,
     fx: initial.fx,
+    currency: initial.currency,
     staleVersion: initial.staleVersion,
     profileGross: Object.fromEntries(salaryData.profiles.map((p) => [p.id, p.grossAnnualEUR])),
 
@@ -144,6 +153,11 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     setFx: (value) => {
       // El tipo de cambio no forma parte de los presets: no marca "Personalizado"
       update({ fx: clamp(value, RANGES.fx) })
+    },
+
+    setCurrency: (c) => {
+      // La moneda es estado de presentación: no marca "Personalizado"
+      update({ currency: c })
     },
 
     setProfileGross: (profileId, value) => {

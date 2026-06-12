@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { deserializeScenario, scenarioFromPreset, serializeScenario } from './urlSync'
-import { DEFAULT_FX_EUR_PER_USD, DEFAULT_PRESET_ID, presets, pricingTable } from '../data'
+import {
+  DEFAULT_CURRENCY,
+  DEFAULT_FX_EUR_PER_USD,
+  DEFAULT_PRESET_ID,
+  presets,
+  pricingTable,
+  type Currency,
+} from '../data'
 
 const P2 = presets.find((p) => p.id === 'P2')!
 
-function roundTrip(scenario: ReturnType<typeof scenarioFromPreset>, presetId: string, fx: number) {
+function roundTrip(
+  scenario: ReturnType<typeof scenarioFromPreset>,
+  presetId: string,
+  fx: number,
+  currency: Currency = DEFAULT_CURRENCY,
+) {
   const query = serializeScenario(
     scenario,
     presetId,
@@ -12,6 +24,8 @@ function roundTrip(scenario: ReturnType<typeof scenarioFromPreset>, presetId: st
     DEFAULT_FX_EUR_PER_USD,
     pricingTable.version,
     presets.find((p) => p.id === presetId)!,
+    currency,
+    DEFAULT_CURRENCY,
   )
   return {
     query,
@@ -21,6 +35,7 @@ function roundTrip(scenario: ReturnType<typeof scenarioFromPreset>, presetId: st
       DEFAULT_PRESET_ID,
       DEFAULT_FX_EUR_PER_USD,
       pricingTable.version,
+      DEFAULT_CURRENCY,
     ),
   }
 }
@@ -66,6 +81,7 @@ describe('serialización en URL', () => {
       DEFAULT_PRESET_ID,
       DEFAULT_FX_EUR_PER_USD,
       pricingTable.version,
+      DEFAULT_CURRENCY,
     )
     expect(restored.presetId).toBe('P2')
     expect(restored.scenario).toEqual(scenarioFromPreset(P2))
@@ -79,6 +95,7 @@ describe('serialización en URL', () => {
       DEFAULT_PRESET_ID,
       DEFAULT_FX_EUR_PER_USD,
       pricingTable.version,
+      DEFAULT_CURRENCY,
     )
     expect(restored.scenario.tokens.cacheReadM).toBe(P2.tokens.cacheReadM)
     expect(restored.scenario.dutyCycle).toBeCloseTo(0.7, 10)
@@ -91,6 +108,7 @@ describe('serialización en URL', () => {
       DEFAULT_PRESET_ID,
       DEFAULT_FX_EUR_PER_USD,
       pricingTable.version,
+      DEFAULT_CURRENCY,
     )
     expect(restored.scenario.tokens.inputK).toBe(500)
     expect(restored.scenario.agents).toBe(100)
@@ -103,6 +121,7 @@ describe('serialización en URL', () => {
       DEFAULT_PRESET_ID,
       DEFAULT_FX_EUR_PER_USD,
       pricingTable.version,
+      DEFAULT_CURRENCY,
     )
     expect(restored.presetId).toBe('P2')
   })
@@ -114,6 +133,7 @@ describe('serialización en URL', () => {
       DEFAULT_PRESET_ID,
       DEFAULT_FX_EUR_PER_USD,
       pricingTable.version,
+      DEFAULT_CURRENCY,
     )
     expect(restored.staleVersion).toBe('2025-01')
   })
@@ -125,9 +145,34 @@ describe('serialización en URL', () => {
       DEFAULT_PRESET_ID,
       DEFAULT_FX_EUR_PER_USD,
       pricingTable.version,
+      DEFAULT_CURRENCY,
     )
     const { fable, opus, sonnet, haiku } = restored.scenario.mix
     expect(fable + opus + sonnet + haiku).toBeCloseTo(1, 10)
     expect(haiku).toBeCloseTo(0, 10)
+  })
+
+  it('moneda por defecto (EUR) no aparece en la URL', () => {
+    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'eur')
+    expect(new URLSearchParams(query).has('cur')).toBe(false)
+    expect(restored.currency).toBe('eur')
+  })
+
+  it('moneda USD se serializa como cur y se restaura', () => {
+    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'usd')
+    expect(new URLSearchParams(query).get('cur')).toBe('usd')
+    expect(restored.currency).toBe('usd')
+  })
+
+  it('valor de moneda inválido cae al defecto EUR', () => {
+    const restored = deserializeScenario(
+      'p=P2&cur=gbp',
+      presets,
+      DEFAULT_PRESET_ID,
+      DEFAULT_FX_EUR_PER_USD,
+      pricingTable.version,
+      DEFAULT_CURRENCY,
+    )
+    expect(restored.currency).toBe('eur')
   })
 })

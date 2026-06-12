@@ -3,14 +3,23 @@ import { Bar } from 'react-chartjs-2'
 import type { TooltipItem } from 'chart.js'
 import { chartTheme } from './chartSetup'
 import { strings } from '../../i18n/es'
-import { formatUSD } from '../../lib/format'
+import { formatMoney } from '../../lib/format'
+import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
+import { useScenarioStore } from '../../store/useScenarioStore'
 import { useTheme } from '../../lib/theme'
 
 /** Barras techo vs. ponderado mensual (RF-07.2) */
 export function CeilingVsWeightedChart() {
   const results = useResults()
+  const currency = useScenarioStore((s) => s.currency)
+  const fx = useScenarioStore((s) => s.fx)
   const dark = useTheme((s) => s.dark)
+
+  // El motor devuelve USD; las barras se expresan en la moneda activa (D3)
+  const toDisplay = (usd: number) => (currency === 'eur' ? usdToEur(usd, fx) : usd)
+  const ceiling = toDisplay(results.ceilingMonthlyUSD)
+  const weighted = toDisplay(results.weightedMonthlyUSD)
 
   const { data, options } = useMemo(() => {
     const theme = chartTheme()
@@ -19,7 +28,7 @@ export function CeilingVsWeightedChart() {
         labels: [strings.charts.ceilingBar, strings.charts.weightedBar],
         datasets: [
           {
-            data: [results.ceilingMonthlyUSD, results.weightedMonthlyUSD],
+            data: [ceiling, weighted],
             backgroundColor: [theme.ceiling, theme.agent],
             // Señal secundaria además del color: el ponderado lleva borde
             borderColor: [theme.ceiling, theme.ink],
@@ -33,23 +42,26 @@ export function CeilingVsWeightedChart() {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (ctx: TooltipItem<'bar'>) => formatUSD(Number(ctx.parsed.y)),
+              label: (ctx: TooltipItem<'bar'>) => formatMoney(Number(ctx.parsed.y), currency),
             },
           },
         },
         scales: {
           x: { ticks: { color: theme.ink }, grid: { display: false } },
           y: {
-            ticks: { color: theme.muted, callback: (v: string | number) => formatUSD(Number(v)) },
+            ticks: {
+              color: theme.muted,
+              callback: (v: string | number) => formatMoney(Number(v), currency),
+            },
             grid: { color: theme.grid },
           },
         },
       },
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results, dark])
+  }, [ceiling, weighted, currency, dark])
 
-  const ariaLabel = `${strings.charts.ceilingVsWeightedTitle}: ${strings.charts.ceilingBar} ${formatUSD(results.ceilingMonthlyUSD)}, ${strings.charts.weightedBar} ${formatUSD(results.weightedMonthlyUSD)}`
+  const ariaLabel = `${strings.charts.ceilingVsWeightedTitle}: ${strings.charts.ceilingBar} ${formatMoney(ceiling, currency)}, ${strings.charts.weightedBar} ${formatMoney(weighted, currency)}`
 
   return (
     <div className="rounded-lg border border-line bg-raised p-4">

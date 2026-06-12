@@ -1,34 +1,41 @@
 import { strings } from '../../i18n/es'
-import { formatUSD, formatUsdPerHour } from '../../lib/format'
+import { formatMoney, formatMoneyPerHour } from '../../lib/format'
+import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
+import { useScenarioStore } from '../../store/useScenarioStore'
 
 export function MetricCards() {
   const results = useResults()
+  const currency = useScenarioStore((s) => s.currency)
+  const fx = useScenarioStore((s) => s.fx)
+
+  // El motor devuelve USD; cuando la moneda activa es EUR se convierte con fx (D3)
+  const toDisplay = (usd: number) => (currency === 'eur' ? usdToEur(usd, fx) : usd)
 
   const cards = [
     {
       id: 'blend',
       label: strings.metrics.blend,
-      value: formatUsdPerHour(results.blendedRate),
+      value: formatMoneyPerHour(toDisplay(results.blendedRate), currency),
       hero: false,
     },
     {
       id: 'ceiling',
       label: strings.metrics.ceiling,
-      value: formatUSD(results.ceilingMonthlyUSD),
+      value: formatMoney(toDisplay(results.ceilingMonthlyUSD), currency),
       hero: false,
     },
     {
       id: 'weighted',
       label: strings.metrics.weighted,
-      value: formatUSD(results.weightedMonthlyUSD),
+      value: formatMoney(toDisplay(results.weightedMonthlyUSD), currency),
       hint: strings.metrics.weightedHint,
       hero: true,
     },
     {
       id: 'annual',
       label: strings.metrics.annual,
-      value: formatUSD(results.weightedAnnualUSD),
+      value: formatMoney(toDisplay(results.weightedAnnualUSD), currency),
       hero: false,
     },
   ]

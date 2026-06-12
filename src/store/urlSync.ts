@@ -1,4 +1,5 @@
 import type { Preset, Scenario } from '../engine/types'
+import { isCurrency, type Currency } from '../data'
 import { clamp, RANGES, type Range } from '../lib/ranges'
 
 /**
@@ -11,6 +12,8 @@ export interface UrlState {
   presetId: string
   scenario: Scenario
   fx: number
+  /** Moneda de presentación (defecto EUR); solo viaja en la URL si difiere */
+  currency: Currency
   isCustomized: boolean
   /** Versión de precios de la URL cuando difiere de la actual (aviso CA-09.1) */
   staleVersion: string | null
@@ -127,6 +130,8 @@ export function serializeScenario(
   defaultFx: number,
   pricingVersion: string,
   basePreset: Preset,
+  currency: Currency,
+  defaultCurrency: Currency,
 ): string {
   const params = new URLSearchParams()
   params.set('p', presetId)
@@ -138,6 +143,7 @@ export function serializeScenario(
     }
   }
   if (fx !== defaultFx) params.set('fx', compact(fx))
+  if (currency !== defaultCurrency) params.set('cur', currency)
   return params.toString()
 }
 
@@ -147,6 +153,7 @@ export function deserializeScenario(
   defaultPresetId: string,
   defaultFx: number,
   pricingVersion: string,
+  defaultCurrency: Currency,
 ): UrlState {
   const params = new URLSearchParams(search)
 
@@ -186,10 +193,14 @@ export function deserializeScenario(
   const parsedFx = rawFx === null ? NaN : Number(rawFx)
   const fx = Number.isFinite(parsedFx) ? clamp(parsedFx, RANGES.fx) : defaultFx
 
+  // Moneda inválida o ausente → defecto
+  const rawCurrency = params.get('cur')
+  const currency = isCurrency(rawCurrency) ? rawCurrency : defaultCurrency
+
   const urlVersion = params.get('pv')
   const staleVersion = urlVersion !== null && urlVersion !== pricingVersion ? urlVersion : null
 
-  return { presetId: basePreset.id, scenario, fx, isCustomized, staleVersion }
+  return { presetId: basePreset.id, scenario, fx, currency, isCustomized, staleVersion }
 }
 
 /** Reescribe la query sin crear entradas de historial; no-op fuera del navegador */

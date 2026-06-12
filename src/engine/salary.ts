@@ -23,6 +23,10 @@ export function usdToEur(usd: number, fxEurPerUsd: number): number {
   return usd * fxEurPerUsd
 }
 
+export function eurToUsd(eur: number, fxEurPerUsd: number): number {
+  return fxEurPerUsd > 0 ? eur / fxEurPerUsd : 0
+}
+
 /** Coste empresa de un perfil a partir del bruto anual (RF-06) */
 export function employerCost(grossAnnualEUR: number, config: SalaryConfig): EmployerCost {
   const annualEUR = grossAnnualEUR * config.employerCostMultiplier

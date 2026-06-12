@@ -116,3 +116,11 @@ export const salaryData: SalaryData = validate(salariesJson, isSalaryData, 'sala
 
 export const DEFAULT_PRESET_ID = 'P2'
 export const DEFAULT_FX_EUR_PER_USD = 0.92
+
+/** Moneda de presentación; el motor siempre calcula en USD */
+export type Currency = 'eur' | 'usd'
+export const DEFAULT_CURRENCY: Currency = 'eur'
+
+export function isCurrency(v: unknown): v is Currency {
+  return v === 'eur' || v === 'usd'
+}

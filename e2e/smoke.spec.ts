@@ -2,15 +2,25 @@ import { expect, test } from '@playwright/test'
 
 // Caso de referencia P2 (PRD §8): ponderado mensual ≈ 6.040 $ (valor exacto 6023 $)
 const P2_WEIGHTED = '6023 $'
+const USD = 'Mostrar cifras en dólares'
 
-test('carga P2 por defecto y muestra la métrica de referencia', async ({ page }) => {
+test('carga P2 por defecto en EUR y el selector propaga el símbolo a las métricas', async ({
+  page,
+}) => {
   await page.goto('./')
+  // Defecto EUR (CA currency-display): las métricas muestran el símbolo €
+  await expect(page.getByTestId('metric-blend')).toHaveText(/€\/h$/)
+  await expect(page.getByTestId('metric-weighted')).toHaveText(/ €$/)
+
+  // Cambiar a USD propaga el símbolo $ y muestra la referencia en USD nativo
+  await page.getByRole('button', { name: USD }).click()
   await expect(page.getByTestId('metric-weighted')).toHaveText(P2_WEIGHTED)
   await expect(page.getByTestId('metric-blend')).toHaveText('13,8 $/h')
 })
 
 test('mover un control recalcula las métricas al instante', async ({ page }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: USD }).click()
   const weighted = page.getByTestId('metric-weighted')
   await expect(weighted).toHaveText(P2_WEIGHTED)
 
@@ -55,6 +65,7 @@ test('copiar URL y abrirla en un contexto nuevo reproduce resultados idénticos'
 
 test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: USD }).click()
   await page.getByRole('button', { name: /Sonnet-first con escalación/ }).click()
   // P4: blend 10,2 $/h · ponderado 10,1591 × 728 × 0,7 ≈ 5177 $
   await expect(page.getByTestId('metric-blend')).toHaveText('10,2 $/h')
