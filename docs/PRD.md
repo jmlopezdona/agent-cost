@@ -216,7 +216,7 @@ Panel colapsable con:
 Caso de referencia para validación (CA-01.3): el preset P2 con los precios por defecto debe producir blend ≈ $13,8/h activa, techo ≈ $10.060/mes y ponderado ≈ $6.040/mes (1 agente).
 
 | # | Preset | Descripción (mostrada al usuario) | In (k/h) | Out (k/h) | CR (M/h) | CW (k/h) | Fable/Opus/Sonnet/Haiku | Régimen | Duty | Agentes |
-|---|---|---|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|---|---|---|---|---|
 | P1 | Pair programming supervisado | Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens tomado de una sesión real de desarrollo. | 42 | 210 | 30 | 530 | 0/90/0/10 | 8×5 | 30% | 1 |
 | P2 | Agente de delivery balanceado | Agente integrado en el flujo de un equipo: Opus planifica la feature y revisa el PR final, Sonnet implementa, Haiku ejecuta el ciclo de tests/lint. Corre de forma continua atendiendo una cola de tareas con esperas de build y CI. | 42 | 210 | 30 | 530 | 0/15/65/20 | 24×7 | 60% | 1 |
 | P3 | Diseño intensivo / greenfield | Arranque de producto o arquitectura compleja: Opus lleva el peso del diseño, los ADRs y la revisión profunda; Sonnet prototipa. Output alto por documentos y razonamiento extenso. Jornada laboral con supervisión frecuente. | 50 | 280 | 25 | 600 | 0/40/50/10 | 8×5 | 50% | 1 |

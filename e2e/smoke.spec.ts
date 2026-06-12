@@ -1,0 +1,67 @@
+import { expect, test } from '@playwright/test'
+
+// Caso de referencia P2 (PRD §8): ponderado mensual ≈ 6.040 $ (valor exacto 6023 $)
+const P2_WEIGHTED = '6023 $'
+
+test('carga P2 por defecto y muestra la métrica de referencia', async ({ page }) => {
+  await page.goto('./')
+  await expect(page.getByTestId('metric-weighted')).toHaveText(P2_WEIGHTED)
+  await expect(page.getByTestId('metric-blend')).toHaveText('13,8 $/h')
+})
+
+test('mover un control recalcula las métricas al instante', async ({ page }) => {
+  await page.goto('./')
+  const weighted = page.getByTestId('metric-weighted')
+  await expect(weighted).toHaveText(P2_WEIGHTED)
+
+  // Cache read 30 → 60 M/h: +30 M × 0,29 $/M ponderado = +8,7 $/h al blend
+  await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
+
+  await expect(weighted).not.toHaveText(P2_WEIGHTED)
+  await expect(weighted).toHaveText('9823 $')
+  // Estado personalizado (CA del spec scenario-presets)
+  await expect(
+    page.getByText('Personalizado (basado en Agente de delivery balanceado)'),
+  ).toBeVisible()
+})
+
+test('copiar URL y abrirla en un contexto nuevo reproduce resultados idénticos', async ({
+  page,
+  browser,
+}) => {
+  await page.goto('./')
+  await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
+  await page.getByRole('spinbutton', { name: 'Duty cycle' }).fill('80')
+  const weighted = await page.getByTestId('metric-weighted').textContent()
+
+  await page.getByRole('button', { name: 'Copiar enlace del escenario' }).click()
+  await expect(page.getByRole('button', { name: 'Enlace copiado' })).toBeVisible()
+
+  // El portapapeles contiene la URL con el estado serializado (replaceState)
+  const sharedUrl = await page.evaluate(() => navigator.clipboard.readText())
+  expect(sharedUrl).toBe(page.url())
+  expect(sharedUrl).toContain('cr=60')
+  expect(sharedUrl).toContain('dc=80')
+
+  const freshContext = await browser.newContext()
+  const freshPage = await freshContext.newPage()
+  await freshPage.goto(sharedUrl)
+  await expect(freshPage.getByTestId('metric-weighted')).toHaveText(weighted!)
+  await expect(
+    freshPage.getByText('Personalizado (basado en Agente de delivery balanceado)'),
+  ).toBeVisible()
+  await freshContext.close()
+})
+
+test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: /Sonnet-first con escalación/ }).click()
+  // P4: blend 10,2 $/h · ponderado 10,1591 × 728 × 0,7 ≈ 5177 $
+  await expect(page.getByTestId('metric-blend')).toHaveText('10,2 $/h')
+  await expect(page.getByTestId('metric-weighted')).toHaveText('5177 $')
+})
+
+test('el disclaimer de la comparativa salarial es visible', async ({ page }) => {
+  await page.goto('./')
+  await expect(page.getByText(/no implica equivalencia de capacidades/)).toBeVisible()
+})

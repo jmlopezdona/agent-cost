@@ -1,0 +1,200 @@
+import type { Preset, Scenario } from '../engine/types'
+import { clamp, RANGES, type Range } from '../lib/ranges'
+
+/**
+ * Serialización compacta del escenario en query string (RF-09, D6).
+ * Solo se escriben los parámetros que difieren del preset base; `p` y `pv`
+ * van siempre. La escritura usa history.replaceState (sin entradas de historial).
+ */
+
+export interface UrlState {
+  presetId: string
+  scenario: Scenario
+  fx: number
+  isCustomized: boolean
+  /** Versión de precios de la URL cuando difiere de la actual (aviso CA-09.1) */
+  staleVersion: string | null
+}
+
+/** Evita restos de coma flotante al pasar fracciones a porcentaje */
+function compact(n: number): string {
+  return String(Number(n.toFixed(6)))
+}
+
+/** Haiku = 100 − suma, redondeado para que el resto no arrastre coma flotante */
+export function mixRemainder(fable: number, opus: number, sonnet: number): number {
+  return Math.max(0, Number((1 - (fable + opus + sonnet)).toFixed(6)))
+}
+
+type NumericParam = {
+  key: string
+  range: Range
+  get: (s: Scenario) => number
+  set: (s: Scenario, v: number) => void
+  /** Factor de presentación en URL (p. ej. fracción → %) */
+  scale: number
+}
+
+const PARAMS: NumericParam[] = [
+  {
+    key: 'i',
+    range: RANGES.inputK,
+    get: (s) => s.tokens.inputK,
+    set: (s, v) => (s.tokens.inputK = v),
+    scale: 1,
+  },
+  {
+    key: 'o',
+    range: RANGES.outputK,
+    get: (s) => s.tokens.outputK,
+    set: (s, v) => (s.tokens.outputK = v),
+    scale: 1,
+  },
+  {
+    key: 'cr',
+    range: RANGES.cacheReadM,
+    get: (s) => s.tokens.cacheReadM,
+    set: (s, v) => (s.tokens.cacheReadM = v),
+    scale: 1,
+  },
+  {
+    key: 'cw',
+    range: RANGES.cacheWriteK,
+    get: (s) => s.tokens.cacheWriteK,
+    set: (s, v) => (s.tokens.cacheWriteK = v),
+    scale: 1,
+  },
+  {
+    key: 'mf',
+    range: RANGES.mix,
+    get: (s) => s.mix.fable,
+    set: (s, v) => (s.mix.fable = v),
+    scale: 100,
+  },
+  {
+    key: 'mo',
+    range: RANGES.mix,
+    get: (s) => s.mix.opus,
+    set: (s, v) => (s.mix.opus = v),
+    scale: 100,
+  },
+  {
+    key: 'ms',
+    range: RANGES.mix,
+    get: (s) => s.mix.sonnet,
+    set: (s, v) => (s.mix.sonnet = v),
+    scale: 100,
+  },
+  {
+    key: 'h',
+    range: RANGES.hoursPerDay,
+    get: (s) => s.hoursPerDay,
+    set: (s, v) => (s.hoursPerDay = v),
+    scale: 1,
+  },
+  {
+    key: 'd',
+    range: RANGES.daysPerWeek,
+    get: (s) => s.daysPerWeek,
+    set: (s, v) => (s.daysPerWeek = v),
+    scale: 1,
+  },
+  {
+    key: 'dc',
+    range: RANGES.dutyCycle,
+    get: (s) => s.dutyCycle,
+    set: (s, v) => (s.dutyCycle = v),
+    scale: 100,
+  },
+  { key: 'n', range: RANGES.agents, get: (s) => s.agents, set: (s, v) => (s.agents = v), scale: 1 },
+]
+
+export function scenarioFromPreset(preset: Preset): Scenario {
+  return {
+    tokens: { ...preset.tokens },
+    mix: { ...preset.mix },
+    hoursPerDay: preset.hoursPerDay,
+    daysPerWeek: preset.daysPerWeek,
+    dutyCycle: preset.dutyCycle,
+    agents: preset.agents,
+  }
+}
+
+export function serializeScenario(
+  scenario: Scenario,
+  presetId: string,
+  fx: number,
+  defaultFx: number,
+  pricingVersion: string,
+  basePreset: Preset,
+): string {
+  const params = new URLSearchParams()
+  params.set('p', presetId)
+  params.set('pv', pricingVersion)
+  for (const param of PARAMS) {
+    const value = param.get(scenario)
+    if (value !== param.get(basePreset)) {
+      params.set(param.key, compact(value * param.scale))
+    }
+  }
+  if (fx !== defaultFx) params.set('fx', compact(fx))
+  return params.toString()
+}
+
+export function deserializeScenario(
+  search: string,
+  presets: Preset[],
+  defaultPresetId: string,
+  defaultFx: number,
+  pricingVersion: string,
+): UrlState {
+  const params = new URLSearchParams(search)
+
+  const requestedPreset = params.get('p')
+  const basePreset =
+    presets.find((p) => p.id === requestedPreset) ??
+    presets.find((p) => p.id === defaultPresetId) ??
+    presets[0]
+
+  const scenario = scenarioFromPreset(basePreset)
+  let isCustomized = false
+
+  for (const param of PARAMS) {
+    const raw = params.get(param.key)
+    if (raw === null) continue
+    const parsed = Number(raw) / param.scale
+    // Parámetro inválido → se descarta con fallback al valor del preset base
+    if (!Number.isFinite(parsed)) continue
+    const value = clamp(parsed, param.range)
+    if (value !== param.get(basePreset)) {
+      param.set(scenario, value)
+      isCustomized = true
+    }
+  }
+
+  // Haiku es el resto; reclamp por si la suma de la URL superase 1
+  const sumThree = scenario.mix.fable + scenario.mix.opus + scenario.mix.sonnet
+  if (sumThree > 1) {
+    const factor = 1 / sumThree
+    scenario.mix.fable *= factor
+    scenario.mix.opus *= factor
+    scenario.mix.sonnet *= factor
+  }
+  scenario.mix.haiku = mixRemainder(scenario.mix.fable, scenario.mix.opus, scenario.mix.sonnet)
+
+  const rawFx = params.get('fx')
+  const parsedFx = rawFx === null ? NaN : Number(rawFx)
+  const fx = Number.isFinite(parsedFx) ? clamp(parsedFx, RANGES.fx) : defaultFx
+
+  const urlVersion = params.get('pv')
+  const staleVersion = urlVersion !== null && urlVersion !== pricingVersion ? urlVersion : null
+
+  return { presetId: basePreset.id, scenario, fx, isCustomized, staleVersion }
+}
+
+/** Reescribe la query sin crear entradas de historial; no-op fuera del navegador */
+export function writeUrl(query: string): void {
+  if (typeof window === 'undefined' || typeof history === 'undefined') return
+  const url = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+  history.replaceState(null, '', url)
+}

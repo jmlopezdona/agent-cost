@@ -1,0 +1,37 @@
+{
+  "presets": [
+    {
+      "id": "P1",
+      "name": "Pair programming supervisado",
+      "description": "Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens tomado de una sesión real de desarrollo.",
+      "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
+      "mix": { "fable": 0, "opus": 0.9, "sonnet": 0, "haiku": 0.1 },
+      "hoursPerDay": 8,
+      "daysPerWeek": 5,
+      "dutyCycle": 0.3,
+      "agents": 1
+    },
+    {
+      "id": "P2",
+      "name": "Agente de delivery balanceado",
+      "description": "Agente integrado en el flujo de un equipo: Opus planifica la feature y revisa el PR final, Sonnet implementa, Haiku ejecuta el ciclo de tests/lint. Corre de forma continua atendiendo una cola de tareas con esperas de build y CI.",
+      "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
+      "mix": { "fable": 0, "opus": 0.15, "sonnet": 0.65, "haiku": 0.2 },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.6,
+      "agents": 1
+    },
+    {
+      "id": "P4",
+      "name": "Sonnet-first con escalación",
+      "description": "Mantenimiento y evolutivos sobre código maduro: Sonnet resuelve la mayoría de tareas y Opus solo entra como escalación cuando el agente se atasca. Haiku absorbe el trabajo trivial. Alta autonomía.",
+      "tokens": { "inputK": 42, "outputK": 190, "cacheReadM": 28, "cacheWriteK": 500 },
+      "mix": { "fable": 0, "opus": 0.05, "sonnet": 0.55, "haiku": 0.4 },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.7,
+      "agents": 1
+    }
+  ]
+}

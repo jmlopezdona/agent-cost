@@ -1,0 +1,211 @@
+import { useMemo } from 'react'
+import { Bar } from 'react-chartjs-2'
+import type { TooltipItem } from 'chart.js'
+import { chartTheme } from '../charts/chartSetup'
+import { strings } from '../../i18n/es'
+import { salaryData } from '../../data'
+import {
+  agentEurPerActiveHour,
+  employerCost,
+  fteEffectiveHoursPerMonth,
+  fteEquivalence,
+  hoursRatio,
+  usdToEur,
+} from '../../engine/salary'
+import {
+  formatEUR,
+  formatEurPerHour,
+  formatFx,
+  formatHours,
+  formatInt,
+  formatOneDecimal,
+  formatRatio,
+} from '../../lib/format'
+import { useResults } from '../../lib/useResults'
+import { useScenarioStore } from '../../store/useScenarioStore'
+import { useTheme } from '../../lib/theme'
+
+export function SalaryComparison() {
+  const fx = useScenarioStore((s) => s.fx)
+  const setFx = useScenarioStore((s) => s.setFx)
+  const profileGross = useScenarioStore((s) => s.profileGross)
+  const setProfileGross = useScenarioStore((s) => s.setProfileGross)
+  const results = useResults()
+  const dark = useTheme((s) => s.dark)
+
+  const config = {
+    employerCostMultiplier: salaryData.employerCostMultiplier,
+    effectiveHoursPerYear: salaryData.effectiveHoursPerYear,
+  }
+
+  const agentMonthlyEUR = usdToEur(results.weightedMonthlyUSD, fx)
+  const agentPerHourEUR = agentEurPerActiveHour(agentMonthlyEUR, results.activeHoursMonth)
+
+  const rows = salaryData.profiles.map((profile) => {
+    const gross = profileGross[profile.id] ?? profile.grossAnnualEUR
+    const cost = employerCost(gross, config)
+    return { profile, gross, cost, fte: fteEquivalence(agentMonthlyEUR, cost.monthlyEUR) }
+  })
+  const monthlyCostsKey = rows.map((r) => r.cost.monthlyEUR).join(',')
+
+  const { data, options } = useMemo(() => {
+    const theme = chartTheme()
+    return {
+      data: {
+        labels: [strings.salary.agentBarLabel, ...rows.map((r) => r.profile.name)],
+        datasets: [
+          {
+            data: [agentMonthlyEUR, ...rows.map((r) => r.cost.monthlyEUR)],
+            backgroundColor: [theme.agent, ...rows.map(() => theme.human)],
+            // Señal secundaria además del color (CA-06.1): la barra del agente lleva borde discontinuo
+            borderColor: [theme.ink, ...rows.map(() => theme.human)],
+            borderWidth: [2, 0, 0, 0, 0],
+            borderDash: [6, 3],
+          },
+        ],
+      },
+      options: {
+        indexAxis: 'y' as const,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx: TooltipItem<'bar'>) => formatEUR(Number(ctx.parsed.x)),
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: theme.muted, callback: (v: string | number) => formatEUR(Number(v)) },
+            grid: { color: theme.grid },
+          },
+          y: { ticks: { color: theme.ink }, grid: { display: false } },
+        },
+      },
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentMonthlyEUR, monthlyCostsKey, dark])
+
+  const chartAria = [
+    `${strings.salary.agentBarLabel}: ${formatEUR(agentMonthlyEUR)}`,
+    ...rows.map((r) => `${r.profile.name}: ${formatEUR(r.cost.monthlyEUR)}`),
+  ].join(', ')
+
+  return (
+    <section className="rounded-lg border border-line bg-raised p-4">
+      <h2 className="text-sm font-semibold">{strings.salary.sectionTitle}</h2>
+
+      {/* Disclaimer permanente, visible sin scroll dentro de la sección (CA-06.2) */}
+      <p className="mt-2 rounded-md bg-warn-bg px-3 py-2 text-xs leading-relaxed text-warn-ink">
+        {strings.salary.disclaimer}
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold tabular-nums">
+            {strings.salary.agentMonthly(formatEUR(agentMonthlyEUR))}
+          </p>
+          <p className="text-xs text-muted tabular-nums">
+            {strings.salary.agentPerHour(formatEurPerHour(agentPerHourEUR))} ·{' '}
+            {strings.salary.hoursLine(
+              formatHours(results.activeHoursMonth),
+              formatInt(fteEffectiveHoursPerMonth(config)),
+              formatRatio(hoursRatio(results.activeHoursMonth, config)),
+            )}
+          </p>
+        </div>
+        {/* Tipo de cambio siempre visible junto al resultado en EUR (RF-06) */}
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-xs text-muted">
+            {strings.salary.fxLabel} ({formatFx(fx)})
+          </span>
+          <input
+            type="number"
+            value={fx}
+            min={0.1}
+            max={10}
+            step={0.01}
+            onChange={(e) => {
+              const v = Number(e.target.value)
+              if (Number.isFinite(v)) setFx(v)
+            }}
+            aria-label={strings.salary.fxLabel}
+            className="w-20 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
+          />
+          <span className="text-xs text-muted">{strings.salary.fxUnit}</span>
+        </label>
+      </div>
+
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm tabular-nums">
+          <thead>
+            <tr className="border-b border-line text-left text-xs text-muted">
+              <th scope="col" className="py-2 pr-2">
+                {strings.salary.colProfile}
+              </th>
+              <th scope="col" className="py-2 pr-2">
+                {strings.salary.colGross}
+              </th>
+              <th scope="col" className="py-2 pr-2 text-right">
+                {strings.salary.colEmployerYear}
+              </th>
+              <th scope="col" className="py-2 pr-2 text-right">
+                {strings.salary.colEmployerMonth}
+              </th>
+              <th scope="col" className="py-2 pr-2 text-right">
+                {strings.salary.colPerHour}
+              </th>
+              <th scope="col" className="py-2 text-right">
+                {strings.salary.colFte}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ profile, gross, cost, fte }) => (
+              <tr key={profile.id} className="border-b border-line last:border-0">
+                <th scope="row" className="py-2 pr-2 text-left font-medium">
+                  {profile.name}
+                  <span className="block text-xs font-normal text-muted">{profile.experience}</span>
+                </th>
+                <td className="py-2 pr-2">
+                  <input
+                    type="number"
+                    value={gross}
+                    min={0}
+                    step={1000}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      if (Number.isFinite(v)) setProfileGross(profile.id, v)
+                    }}
+                    aria-label={strings.salary.grossInputLabel(profile.name)}
+                    className="w-24 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
+                  />
+                </td>
+                <td className="py-2 pr-2 text-right">{formatEUR(cost.annualEUR)}</td>
+                <td className="py-2 pr-2 text-right">{formatEUR(cost.monthlyEUR)}</td>
+                <td className="py-2 pr-2 text-right">
+                  {formatEurPerHour(cost.perEffectiveHourEUR)}
+                </td>
+                <td className="py-2 text-right font-semibold">
+                  {strings.salary.fteValue(formatRatio(fte))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-1 text-xs text-muted">
+        {strings.salary.multiplierNote(
+          formatOneDecimal(salaryData.employerCostMultiplier),
+          formatInt(salaryData.effectiveHoursPerYear),
+        )}
+      </p>
+
+      <h3 className="mt-4 text-xs font-semibold text-muted">{strings.salary.chartTitle}</h3>
+      <div className="mt-2 h-56" role="img" aria-label={chartAria}>
+        <Bar data={data} options={options} />
+      </div>
+    </section>
+  )
+}
