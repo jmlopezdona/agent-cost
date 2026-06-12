@@ -3,7 +3,7 @@
     {
       "id": "P1",
       "name": "Pair programming supervisado",
-      "description": "Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens tomado de una sesión real de desarrollo.",
+      "description": "Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens representativo de una sesión interactiva de desarrollo.",
       "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
       "mix": { "fable": 0, "opus": 0.9, "sonnet": 0, "haiku": 0.1 },
       "hoursPerDay": 8,
