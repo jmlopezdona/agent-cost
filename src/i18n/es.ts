@@ -59,6 +59,9 @@ export const strings = {
     agentsUnit: 'agentes',
     regimes: { full: '24×7', extended: '12×5', office: '8×5' },
     regimeGroupLabel: 'Presets de régimen horario',
+    dutyHelp:
+      'Fracción del tiempo programado en que el agente consume tokens de verdad. El resto es tiempo muerto (esperas de build/test, aprobaciones humanas, inactividad) que no factura. Un duty del 100% supone el agente activo de forma continua; el coste ponderado es el techo × duty cycle.',
+    helpButton: (label: string) => `Ayuda sobre ${label}`,
     contextLine: (scheduled: string, active: string, duty: string) =>
       `${scheduled}/mes programadas por agente · ${active} activas con duty ${duty}`,
     dutyGuide:

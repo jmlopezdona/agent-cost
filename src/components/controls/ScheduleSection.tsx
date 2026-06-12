@@ -1,5 +1,6 @@
 import { Section } from '../layout/Section'
 import { SliderInput } from './SliderInput'
+import { HelpTip } from './HelpTip'
 import { strings } from '../../i18n/es'
 import { RANGES } from '../../lib/ranges'
 import { formatHours, formatPercent } from '../../lib/format'
@@ -66,6 +67,12 @@ export function ScheduleSection() {
         min={RANGES.dutyCycle.min * 100}
         max={RANGES.dutyCycle.max * 100}
         onChange={(v) => setSchedule('dutyCycle', v / 100)}
+        labelExtra={
+          <HelpTip
+            label={strings.schedule.helpButton(strings.schedule.dutyCycle)}
+            text={strings.schedule.dutyHelp}
+          />
+        }
         detail={strings.schedule.dutyGuide}
       />
       <SliderInput
