@@ -74,7 +74,7 @@ export function Header() {
               type="button"
               aria-pressed={active && !isCustomized}
               onClick={() => loadPreset(preset.id)}
-              className={`rounded-lg border p-3 text-left transition-colors ${
+              className={`min-w-0 rounded-lg border p-3 text-left transition-colors ${
                 active && !isCustomized
                   ? 'border-accent bg-accent-soft'
                   : 'border-line bg-raised hover:border-accent'
