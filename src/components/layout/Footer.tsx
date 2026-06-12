@@ -7,7 +7,7 @@ export function Footer() {
       <p>
         {strings.footer.pricingVersion(pricingTable.version, pricingTable.effective_date)} ·{' '}
         <a
-          href="https://www.anthropic.com/pricing"
+          href="https://claude.com/pricing#api"
           target="_blank"
           rel="noreferrer"
           className="underline hover:text-accent"

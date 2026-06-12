@@ -114,7 +114,7 @@ export const strings = {
   footer: {
     pricingVersion: (version: string, date: string) =>
       `Precios API de Anthropic versión ${version} (efectivos desde ${date})`,
-    pricingLink: 'Tabla oficial de precios de Anthropic',
+    pricingLink: 'Tabla oficial de precios de la API de Anthropic',
     salarySources: (sources: string, reviewed: string) =>
       `Fuentes salariales: ${sources} · Última revisión: ${reviewed}`,
     estimateDisclaimer:
