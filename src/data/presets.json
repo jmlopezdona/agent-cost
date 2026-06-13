@@ -121,7 +121,7 @@
       },
       "hoursPerDay": 24,
       "daysPerWeek": 7,
-      "dutyCycle": 0.8,
+      "dutyCycle": 0.6,
       "agents": 1
     },
     {
@@ -239,7 +239,7 @@
       },
       "hoursPerDay": 24,
       "daysPerWeek": 7,
-      "dutyCycle": 0.8,
+      "dutyCycle": 0.6,
       "agents": 1
     },
     {
@@ -357,7 +357,7 @@
       },
       "hoursPerDay": 24,
       "daysPerWeek": 7,
-      "dutyCycle": 0.8,
+      "dutyCycle": 0.6,
       "agents": 1
     }
   ]

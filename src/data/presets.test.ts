@@ -43,6 +43,6 @@ describe('presets.json (Fase 2 + multi-proveedor)', () => {
     const p6 = presets.find((p) => p.id === 'P6')!
     expect(p6.tokens).toEqual({ inputK: 45, outputK: 220, cacheReadM: 50, cacheWriteK: 600 })
     expect(p6.mix).toEqual({ fable: 0, opus: 0.1, sonnet: 0.7, haiku: 0.2 })
-    expect([p6.hoursPerDay, p6.daysPerWeek, p6.dutyCycle, p6.agents]).toEqual([24, 7, 0.8, 1])
+    expect([p6.hoursPerDay, p6.daysPerWeek, p6.dutyCycle, p6.agents]).toEqual([24, 7, 0.6, 1])
   })
 })

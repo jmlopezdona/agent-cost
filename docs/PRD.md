@@ -222,7 +222,7 @@ Caso de referencia para validación (CA-01.3): el preset P2 (régimen 12×5, dut
 | P3 | Diseño intensivo / greenfield | Arranque de producto o arquitectura compleja: el modelo frontera (Fable) y Opus llevan el peso del diseño, los ADRs y la revisión profunda; Sonnet prototipa. Output alto por documentos y razonamiento extenso. Jornada laboral con supervisión frecuente. | 50 | 280 | 25 | 600 | 20/40/35/5 | 8×5 | 50% | 1 |
 | P4 | Evolutivos sobre código maduro | Mantenimiento y evolutivos sobre código maduro: Sonnet resuelve la mayoría de tareas y Opus solo entra como escalación cuando el agente se atasca. Haiku absorbe el trabajo trivial. Alta autonomía. | 42 | 190 | 28 | 500 | 0/5/55/40 | 12×5 | 70% | 1 |
 | P5 | Enjambre QA nocturno | Flota de agentes de testing (personas sintéticas, regresión E2E, evals y análisis de vulnerabilidades) que corre fuera de horario. Mayoría Haiku-heavy en contextos cortos, con una franja del modelo frontera (Fable) para el análisis de seguridad profundo. Candidato ideal a Batch API (−50%) por no requerir latencia. | 25 | 120 | 12 | 300 | 5/0/25/70 | 12×7 | 85% | 5 |
-| P6 | Agente autónomo de mantenimiento | Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7. Duty alto al no esperar aprobaciones; contexto grande por repos extensos — el cache read domina el coste. | 45 | 220 | 50 | 600 | 0/10/70/20 | 24×7 | 80% | 1 |
+| P6 | Agente autónomo de mantenimiento | Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7. Duty moderado por esperas de build/CI; contexto grande por repos extensos — el cache read domina el coste. | 45 | 220 | 50 | 600 | 0/10/70/20 | 24×7 | 60% | 1 |
 
 Notas de implementación:
 
