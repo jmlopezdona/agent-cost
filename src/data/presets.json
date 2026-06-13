@@ -6,7 +6,7 @@
       "description": "Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens representativo de una sesión interactiva de desarrollo.",
       "learnings": "El duty bajo (el agente espera al humano) hace que el coste real sea una fracción del techo: la palanca aquí es cuánto del tiempo programado factura de verdad, no la tarifa por hora.",
       "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
-      "mix": { "fable": 0, "opus": 0.6, "sonnet": 0.3, "haiku": 0.1 },
+      "mix": { "fable": 0, "opus": 0, "sonnet": 0.8, "haiku": 0.2 },
       "hoursPerDay": 8,
       "daysPerWeek": 5,
       "dutyCycle": 0.3,

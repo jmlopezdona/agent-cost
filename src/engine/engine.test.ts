@@ -89,11 +89,11 @@ describe('caso de referencia dorado P2 (CA-01.3)', () => {
 })
 
 describe('casos dorados P1 y P4', () => {
-  it('P1: blend Opus-led con Sonnet en régimen 8×5 supervisado', () => {
+  it('P1: blend Sonnet-heavy en régimen 8×5 supervisado', () => {
     const results = computeResults(P1, pricingTable)
-    // 0,6 × 23,7725 + 0,3 × 14,2635 + 0,1 × 4,7545 = 19,0180 $/h
-    expect(results.blendedRate).toBeCloseTo(19.018, 4)
-    expect(results.ceilingMonthlyUSD).toBeCloseTo(19.018 * 40 * (52 / 12), 2)
+    // 0,8 × 14,2635 + 0,2 × 4,7545 = 12,3617 $/h
+    expect(results.blendedRate).toBeCloseTo(12.3617, 4)
+    expect(results.ceilingMonthlyUSD).toBeCloseTo(12.3617 * 40 * (52 / 12), 2)
     expect(results.weightedMonthlyUSD).toBeCloseTo(results.ceilingMonthlyUSD * 0.3, 8)
   })
 
