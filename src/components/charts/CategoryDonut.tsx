@@ -56,8 +56,12 @@ export function CategoryDonut() {
                 results.byCategory.map((c, i) => ({
                   text: `${categoryLabel(t, c.category)}: ${rate(c.usdPerHour)} (${formatPercent(c.share)})`,
                   fillStyle: categoryColor(c.category),
-                  strokeStyle: categoryColor(c.category),
-                  fontColor: chartTheme().ink,
+                  // El swatch replica el borde de la porción (color + patrón) para
+                  // mantener la señal secundaria al color también en la leyenda (CA-07.2)
+                  strokeStyle: theme.ink,
+                  lineWidth: 2,
+                  lineDash: categoryBorderDash(c.category),
+                  fontColor: theme.ink,
                   index: i,
                 })),
             },
