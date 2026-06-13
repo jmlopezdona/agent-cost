@@ -46,7 +46,7 @@ export function CategoryDonut() {
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'bottom' as const,
+            position: 'right' as const,
             labels: {
               color: theme.ink,
               // Leyenda con valor + % (CA del spec results-display)
