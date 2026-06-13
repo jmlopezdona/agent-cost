@@ -87,6 +87,44 @@ Sesión de Claude Code con **Opus 4.8 (1M context) como único modelo** (loop pr
 - **Pero el cache read por hora (~17,3 M/h) es notablemente menor que en P2 (30 M/h)** y que en la sesión de implementación del MVP (~30,7 M/h): una sesión de propuesta relee menos contexto grande de forma repetida (más lectura puntual del PRD y escritura de artefactos, menos ciclos de ida y vuelta sobre ficheros de código). El **output por hora, en cambio, es alto** (~249 k/h) por la redacción densa de specs y tasks.
 - **Modelo único, sin overhead de harness**: a diferencia del MVP (que repartió ~16% en subagentes Opus/Haiku auxiliares), aquí no se lanzaron subagentes; el 100% del coste es atribuible al loop principal. El coste real (2,75 $) supera la estimación a precios estándar de Opus (~2,40 $) por el premium del contexto de 1M tokens.
 
+### 2026-06-13 — Implementación de la spec "Fase 2 — v1.0" (`/openspec-apply-change`, las 36 tareas)
+
+Sesión de Claude Code con **Opus 4.8 (1M context) como modelo del loop principal** (un toque residual de Haiku como auxiliar del harness), dedicada a la **fase de implementación** de la change `agentcost-fase2`: leer los 11 ficheros de contexto (proposal, design, 7 specs, tasks) y completar las **36 tareas en una sola pasada** —presets P3/P5/P6 + learnings, panel de configuración avanzada (precios editables, Batch API, recargo Bedrock, fx, coste empresa, horas), modo presentación, exportación CSV/JSON/PNG, persistencia en URL y señal secundaria accesible—, con verificación completa (lint, typecheck, 63 tests unitarios, 8 E2E, build, bundle 135 kB gzip y Lighthouse móvil 97/92). Es la continuación del `/openspec-propose` del mismo día.
+
+| Métrica | Valor |
+|---|---|
+| Coste total | **13,04 $** |
+| Duración API (≈ horas activas) | 20 min 34 s |
+| Duración de pared | 32 min 9 s |
+| Código | +1.442 / −158 líneas |
+| Coste por línea añadida | ~0,009 $ |
+| Coste por hora activa | ~38 $/h |
+| Versión de precios | 2026-06 (`pricing.json`) |
+
+**Desglose por modelo (acumulado de sesión):**
+
+| Modelo | Rol | Input | Output | Cache read | Cache write | Coste |
+|---|---|---|---|---|---|---|
+| Opus 4.8 (1M context) | Loop principal (toda la sesión) | 6,3 k | 96,4 k | 17,3 M | 192,6 k | 13,04 $ |
+| Haiku 4.5 | Auxiliar del harness | 0,5 k | 13 | 0 | 0 | 0,0006 $ |
+
+**Perfil de tokens por hora activa** (sobre ~0,34 h de API):
+
+| Categoría | Esta sesión | Preset P2 (referencia) |
+|---|---|---|
+| Input fresco | ~20 k/h | 42 k/h |
+| Output | ~281 k/h | 210 k/h |
+| Cache read | ~50,5 M/h | 30 M/h |
+| Cache write | ~562 k/h | 530 k/h |
+
+**Observaciones:**
+
+- **Implementar es el grueso del coste**: 13,04 $ frente a los 2,75 $ del propose (~4,7×). El ciclo de Fase 2 hasta aquí (propose + apply) suma **15,79 $** con archive aún pendiente; sigue por debajo de los 31,91 $ del ciclo completo del MVP, que usó Fable (más barato que Opus en mezcla, pero la Fase 2 es bastante más ligera en tokens totales).
+- **El cache read vuelve a dominar el coste**: ~17,3 MTok × 0,50 $/MTok ≈ 8,65 $ (~66% del total), muy por encima del output (~2,41 $) y la escritura de caché (~1,20 $). El insight central de AgentCost, confirmado una tercera vez.
+- **El cache read por hora (~50,5 M/h) es el más alto de las tres sesiones** y se acerca al preset P6 (50 M/h), no a P2. Una sesión larga de implementación en ventana de 1M relee de forma repetida un contexto grande y creciente (motor, store, ~15 componentes, tests) en cada turno: el perfil real es el de un agente autónomo/greenfield, no el de pair programming. El output por hora también es alto (~281 k/h) por escribir mucho código y tests.
+- **Modelo único, premium de 1M**: a precios estándar de Opus el coste estimado sería ~12,3 $; el real (13,04 $) lo supera en ~6% por el premium del contexto de 1M tokens. El Haiku residual (0,0006 $) es overhead del harness, no atribuible a ninguna fase.
+- **El coste por hora activa (~38 $/h) es menor que el del MVP (~52 $/h)** pese a usar Opus (más caro que Fable): la mezcla efectiva fue casi 100% cache read barato + output, y el volumen de input fresco por hora fue bajo (~20 k/h, mucho contexto cacheado y poco texto nuevo).
+
 ## Cómo añadir una entrada
 
 1. Ejecuta `/usage` en Claude Code **al final de cada fase relevante** (no solo al cerrar la sesión): la diferencia entre snapshots es la única forma de atribuir coste por fase, porque `/usage` desglosa por modelo, no por comando.
