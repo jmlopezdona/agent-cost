@@ -61,7 +61,7 @@ src/
 
 ## Alcance
 
-Fase 1 (MVP) implementada. Batch API, recargo Bedrock, precios editables, presets P3/P5/P6, modo presentación, exportación e i18n EN son **Fase 2/3** (PRD §13): no los implementes de pasada; el motor ya expone hooks neutros (`EngineOptions`) para no romper firmas.
+Fases 1 (MVP) y 2 (v1.0) implementadas: además del MVP, ya están Batch API, recargo Bedrock/regional, precios editables, los seis presets (P3/P5/P6 incluidos), modo presentación y exportación (CSV/JSON + PNG). Lo pendiente es **Fase 3 / v1.1+** (PRD §13): i18n EN (hoy solo existe `src/i18n/es.ts`), modelo personalizado / tier self-hosted con precio editable, analítica anónima opcional, importación de uso real (CSV de LiteLLM o Cost API) y multi-proveedor / modo flota. No los implementes de pasada; el motor ya expone hooks neutros (`EngineOptions`) para no romper firmas.
 
 ## Git
 
