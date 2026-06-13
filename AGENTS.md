@@ -11,6 +11,7 @@ El repo usa [OpenSpec](https://github.com/Fission-AI/OpenSpec) (schema `spec-dri
 - `openspec instructions apply --change <name> --json` — ficheros de contexto y tareas pendientes
 - Al implementar: lee **todos** los context files antes de tocar código, trabaja tarea a tarea y marca `- [x]` en `tasks.md` inmediatamente después de completar cada una
 - Si la implementación revela un problema de diseño, actualiza los artefactos en vez de improvisar
+- **Specs en español**: los requirements se redactan con las primitivas en español (`DEBE`/`DEBEN`), no `SHALL`/`MUST`. El validador de OpenSpec espera el keyword inglés y por eso marca `[ERROR] ... must contain SHALL or MUST` en todas las specs del repo: es **ruido esperado y no bloqueante** (`openspec validate` sale con exit code 0 y CI no ejecuta OpenSpec). No añadas `SHALL`/`MUST` solo para silenciarlo ni parchees el binario global de OpenSpec; mantén la convención en español por coherencia con las specs existentes.
 
 ## Comandos
 
