@@ -283,30 +283,22 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         }
       }
 
-      // Familia ya visitada: restaura su mezcla/modificadores; tasas compartidas y régimen al día
-      const cached = state.providerCache[providerId]
-      if (cached) {
-        const restored = withGlobals(cached.scenario)
-        update({
-          providerCache,
-          scenario: restored,
-          presetId: cached.presetId,
-          isCustomized: !sameScenarioAsPreset(restored, presetById(cached.presetId)),
-          storageEnabled: cached.storageEnabled,
-        })
-        return
-      }
-
-      // Primera vez en la familia: preset análogo (mezcla) + tokens y régimen globales.
-      // Batch y recargo regional son globales: se conservan tal cual (no se toman del análogo).
+      // El CASO DE USO es global: el régimen y las tasas de token compartidas (globales) describen el
+      // caso activo, así que la familia destino se ancla SIEMPRE al análogo del caso actual (mismo
+      // número: P5→O5→G5). Su memoria por familia solo se restaura si corresponde al MISMO caso (mismo
+      // análogo); si entre medias se cargó otro caso de uso, esa memoria es obsoleta y se descarta para
+      // no arrastrar la mezcla/tokens propios de un caso que ya no está activo (lo que marcaba
+      // "Personalizado" sin que el usuario tocara nada).
       const preset = analogPresetFor(presetId, providerId)
-      const next = withGlobals(scenarioFromPreset(preset))
+      const cached = state.providerCache[providerId]
+      const restoreCache = cached?.presetId === preset.id
+      const next = withGlobals(restoreCache ? cached!.scenario : scenarioFromPreset(preset))
       update({
         providerCache,
         scenario: next,
         presetId: preset.id,
         isCustomized: !sameScenarioAsPreset(next, preset),
-        storageEnabled: DEFAULT_STORAGE_ENABLED,
+        storageEnabled: restoreCache ? cached!.storageEnabled : DEFAULT_STORAGE_ENABLED,
       })
     },
 
