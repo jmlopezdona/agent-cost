@@ -72,6 +72,8 @@ export interface ModelPricing {
 
 export interface ProviderData {
   name: string
+  /** URL de la tabla oficial de precios de la API del proveedor (nota al pie) */
+  pricingUrl: string
   costModel: CostCategory[]
   modifiers: ProviderModifiers
   /** Modelo (clave local) que absorbe el resto hasta 100% en la mezcla */

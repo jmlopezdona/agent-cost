@@ -72,6 +72,7 @@ function isProviderData(v: unknown): v is ProviderData {
   if (typeof v !== 'object' || v === null) return false
   const p = v as Record<string, unknown>
   if (!isNonEmptyString(p.name)) return false
+  if (!isNonEmptyString(p.pricingUrl)) return false
   if (!Array.isArray(p.costModel) || p.costModel.length === 0) return false
   if (!p.costModel.every(isCostCategory)) return false
   const costModel = p.costModel as CostCategory[]

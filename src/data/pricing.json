@@ -5,6 +5,7 @@
   "providers": {
     "anthropic": {
       "name": "Anthropic · Claude",
+      "pricingUrl": "https://claude.com/pricing#api",
       "costModel": [
         { "key": "input", "kind": "rate", "rateKey": "inputK", "unit": "k" },
         { "key": "output", "kind": "rate", "rateKey": "outputK", "unit": "k" },
@@ -65,6 +66,7 @@
     },
     "openai": {
       "name": "OpenAI · ChatGPT",
+      "pricingUrl": "https://developers.openai.com/api/docs/pricing",
       "costModel": [
         { "key": "input", "kind": "rate", "rateKey": "inputK", "unit": "k" },
         { "key": "cached_input", "kind": "rate", "rateKey": "cacheReadM", "unit": "M" },
@@ -132,6 +134,7 @@
     },
     "google": {
       "name": "Google · Gemini",
+      "pricingUrl": "https://ai.google.dev/gemini-api/docs/pricing",
       "costModel": [
         { "key": "input", "kind": "rate", "rateKey": "inputK", "unit": "k" },
         { "key": "output", "kind": "rate", "rateKey": "outputK", "unit": "k" },

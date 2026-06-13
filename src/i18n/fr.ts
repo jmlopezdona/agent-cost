@@ -244,8 +244,8 @@ export const fr: Strings = {
   },
   footer: {
     pricingVersion: (version: string, date: string) =>
-      `Prix de l'API Anthropic version ${version} (effectifs depuis le ${date})`,
-    pricingLink: "Table officielle des prix de l'API Anthropic",
+      `Prix de l'API version ${version} (effectifs depuis le ${date})`,
+    pricingSourcesLabel: 'Tables officielles des prix',
     salarySources: (sources: string, reviewed: string) =>
       `Sources salariales : ${sources} · Dernière révision : ${reviewed}`,
     estimateDisclaimer:

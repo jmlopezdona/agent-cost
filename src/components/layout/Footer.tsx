@@ -1,6 +1,12 @@
 import { useStrings } from '../../i18n/hooks'
 import { pricingTable, salaryData } from '../../data'
+import { PROVIDER_IDS } from '../../engine/types'
 import { useScenarioStore } from '../../store/useScenarioStore'
+
+/** Marca corta del proveedor para el texto del enlace ("Anthropic · Claude" → "Anthropic") */
+function providerBrand(name: string): string {
+  return name.split(' · ')[0] ?? name
+}
 
 export function Footer() {
   const t = useStrings()
@@ -16,14 +22,23 @@ export function Footer() {
       )}
       <p>
         {t.footer.pricingVersion(pricingTable.version, pricingTable.effective_date)} ·{' '}
-        <a
-          href="https://claude.com/pricing#api"
-          target="_blank"
-          rel="noreferrer"
-          className="underline hover:text-accent"
-        >
-          {t.footer.pricingLink}
-        </a>
+        {t.footer.pricingSourcesLabel}:{' '}
+        {PROVIDER_IDS.map((id, i) => {
+          const provider = pricingTable.providers[id]
+          return (
+            <span key={id}>
+              {i > 0 && ' · '}
+              <a
+                href={provider.pricingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-accent"
+              >
+                {providerBrand(provider.name)}
+              </a>
+            </span>
+          )
+        })}
       </p>
       <p className="mt-1">{t.footer.salarySources(t.salarySource, salaryData.last_reviewed)}</p>
       <p className="mt-1">{t.footer.estimateDisclaimer}</p>
