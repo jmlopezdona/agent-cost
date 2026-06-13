@@ -41,9 +41,10 @@ import {
 type ScheduleField = 'hoursPerDay' | 'daysPerWeek' | 'dutyCycle' | 'agents'
 
 /**
- * Estado de una familia memorizado para restaurarlo al volver a ella (régimen, mix, escenario).
- * Batch y recargo regional NO se memorizan aquí: son globales (compartidos por las tres familias).
- * El almacenamiento de caché es propio de Gemini, así que sí se recuerda por familia.
+ * Estado de una familia memorizado para restaurarlo al volver a ella (mezcla, escenario).
+ * El régimen/utilización (horas/día, días/semana, duty, agentes) NO es propio de la familia: es
+ * GLOBAL y se arrastra de la familia activa, igual que las tasas de token compartidas, batch y
+ * recargo regional. El almacenamiento de caché sí es propio de Gemini, así que se recuerda por familia.
  */
 interface ProviderMemory {
   scenario: Scenario
@@ -241,13 +242,14 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     priceOverrides: initial.priceOverrides,
     presentation: initial.presentation,
 
-    // Cambio de proveedor activo. Modelo "tokens globales": las tasas de token con clave compartida
-    // (input/output/cache read) describen la carga del agente y se aplican a las tres familias; el
-    // régimen, la mezcla y las categorías de token propias (cache write, almacenamiento) se recuerdan
-    // POR FAMILIA. Batch y recargo regional también son GLOBALES: no se memorizan ni se resetean al
-    // cambiar de familia, persisten tal cual. Al volver a una familia ya visitada se restaura su
-    // estado (no se resetea por el ida y vuelta); la primera vez se ancla a su preset análogo limpio
-    // (P3↔O3↔G3). En ambos casos las tasas compartidas se sincronizan con las globales actuales.
+    // Cambio de proveedor activo. Modelo "globales": las tasas de token con clave compartida
+    // (input/output/cache read) describen la carga del agente Y el régimen/utilización completo
+    // (horas/día, días/semana, duty, agentes) se aplican a las tres familias. Solo la mezcla y las
+    // categorías de token propias (cache write, almacenamiento) se recuerdan POR FAMILIA. Batch y
+    // recargo regional también son GLOBALES: no se memorizan ni se resetean al cambiar de familia,
+    // persisten tal cual. Al volver a una familia ya visitada se restaura su estado (no se resetea
+    // por el ida y vuelta); la primera vez se ancla a su preset análogo (P3↔O3↔G3). En ambos casos
+    // las tasas compartidas y el régimen se sincronizan con los globales actuales.
     setProvider: (providerId) => {
       const state = get()
       const { scenario, presetId } = state
@@ -263,19 +265,28 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         },
       }
 
-      // Aplica las tasas de token globales (claves compartidas) sobre las propias de la familia destino
-      const withGlobalTokens = (familyTokens: TokenRates): TokenRates => {
-        const out = { ...familyTokens }
-        for (const key of Object.keys(out)) {
-          if (scenario.tokens[key] !== undefined) out[key] = scenario.tokens[key]
+      // Aplica los globales sobre el escenario de la familia destino: tasas de token compartidas
+      // (claves presentes en ambos) y el régimen/utilización completo. La mezcla y las categorías de
+      // token propias (cache write, almacenamiento) quedan tal cual las trae la familia destino.
+      const withGlobals = (familyScenario: Scenario): Scenario => {
+        const tokens = { ...familyScenario.tokens }
+        for (const key of Object.keys(tokens)) {
+          if (scenario.tokens[key] !== undefined) tokens[key] = scenario.tokens[key]
         }
-        return out
+        return {
+          ...familyScenario,
+          tokens,
+          hoursPerDay: scenario.hoursPerDay,
+          daysPerWeek: scenario.daysPerWeek,
+          dutyCycle: scenario.dutyCycle,
+          agents: scenario.agents,
+        }
       }
 
-      // Familia ya visitada: restaura su régimen/mezcla/modificadores; tasas compartidas al día
+      // Familia ya visitada: restaura su mezcla/modificadores; tasas compartidas y régimen al día
       const cached = state.providerCache[providerId]
       if (cached) {
-        const restored = { ...cached.scenario, tokens: withGlobalTokens(cached.scenario.tokens) }
+        const restored = withGlobals(cached.scenario)
         update({
           providerCache,
           scenario: restored,
@@ -286,10 +297,10 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         return
       }
 
-      // Primera vez en la familia: preset análogo limpio (régimen, mezcla) + tokens globales.
+      // Primera vez en la familia: preset análogo (mezcla) + tokens y régimen globales.
       // Batch y recargo regional son globales: se conservan tal cual (no se toman del análogo).
       const preset = analogPresetFor(presetId, providerId)
-      const next = { ...scenarioFromPreset(preset), tokens: withGlobalTokens(preset.tokens) }
+      const next = withGlobals(scenarioFromPreset(preset))
       update({
         providerCache,
         scenario: next,

@@ -148,6 +148,22 @@ test('cambiar de familia carga su preset, filtra modelos y comparte con pr', asy
   await freshContext.close()
 })
 
+test('el régimen es global: editarlo persiste al cambiar de familia', async ({ page }) => {
+  await page.goto('./')
+  // Régimen abierto por defecto: duty cycle 60% en P2
+  const duty = page.getByRole('spinbutton', { name: 'Duty cycle' })
+  await expect(duty).toHaveValue('60')
+
+  // Editarlo y cambiar de familia: el valor se arrastra (no vuelve al del preset análogo)
+  await duty.fill('85')
+  await page.getByRole('button', { name: 'Google · Gemini' }).click()
+  await expect(page.getByRole('spinbutton', { name: 'Duty cycle' })).toHaveValue('85')
+
+  // Y de vuelta a Anthropic sigue siendo el global
+  await page.getByRole('button', { name: 'Anthropic · Claude' }).click()
+  await expect(page.getByRole('spinbutton', { name: 'Duty cycle' })).toHaveValue('85')
+})
+
 test('desempeño SWE-Pro: tarjetas, paréntesis por modelo y recálculo al mover el mix', async ({
   page,
 }) => {

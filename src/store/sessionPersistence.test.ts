@@ -94,12 +94,13 @@ describe('reset (D5)', () => {
   })
 })
 
-describe('cambio de proveedor: tokens y modificadores (batch/regional) globales, régimen/mezcla por familia', () => {
-  it('sincroniza las tasas de token compartidas pero el régimen viene del preset análogo', async () => {
+describe('cambio de proveedor: tokens, régimen y modificadores (batch/regional) globales, mezcla por familia', () => {
+  it('sincroniza las tasas de token compartidas y el régimen completo entre familias', async () => {
     const { store } = await loadStore('', null)
-    const O3 = presets.find((p) => p.id === 'O3')!
     // Parte de P3 (greenfield) y personaliza régimen + tokens compartidos + batch
     store.getState().loadPreset('P3')
+    store.getState().setSchedule('hoursPerDay', 18)
+    store.getState().setSchedule('daysPerWeek', 6)
     store.getState().setSchedule('dutyCycle', 0.42)
     store.getState().setSchedule('agents', 7)
     store.getState().setToken('cacheReadM', 99)
@@ -113,17 +114,38 @@ describe('cambio de proveedor: tokens y modificadores (batch/regional) globales,
     expect(s.presetId).toBe('O3')
     // Tasa compartida (cache read) GLOBAL → se aplica a OpenAI
     expect(s.scenario.tokens.cacheReadM).toBe(99)
-    // Régimen POR FAMILIA → viene de O3, no del valor editado en Anthropic
-    expect(s.scenario.dutyCycle).toBe(O3.dutyCycle)
-    expect(s.scenario.agents).toBe(O3.agents)
+    // Régimen GLOBAL → se arrastra el editado en Anthropic, no el del preset O3
+    expect(s.scenario.hoursPerDay).toBe(18)
+    expect(s.scenario.daysPerWeek).toBe(6)
+    expect(s.scenario.dutyCycle).toBe(0.42)
+    expect(s.scenario.agents).toBe(7)
     // La mezcla pasa a los modelos de OpenAI (no quedan claves de Anthropic)
     expect(Object.keys(s.scenario.mix).sort()).toEqual(
       Object.keys(pricingTable.providers.openai.models).sort(),
     )
     // Batch es GLOBAL → activado en Anthropic, sigue activo al pasar a OpenAI
     expect(s.batchEnabled).toBe(true)
-    // Personalizado porque la tasa global difiere del preset O3
+    // Personalizado porque la tasa global y el régimen difieren del preset O3
     expect(s.isCustomized).toBe(true)
+  })
+
+  it('el régimen es global en ambos sentidos entre familias', async () => {
+    const { store } = await loadStore('', null)
+    // Editado en Anthropic
+    store.getState().setSchedule('hoursPerDay', 10)
+    store.getState().setSchedule('dutyCycle', 0.33)
+    store.getState().setProvider('google')
+    // Sincronizado a Gemini (primera visita)
+    expect(store.getState().scenario.hoursPerDay).toBe(10)
+    expect(store.getState().scenario.dutyCycle).toBe(0.33)
+
+    // Editar el régimen en Gemini se propaga de vuelta a Anthropic (familia ya visitada)
+    store.getState().setSchedule('agents', 4)
+    store.getState().setSchedule('daysPerWeek', 3)
+    store.getState().setProvider('anthropic')
+    expect(store.getState().scenario.agents).toBe(4)
+    expect(store.getState().scenario.daysPerWeek).toBe(3)
+    expect(store.getState().scenario.hoursPerDay).toBe(10)
   })
 
   it('las tasas de token compartidas son globales en ambos sentidos entre familias', async () => {
