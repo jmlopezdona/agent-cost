@@ -170,6 +170,7 @@ export const strings = {
   },
   exporting: {
     sectionTitle: 'Exportar',
+    menuAria: 'Opciones de exportación',
     json: 'Exportar JSON',
     csv: 'Exportar CSV',
     pngChart: 'Exportar imagen',

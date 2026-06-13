@@ -4,6 +4,7 @@ import { presets } from '../../data'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import { useTheme } from '../../lib/theme'
 import { PresentationToggle } from './PresentationToggle'
+import { ExportMenu } from '../export/ExportMenu'
 
 export function Header() {
   const presetId = useScenarioStore((s) => s.presetId)
@@ -82,6 +83,7 @@ export function Header() {
           >
             {copied ? strings.header.copied : strings.header.copyLink}
           </button>
+          <ExportMenu />
           <PresentationToggle />
           <button
             type="button"

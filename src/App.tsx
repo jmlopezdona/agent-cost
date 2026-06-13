@@ -9,7 +9,6 @@ import { AdvancedConfigSection } from './components/controls/AdvancedConfigSecti
 import { MetricCards } from './components/results/MetricCards'
 import { ModifierBadges } from './components/results/ModifierBadges'
 import { PresetLearnings } from './components/results/PresetLearnings'
-import { ExportBar } from './components/export/ExportBar'
 import { CategoryDonut } from './components/charts/CategoryDonut'
 import { CeilingVsWeightedChart } from './components/charts/CeilingVsWeightedChart'
 import { SalaryComparison } from './components/salary/SalaryComparison'
@@ -52,7 +51,6 @@ function App() {
           <PresetLearnings />
           <ModifierBadges />
           <MetricCards />
-          <ExportBar />
         </div>
         <div className="order-2 flex flex-col gap-6 lg:col-span-2 lg:col-start-1 lg:row-span-3 lg:row-start-1">
           <TokenRatesSection />

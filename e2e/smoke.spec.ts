@@ -112,10 +112,11 @@ test('present=1 arranca en modo presentación y el conmutador restaura los contr
   await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
 })
 
-test('exportar JSON descarga el escenario', async ({ page }) => {
+test('exportar JSON desde el menú de la cabecera descarga el escenario', async ({ page }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: 'Exportar', exact: true }).click()
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Exportar JSON' }).click()
+  await page.getByRole('menuitem', { name: 'Exportar JSON' }).click()
   const download = await downloadPromise
   expect(download.suggestedFilename()).toBe('agentcost-escenario.json')
 })
