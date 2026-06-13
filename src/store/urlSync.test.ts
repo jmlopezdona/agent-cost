@@ -13,6 +13,7 @@ import {
   DEFAULT_EMPLOYER_MULTIPLIER,
   DEFAULT_FX_EUR_PER_USD,
   DEFAULT_PRESET_ID,
+  DEFAULT_REGIONAL,
   presets,
   pricingTable,
   type Currency,
@@ -22,6 +23,7 @@ const P2 = presets.find((p) => p.id === 'P2')!
 
 const MOD_DEFAULTS: ModifierDefaults = {
   batchFraction: DEFAULT_BATCH_FRACTION,
+  regional: DEFAULT_REGIONAL,
   employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
   effectiveHours: DEFAULT_EFFECTIVE_HOURS,
 }
@@ -29,7 +31,7 @@ const MOD_DEFAULTS: ModifierDefaults = {
 const NEUTRAL_MODS: ModifierState = {
   batchEnabled: false,
   batchFraction: DEFAULT_BATCH_FRACTION,
-  regional: false,
+  regional: DEFAULT_REGIONAL,
   employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
   effectiveHours: DEFAULT_EFFECTIVE_HOURS,
   priceOverrides: {},
@@ -157,29 +159,31 @@ describe('serialización en URL', () => {
     expect(restored.currency).toBe('eur')
   })
 
-  it('los modificadores activos se serializan y restauran', () => {
+  it('batch y la desactivación del recargo (no-defecto) se serializan y restauran', () => {
+    // El recargo está activo por defecto; apagarlo (bd=0) sí difiere del defecto
     const mods: ModifierState = {
       ...NEUTRAL_MODS,
       batchEnabled: true,
       batchFraction: 0.4,
-      regional: true,
+      regional: false,
     }
     const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'eur', mods)
     const params = new URLSearchParams(query)
     expect(params.get('b')).toBe('40')
-    expect(params.get('bd')).toBe('1')
+    expect(params.get('bd')).toBe('0')
     expect(restored.batchEnabled).toBe(true)
     expect(restored.batchFraction).toBeCloseTo(0.4, 10)
-    expect(restored.regional).toBe(true)
+    expect(restored.regional).toBe(false)
   })
 
-  it('batch desactivado y recargo off no aparecen en la URL', () => {
+  it('con los modificadores por defecto no aparecen b ni bd en la URL', () => {
+    // Recargo activo por defecto → no se serializa; batch off → no se serializa
     const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD)
     const params = new URLSearchParams(query)
     expect(params.has('b')).toBe(false)
     expect(params.has('bd')).toBe(false)
     expect(restored.batchEnabled).toBe(false)
-    expect(restored.regional).toBe(false)
+    expect(restored.regional).toBe(true)
   })
 
   it('multiplicador y horas efectivas se serializan solo si difieren del defecto', () => {

@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
 
-// Caso de referencia P2 (PRD §8): ponderado mensual ≈ 6.040 $ (valor exacto 6023 $)
-const P2_WEIGHTED = '6023 $'
+// Caso de referencia P2 (PRD §8) con el recargo Bedrock (+10%) activo por defecto:
+// ponderado ≈ 6.040 $ × 1,10 = 6625 $; blend 13,8 × 1,10 = 15,2 $/h
+const P2_WEIGHTED = '6625 $'
 const USD = 'Mostrar cifras en dólares'
 
 test('carga P2 por defecto en EUR y el selector propaga el símbolo a las métricas', async ({
@@ -15,7 +16,7 @@ test('carga P2 por defecto en EUR y el selector propaga el símbolo a las métri
   // Cambiar a USD propaga el símbolo $ y muestra la referencia en USD nativo
   await page.getByRole('button', { name: USD }).click()
   await expect(page.getByTestId('metric-weighted')).toHaveText(P2_WEIGHTED)
-  await expect(page.getByTestId('metric-blend')).toHaveText('13,8 $/h')
+  await expect(page.getByTestId('metric-blend')).toHaveText('15,2 $/h')
 })
 
 test('mover un control recalcula las métricas al instante', async ({ page }) => {
@@ -24,11 +25,11 @@ test('mover un control recalcula las métricas al instante', async ({ page }) =>
   const weighted = page.getByTestId('metric-weighted')
   await expect(weighted).toHaveText(P2_WEIGHTED)
 
-  // Cache read 30 → 60 M/h: +30 M × 0,29 $/M ponderado = +8,7 $/h al blend
+  // Cache read 30 → 60 M/h recalcula al instante (con recargo +10% por defecto)
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
 
   await expect(weighted).not.toHaveText(P2_WEIGHTED)
-  await expect(weighted).toHaveText('9823 $')
+  await expect(weighted).toHaveText('10.805 $')
   // Estado personalizado (CA del spec scenario-presets)
   await expect(
     page.getByText('Personalizado (basado en Agente de delivery balanceado)'),
@@ -67,9 +68,9 @@ test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: USD }).click()
   await page.getByRole('button', { name: /Sonnet-first con escalación/ }).click()
-  // P4: blend 10,2 $/h · ponderado 10,1591 × 728 × 0,7 ≈ 5177 $
-  await expect(page.getByTestId('metric-blend')).toHaveText('10,2 $/h')
-  await expect(page.getByTestId('metric-weighted')).toHaveText('5177 $')
+  // P4 con recargo +10%: blend 10,1591 × 1,10 = 11,2 $/h · ponderado ≈ 5695 $
+  await expect(page.getByTestId('metric-blend')).toHaveText('11,2 $/h')
+  await expect(page.getByTestId('metric-weighted')).toHaveText('5695 $')
 })
 
 test('el disclaimer de la comparativa salarial es visible', async ({ page }) => {

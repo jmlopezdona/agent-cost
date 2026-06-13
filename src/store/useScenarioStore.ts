@@ -7,6 +7,7 @@ import {
   DEFAULT_EMPLOYER_MULTIPLIER,
   DEFAULT_FX_EUR_PER_USD,
   DEFAULT_PRESET_ID,
+  DEFAULT_REGIONAL,
   presets,
   pricingTable,
   salaryData,
@@ -86,6 +87,7 @@ const SCHEDULE_RANGE = {
 
 const MOD_DEFAULTS: ModifierDefaults = {
   batchFraction: DEFAULT_BATCH_FRACTION,
+  regional: DEFAULT_REGIONAL,
   employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
   effectiveHours: DEFAULT_EFFECTIVE_HOURS,
 }

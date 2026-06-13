@@ -30,12 +30,17 @@ El panel DEBE ofrecer un toggle de **Batch API (−50%)** y un slider de "% del 
 
 ### Requirement: Toggle de recargo regional/Bedrock
 
-El panel DEBE ofrecer un toggle de **Recargo regional/Bedrock (+10%)** que, cuando está activo, aplica un recargo del 10% a todas las categorías de todos los modelos (RF-08). Por defecto está desactivado.
+El panel DEBE ofrecer un toggle de **Recargo regional/Bedrock (+10%)** que, cuando está activo, aplica un recargo del 10% a todas las categorías de todos los modelos (RF-08). Está **activado por defecto** (el acceso vía Amazon Bedrock se toma como caso base), de modo que la cifra por defecto incluye el recargo; el usuario puede desactivarlo.
 
-#### Scenario: Recargo aplicado a todo el coste
+#### Scenario: Recargo activo por defecto
 
-- **WHEN** el usuario activa el recargo regional/Bedrock
-- **THEN** el blend y todas las métricas de coste se multiplican por 1,10 y se recalculan al instante
+- **WHEN** la aplicación arranca sin interacción del usuario
+- **THEN** el toggle de recargo regional/Bedrock está activo y todas las métricas de coste ya incluyen el ×1,10
+
+#### Scenario: Desactivar el recargo recalcula sin él
+
+- **WHEN** el usuario desactiva el recargo regional/Bedrock
+- **THEN** el blend y todas las métricas de coste pasan a calcularse sin el ×1,10 y se recalculan al instante
 
 ### Requirement: Tipo de cambio USD→EUR editable
 

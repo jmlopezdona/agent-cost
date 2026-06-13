@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Bar } from 'react-chartjs-2'
 import type { Chart as ChartJS, TooltipItem } from 'chart.js'
 import { chartTheme } from './chartSetup'
+import { barValueLabels } from './barValueLabels'
 import { registerChart } from '../../lib/chartRegistry'
 import { ChartExportButton } from '../export/ChartExportButton'
 import { strings } from '../../i18n/es'
@@ -53,6 +54,8 @@ export function CeilingVsWeightedChart() {
         scales: {
           x: { ticks: { color: theme.ink }, grid: { display: false } },
           y: {
+            // Headroom para que la etiqueta de valor sobre la barra no se recorte
+            grace: '12%',
             ticks: {
               color: theme.muted,
               callback: (v: string | number) => formatMoney(Number(v), currency),
@@ -74,7 +77,12 @@ export function CeilingVsWeightedChart() {
         <ChartExportButton id="ceiling" title={strings.charts.ceilingVsWeightedTitle} />
       </div>
       <div className="mt-3 h-56" role="img" aria-label={ariaLabel}>
-        <Bar ref={chartRef} data={data} options={options} />
+        <Bar
+          ref={chartRef}
+          data={data}
+          options={options}
+          plugins={[barValueLabels((v) => formatMoney(v, currency))]}
+        />
       </div>
     </div>
   )

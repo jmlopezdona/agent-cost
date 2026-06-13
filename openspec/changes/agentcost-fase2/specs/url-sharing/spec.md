@@ -19,10 +19,10 @@ Todos los parámetros del escenario (tokens, mezcla, régimen, duty, número de 
 - **WHEN** el usuario cambia la moneda de presentación a USD
 - **THEN** la query string incluye `cur` con el valor correspondiente a USD; al volver a EUR, `cur` desaparece de la URL
 
-#### Scenario: Los modificadores activos se serializan
+#### Scenario: Los modificadores que difieren del defecto se serializan
 
-- **WHEN** el usuario activa Batch API al 40% y el recargo regional/Bedrock
-- **THEN** la query string incluye las claves de batch y Bedrock con sus valores; al desactivarlos, esas claves desaparecen de la URL
+- **WHEN** el usuario activa Batch API al 40% y desactiva el recargo regional/Bedrock (que está activo por defecto)
+- **THEN** la query string incluye `b` con el porcentaje y `bd=0`; al volver a los valores por defecto (batch off, recargo on), esas claves desaparecen de la URL
 
 #### Scenario: Los overrides de precios se serializan como deltas
 

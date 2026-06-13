@@ -29,9 +29,10 @@ export interface ModifierState {
   presentation: boolean
 }
 
-/** Defaults neutros frente a los que se serializan los modificadores */
+/** Defaults frente a los que se serializan los modificadores (solo se escribe el diff) */
 export interface ModifierDefaults {
   batchFraction: number
+  regional: boolean
   employerMultiplier: number
   effectiveHours: number
 }
@@ -214,7 +215,8 @@ export function serializeScenario(
   if (currency !== defaultCurrency) params.set('cur', currency)
   // Modificadores de configuración avanzada: solo si difieren del defecto (D4)
   if (mods.batchEnabled) params.set('b', compact(mods.batchFraction * 100))
-  if (mods.regional) params.set('bd', '1')
+  // `bd` solo si difiere del defecto (Bedrock activo por defecto): 1 = on, 0 = off
+  if (mods.regional !== modDefaults.regional) params.set('bd', mods.regional ? '1' : '0')
   if (mods.employerMultiplier !== modDefaults.employerMultiplier)
     params.set('em', compact(mods.employerMultiplier))
   if (mods.effectiveHours !== modDefaults.effectiveHours)
@@ -288,7 +290,8 @@ export function deserializeScenario(
     ? clamp(parsedBatch, RANGES.batchFraction)
     : modDefaults.batchFraction
 
-  const regional = params.get('bd') === '1'
+  const rawBd = params.get('bd')
+  const regional = rawBd === null ? modDefaults.regional : rawBd === '1'
 
   const rawEm = params.get('em')
   const parsedEm = rawEm === null ? NaN : Number(rawEm)

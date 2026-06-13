@@ -132,7 +132,8 @@ export const DEFAULT_BATCH_ENABLED = false
 export const DEFAULT_BATCH_FRACTION = 0.5
 /** Descuento de la Batch API (−50%) */
 export const BATCH_DISCOUNT = 0.5
-export const DEFAULT_REGIONAL = false
+/** Recargo regional/Bedrock activo por defecto (acceso vía Bedrock como caso base) */
+export const DEFAULT_REGIONAL = true
 /** Recargo regional/Bedrock cuando está activo (+10%) */
 export const REGIONAL_SURCHARGE = 1.1
 export const DEFAULT_EMPLOYER_MULTIPLIER = salaryData.employerCostMultiplier
