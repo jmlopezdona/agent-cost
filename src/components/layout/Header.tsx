@@ -89,18 +89,18 @@ export function Header() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={copyLink}
-            className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
-          >
-            {copied ? t.header.copied : t.header.copyLink}
-          </button>
-          <button
-            type="button"
             onClick={reset}
             aria-label={t.header.resetAria}
             className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
           >
             {t.header.reset}
+          </button>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
+          >
+            {copied ? t.header.copied : t.header.copyLink}
           </button>
           <ExportMenu />
           <PresentationToggle />
