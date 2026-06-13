@@ -31,10 +31,6 @@ function App() {
           <PresentationScenario />
           <ModifierBadges />
           <MetricCards large />
-          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
-            <CategoryDonut />
-            <CeilingVsWeightedChart />
-          </div>
           <SalaryComparison />
         </main>
         <Footer />
