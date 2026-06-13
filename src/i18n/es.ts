@@ -1,7 +1,7 @@
 /** Todos los textos de UI (D9). Añadir EN = crear en.ts con esta misma forma. */
 export const strings = {
   app: {
-    title: 'AgentCost',
+    title: 'Agent Cost',
     subtitle: 'Calculadora de costes de agentes de IA sobre la API de Anthropic',
   },
   header: {
