@@ -256,6 +256,71 @@ describe('hooks neutros del motor', () => {
   })
 })
 
+describe('desempeño SWE-Pro ponderado y coste por punto (D2/D3)', () => {
+  it('P2: weightedSwePro ≈ 61,48, cobertura 1 y coste/punto ≈ 98, sin tocar el coste dorado', () => {
+    const results = computeResults(P2, pricingTable)
+    // 0,15×69,2 + 0,65×62 + 0,20×54 = 61,48 (Fable 0%)
+    expect(results.weightedSwePro).toBeCloseTo(61.48, 6)
+    expect(results.sweProCoverage).toBeCloseTo(1, 10)
+    // ponderado ≈ 6.040 $/mes / 61,48 ≈ 98 $/mes·pto
+    expect(results.costPerPointUSD).toBeCloseTo(results.weightedMonthlyUSD / 61.48, 6)
+    expectWithin1Percent(results.costPerPointUSD, 98)
+    // El score no toca ninguna métrica de coste (caso dorado intacto)
+    expectWithin1Percent(results.blendedRate, 13.8)
+    expectWithin1Percent(results.weightedMonthlyUSD, 6040)
+  })
+
+  it('mezcla 100% en un modelo medido da su score exacto y coste/punto = ponderado / score', () => {
+    const mix = { fable: 0, opus: 1, sonnet: 0, haiku: 0 }
+    const results = computeResults({ ...P2, mix }, pricingTable)
+    expect(results.weightedSwePro).toBe(69.2)
+    expect(results.sweProCoverage).toBeCloseTo(1, 10)
+    expect(results.costPerPointUSD).toBeCloseTo(results.weightedMonthlyUSD / 69.2, 8)
+  })
+
+  it('cobertura parcial: renormaliza sobre los modelos con score y expone coverage < 1', () => {
+    // Tabla sin score en Sonnet; el resto del catálogo conserva el suyo
+    const stripped = {
+      ...pricingTable,
+      providers: {
+        ...pricingTable.providers,
+        anthropic: {
+          ...anthropic,
+          models: {
+            ...anthropic.models,
+            sonnet: { ...anthropic.models.sonnet, swePro: undefined },
+          },
+        },
+      },
+    }
+    const results = computeResults(P2, stripped)
+    // Cobertura = 0,15 (opus) + 0,20 (haiku) = 0,35; ponderado renormalizado
+    expect(results.sweProCoverage).toBeCloseTo(0.35, 10)
+    expect(results.weightedSwePro).toBeCloseTo((0.15 * 69.2 + 0.2 * 54) / 0.35, 6)
+  })
+
+  it('ausencia total de scores: weightedSwePro = 0, coste/punto = 0, coverage = 0', () => {
+    const noScores = {
+      ...pricingTable,
+      providers: {
+        ...pricingTable.providers,
+        anthropic: {
+          ...anthropic,
+          models: Object.fromEntries(
+            Object.entries(anthropic.models).map(([k, m]) => [k, { ...m, swePro: undefined }]),
+          ),
+        },
+      },
+    }
+    const results = computeResults(P2, noScores)
+    expect(results.weightedSwePro).toBe(0)
+    expect(results.costPerPointUSD).toBe(0)
+    expect(results.sweProCoverage).toBe(0)
+    // El coste se sigue calculando con normalidad
+    expectWithin1Percent(results.weightedMonthlyUSD, 6040)
+  })
+})
+
 describe('salary', () => {
   const config = {
     employerCostMultiplier: salaryData.employerCostMultiplier,

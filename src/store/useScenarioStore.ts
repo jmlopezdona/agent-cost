@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   ModelId,
   ModelKey,
+  Preset,
   ProviderId,
   PriceOverrides,
   Scenario,
@@ -16,7 +17,7 @@ import {
   DEFAULT_PRESET_ID,
   DEFAULT_REGIONAL,
   DEFAULT_STORAGE_ENABLED,
-  defaultPresetFor,
+  analogPresetFor,
   defaultRegional,
   presets,
   pricingTable,
@@ -39,12 +40,24 @@ import {
 
 type ScheduleField = 'hoursPerDay' | 'daysPerWeek' | 'dutyCycle' | 'agents'
 
+/** Estado de una familia memorizado para restaurarlo al volver a ella (régimen, mix, modificadores) */
+interface ProviderMemory {
+  scenario: Scenario
+  presetId: string
+  batchEnabled: boolean
+  batchFraction: number
+  regional: boolean
+  storageEnabled: boolean
+}
+
 interface ScenarioStore {
   scenario: Scenario
   /** Preset base del escenario actual */
   presetId: string
   /** true → "Personalizado (basado en …)" */
   isCustomized: boolean
+  /** Memoria por familia del último escenario editado; memoria de sesión, no se serializa */
+  providerCache: Partial<Record<ProviderId, ProviderMemory>>
   /** Tipo de cambio EUR por USD */
   fx: number
   /** Moneda de presentación global (defecto EUR) */
@@ -112,6 +125,22 @@ function presetById(id: string) {
   const preset = presets.find((p) => p.id === id)
   if (!preset) throw new Error(`Preset desconocido: ${id}`)
   return preset
+}
+
+/** true si el escenario coincide exactamente con su preset base (para derivar `isCustomized`) */
+function sameScenarioAsPreset(s: Scenario, preset: Preset): boolean {
+  if (
+    s.hoursPerDay !== preset.hoursPerDay ||
+    s.daysPerWeek !== preset.daysPerWeek ||
+    s.dutyCycle !== preset.dutyCycle ||
+    s.agents !== preset.agents
+  )
+    return false
+  const tokenKeys = new Set([...Object.keys(s.tokens), ...Object.keys(preset.tokens)])
+  for (const k of tokenKeys) if (s.tokens[k] !== preset.tokens[k]) return false
+  const mixKeys = new Set([...Object.keys(s.mix), ...Object.keys(preset.mix)])
+  for (const k of mixKeys) if (s.mix[k] !== preset.mix[k]) return false
+  return true
 }
 
 // Precedencia al cargar (D3): URL con estado → sessionStorage → preset por defecto.
@@ -196,6 +225,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     scenario: initial.scenario,
     presetId: initial.presetId,
     isCustomized: initial.isCustomized,
+    providerCache: {},
     fx: initial.fx,
     currency: initial.currency,
     staleVersion: initial.staleVersion,
@@ -210,8 +240,70 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     priceOverrides: initial.priceOverrides,
     presentation: initial.presentation,
 
-    // Cambio de proveedor activo: carga el preset por defecto de la familia (D7)
-    setProvider: (providerId) => applyPreset(defaultPresetFor(providerId).id),
+    // Cambio de proveedor activo. Modelo "tokens globales": las tasas de token con clave compartida
+    // (input/output/cache read) describen la carga del agente y se aplican a las tres familias; el
+    // régimen, la mezcla, los modificadores y las categorías de token propias (cache write,
+    // almacenamiento) se recuerdan POR FAMILIA. Al volver a una familia ya visitada se restaura su
+    // estado (no se resetea por el ida y vuelta); la primera vez se ancla a su preset análogo limpio
+    // (P3↔O3↔G3). En ambos casos las tasas compartidas se sincronizan con las globales actuales.
+    setProvider: (providerId) => {
+      const state = get()
+      const { scenario, presetId } = state
+      if (providerId === scenario.providerId) return
+
+      // Memoriza el estado per-familia de la que se abandona
+      const providerCache = {
+        ...state.providerCache,
+        [scenario.providerId]: {
+          scenario,
+          presetId,
+          batchEnabled: state.batchEnabled,
+          batchFraction: state.batchFraction,
+          regional: state.regional,
+          storageEnabled: state.storageEnabled,
+        },
+      }
+
+      // Aplica las tasas de token globales (claves compartidas) sobre las propias de la familia destino
+      const withGlobalTokens = (familyTokens: TokenRates): TokenRates => {
+        const out = { ...familyTokens }
+        for (const key of Object.keys(out)) {
+          if (scenario.tokens[key] !== undefined) out[key] = scenario.tokens[key]
+        }
+        return out
+      }
+
+      // Familia ya visitada: restaura su régimen/mezcla/modificadores; tasas compartidas al día
+      const cached = state.providerCache[providerId]
+      if (cached) {
+        const restored = { ...cached.scenario, tokens: withGlobalTokens(cached.scenario.tokens) }
+        update({
+          providerCache,
+          scenario: restored,
+          presetId: cached.presetId,
+          isCustomized: !sameScenarioAsPreset(restored, presetById(cached.presetId)),
+          batchEnabled: cached.batchEnabled,
+          batchFraction: cached.batchFraction,
+          regional: cached.regional,
+          storageEnabled: cached.storageEnabled,
+        })
+        return
+      }
+
+      // Primera vez en la familia: preset análogo limpio (régimen, mezcla, modificadores) + tokens globales
+      const preset = analogPresetFor(presetId, providerId)
+      const next = { ...scenarioFromPreset(preset), tokens: withGlobalTokens(preset.tokens) }
+      update({
+        providerCache,
+        scenario: next,
+        presetId: preset.id,
+        isCustomized: !sameScenarioAsPreset(next, preset),
+        batchEnabled: preset.modifiers?.batchEnabled ?? false,
+        batchFraction: preset.modifiers?.batchFraction ?? DEFAULT_BATCH_FRACTION,
+        regional: defaultRegional(preset.provider),
+        storageEnabled: DEFAULT_STORAGE_ENABLED,
+      })
+    },
 
     loadPreset: (id) => applyPreset(id),
 
@@ -301,6 +393,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         scenario: scenarioFromPreset(preset),
         presetId: DEFAULT_PRESET_ID,
         isCustomized: false,
+        providerCache: {},
         staleVersion: null,
         batchEnabled: false,
         batchFraction: DEFAULT_BATCH_FRACTION,

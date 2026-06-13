@@ -14,6 +14,8 @@ export interface Formatters {
   formatOneDecimal(value: number): string
   /** Fracción 0–1 → "65 %" */
   formatPercent(fraction: number): string
+  /** Score 0–100 (ya en escala de puntos) → "62 %" */
+  formatScore(score: number): string
   /** Ratio → "1,3×" */
   formatRatio(value: number): string
   formatHours(value: number): string
@@ -27,10 +29,14 @@ export interface Formatters {
  */
 export function makeFormatters(locale: Locale): Formatters {
   const intl = INTL_LOCALE[locale]
-  const intFmt = new Intl.NumberFormat(intl, { maximumFractionDigits: 0 })
+  // `useGrouping: 'always'` fuerza el separador de millares también en cifras de 4 dígitos
+  // (decisión de producto: consistencia visual entre escenarios baratos y caros; es-ES omitiría
+  // el separador en 4 dígitos por defecto —"2781" vs "33.368"—, lo que se veía dispar en fila).
+  const intFmt = new Intl.NumberFormat(intl, { maximumFractionDigits: 0, useGrouping: 'always' })
   const oneDecimalFmt = new Intl.NumberFormat(intl, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
+    useGrouping: 'always',
   })
   const fxFmt = new Intl.NumberFormat(intl, { maximumFractionDigits: 4 })
 
@@ -48,6 +54,7 @@ export function makeFormatters(locale: Locale): Formatters {
     formatInt: (value) => intFmt.format(value),
     formatOneDecimal: (value) => oneDecimalFmt.format(value),
     formatPercent: (fraction) => `${intFmt.format(fraction * 100)} %`,
+    formatScore: (score) => `${intFmt.format(score)} %`,
     formatRatio: (value) => `${oneDecimalFmt.format(value)}×`,
     formatHours: (value) => `${intFmt.format(value)} h`,
     formatFx: (fxEurPerUsd) => `1 USD = ${fxFmt.format(fxEurPerUsd)} €`,

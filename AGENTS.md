@@ -41,7 +41,7 @@ src/
 ```
 
 1. **El motor (`src/engine/`) es puro**: sin dependencias de DOM, React, Zustand ni del navegador. Debe ejecutarse en Node tal cual (tests, futuro CLI). Cualquier cálculo nuevo (también los de comparativa salarial) va aquí, no en componentes.
-2. **Sin redondeo interno**: el motor mantiene precisión completa; el formateo (es-ES, separadores, decimales) vive solo en `src/lib/format.ts`. Ojo: la convención española no usa separador de miles en cifras de 4 dígitos ("6038 $", pero "10.060 $").
+2. **Sin redondeo interno**: el motor mantiene precisión completa; el formateo (es-ES, separadores, decimales) vive solo en `src/lib/format.ts`. Nota: por decisión de producto se fuerza el separador de millares también en cifras de 4 dígitos (`useGrouping: 'always'`) para mantener consistencia visual entre escenarios baratos y caros ("6.038 $" y "10.060 $"); esto se desvía de la convención por defecto de `Intl` es-ES (que omitiría el separador en 4 dígitos).
 3. **Caso dorado intocable**: el preset P2 debe producir blend ≈ 13,8 $/h, techo ≈ 10.060 $/mes y ponderado ≈ 6.040 $/mes con error < 1% (tests en `src/engine/engine.test.ts`). Si cambias precios, presets o fórmulas y estos tests fallan, el cambio es incorrecto o exige actualizar el PRD primero.
 4. **Datos en JSON, no en código**: precios, presets y salarios viven en `src/data/*.json` con type guards en `src/data/index.ts`. Si cambias precios, incrementa `version` y `effective_date` en `pricing.json` (la versión viaja en las URLs compartidas como `pv`).
 5. **Cero literales de UI en componentes**: todo string sale de `src/i18n/es.ts` (objeto tipado). Añadir inglés en el futuro = crear `en.ts` con la misma forma.

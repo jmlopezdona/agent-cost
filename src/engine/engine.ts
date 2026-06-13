@@ -99,6 +99,28 @@ function storageMonthlyPerAgent(
   return total * scheduledHoursMonth
 }
 
+/**
+ * Desempeño SWE-bench Pro ponderado por la mezcla (D2): Σ mix × score sobre los modelos del
+ * proveedor con score, renormalizado sobre la cobertura. `coverage` es la fracción de la mezcla
+ * con score (1 = total). Sin scores ⇒ `{ weighted: 0, coverage: 0 }`. El `swePro` NO entra en
+ * ninguna fórmula de coste: este cálculo es independiente del blend y del techo.
+ */
+function weightedSwePerformance(
+  mix: ModelMix,
+  provider: ProviderData,
+): { weighted: number; coverage: number } {
+  let coverage = 0
+  let weightedSum = 0
+  for (const key of Object.keys(provider.models)) {
+    const score = provider.models[key].swePro?.score
+    if (score === undefined) continue
+    const fraction = mix[key] ?? 0
+    coverage += fraction
+    weightedSum += fraction * score
+  }
+  return { weighted: coverage > 0 ? weightedSum / coverage : 0, coverage }
+}
+
 export function computeResults(
   scenario: Scenario,
   table: PricingTable,
@@ -139,6 +161,10 @@ export function computeResults(
   const weightedMonthlyUSD = ceilingMonthlyUSD * scenario.dutyCycle
   const weightedAnnualUSD = weightedMonthlyUSD * 12
 
+  // Desempeño SWE-Pro: derivado e independiente del coste (D2/D3). Coste/punto con guarda a 0.
+  const { weighted: weightedSwePro, coverage: sweProCoverage } = weightedSwePerformance(mix, provider)
+  const costPerPointUSD = weightedSwePro > 0 ? weightedMonthlyUSD / weightedSwePro : 0
+
   return {
     perModelRate,
     blendedRate: blend,
@@ -150,5 +176,8 @@ export function computeResults(
     storageMonthlyUSD,
     byCategory,
     byModel,
+    weightedSwePro,
+    costPerPointUSD,
+    sweProCoverage,
   }
 }

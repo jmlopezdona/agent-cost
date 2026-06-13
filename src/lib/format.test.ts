@@ -8,8 +8,8 @@ const fr = makeFormatters('fr')
 // Intl es-ES usa "." como separador de miles y "," como decimal; símbolo como sufijo
 describe('format es-ES', () => {
   it('importes mensuales/anuales como enteros con separador de miles + símbolo sufijo', () => {
-    // Convención española: sin separador en cifras de 4 dígitos
-    expect(es.formatMoney(6038.4567, 'usd')).toBe('6038 $')
+    // Separador de millares forzado también en cifras de 4 dígitos (consistencia visual)
+    expect(es.formatMoney(6038.4567, 'usd')).toBe('6.038 $')
     expect(es.formatMoney(10060, 'usd')).toBe('10.060 $')
     expect(es.formatMoney(52000, 'eur')).toBe('52.000 €')
   })
@@ -36,7 +36,7 @@ describe('format en-US', () => {
   it('importes mensuales con separador de miles y símbolo prefijo', () => {
     expect(en.formatMoney(10060, 'usd')).toBe('$10,060')
     expect(en.formatMoney(10060, 'eur')).toBe('€10,060')
-    // en-US sí separa los 4 dígitos
+    // Separador en los 4 dígitos
     expect(en.formatMoney(6038, 'usd')).toBe('$6,038')
   })
 

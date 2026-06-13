@@ -94,6 +94,82 @@ describe('reset (D5)', () => {
   })
 })
 
+describe('cambio de proveedor: tokens globales, régimen/mezcla/modificadores por familia', () => {
+  it('sincroniza las tasas de token compartidas pero el régimen viene del preset análogo', async () => {
+    const { store } = await loadStore('', null)
+    const O3 = presets.find((p) => p.id === 'O3')!
+    // Parte de P3 (greenfield) y personaliza régimen + tokens compartidos + batch
+    store.getState().loadPreset('P3')
+    store.getState().setSchedule('dutyCycle', 0.42)
+    store.getState().setSchedule('agents', 7)
+    store.getState().setToken('cacheReadM', 99)
+    store.getState().setBatchEnabled(true)
+
+    store.getState().setProvider('openai')
+    const s = store.getState()
+
+    // Caso de uso conservado: P3 → O3 (no el default O2)
+    expect(s.scenario.providerId).toBe('openai')
+    expect(s.presetId).toBe('O3')
+    // Tasa compartida (cache read) GLOBAL → se aplica a OpenAI
+    expect(s.scenario.tokens.cacheReadM).toBe(99)
+    // Régimen POR FAMILIA → viene de O3, no del valor editado en Anthropic
+    expect(s.scenario.dutyCycle).toBe(O3.dutyCycle)
+    expect(s.scenario.agents).toBe(O3.agents)
+    // La mezcla pasa a los modelos de OpenAI (no quedan claves de Anthropic)
+    expect(Object.keys(s.scenario.mix).sort()).toEqual(
+      Object.keys(pricingTable.providers.openai.models).sort(),
+    )
+    // Modificadores POR FAMILIA → O3 no trae batch, vuelve a su default
+    expect(s.batchEnabled).toBe(false)
+    // Personalizado porque la tasa global difiere del preset O3
+    expect(s.isCustomized).toBe(true)
+  })
+
+  it('las tasas de token compartidas son globales en ambos sentidos entre familias', async () => {
+    const { store } = await loadStore('', null)
+    store.getState().setToken('cacheReadM', 60) // en Anthropic
+    store.getState().setProvider('google')
+    expect(store.getState().scenario.tokens.cacheReadM).toBe(60) // sincronizado a Gemini
+
+    // Editar en Gemini se propaga de vuelta a Anthropic
+    store.getState().setToken('cacheReadM', 45)
+    store.getState().setProvider('anthropic')
+    expect(store.getState().scenario.tokens.cacheReadM).toBe(45)
+  })
+
+  it('desde un preset limpio carga el análogo limpio sin marcar personalizado', async () => {
+    const { store } = await loadStore('', null)
+    store.getState().setProvider('google')
+    const s = store.getState()
+    // P2 (default Anthropic) → G2 análogo, limpio
+    expect(s.presetId).toBe('G2')
+    expect(s.isCustomized).toBe(false)
+    expect(s.scenario.providerId).toBe('google')
+  })
+
+  it('al volver a una familia ya visitada restaura su mix editado (Gemini → ChatGPT → Gemini)', async () => {
+    const { store } = await loadStore('', null)
+    store.getState().setProvider('google')
+    const before = { ...store.getState().scenario.mix }
+
+    // Edita el mix de Gemini
+    store.getState().setMix('gemini-3.5-flash', 0.5)
+    const edited = { ...store.getState().scenario.mix }
+    expect(edited).not.toEqual(before)
+
+    // Va a ChatGPT y vuelve a Gemini
+    store.getState().setProvider('openai')
+    expect(store.getState().scenario.providerId).toBe('openai')
+    store.getState().setProvider('google')
+
+    // El mix editado de Gemini se conserva (no se resetea por el ida y vuelta)
+    expect(store.getState().scenario.providerId).toBe('google')
+    expect(store.getState().scenario.mix).toEqual(edited)
+    expect(store.getState().isCustomized).toBe(true)
+  })
+})
+
 describe('staleVersion (D3)', () => {
   it('una query entrante con pv distinto conserva el aviso aunque la URL se limpie', async () => {
     const { store, sessionStore, replaceState } = await loadStore('?p=P2&pv=2025-01', null)

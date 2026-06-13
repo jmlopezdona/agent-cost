@@ -75,6 +75,8 @@ export const fr: Strings = {
     blendLabel: 'Tarif du blend',
     rateLabel: (rate: string) => `${rate} actif`,
     tabsLabel: 'Famille de modèles',
+    perfLabel: 'Performance du mix',
+    scoreParen: (score: string) => `(${score})`,
   },
   schedule: {
     sectionTitle: 'Régime et utilisation',
@@ -104,6 +106,17 @@ export const fr: Strings = {
     annual: 'Pondéré annuel',
     storage: 'Stockage de cache',
     storageHint: 'coût mensuel distinct du blend',
+    swePro: 'Performance SWE-Pro',
+    costPerPoint: 'Coût/point',
+    costPerPointHint: 'coût mensuel par point SWE-Pro',
+  },
+  performance: {
+    approx: 'approximatif',
+    approxHint:
+      'Inclut des scores estimés ou non publiés par le fournisseur : valeur approximative.',
+    na: 'n/d',
+    disclaimer:
+      'La performance SWE-bench Pro se fie au chiffre de chaque fournisseur et mélange des bases (standardisée de Scale, fournisseur et estimée). Chaque famille utilise son propre scaffold, qui gonfle de 15 à 30 points par rapport à la base standardisée ; la comparaison de performance entre familles est donc indicative, et non une équivalence exacte.',
   },
   charts: {
     breakdownTitle: 'Répartition du coût par catégorie de token',

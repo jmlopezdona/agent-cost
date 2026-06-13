@@ -1,5 +1,5 @@
 {
-  "version": "2026-06b",
+  "version": "2026-06c",
   "effective_date": "2026-06-13",
   "unit": "USD/MTok",
   "providers": {
@@ -19,19 +19,47 @@
       "models": {
         "fable": {
           "name": "Claude Fable 5",
-          "prices": { "input": 10.0, "output": 50.0, "cache_read": 1.0, "cache_write": 12.5 }
+          "prices": { "input": 10.0, "output": 50.0, "cache_read": 1.0, "cache_write": 12.5 },
+          "swePro": {
+            "score": 80.3,
+            "basis": "vendor",
+            "confidence": "high",
+            "source": "https://www.morphllm.com/claude-benchmarks",
+            "effective_date": "2026-06-13"
+          }
         },
         "opus": {
           "name": "Claude Opus 4.8",
-          "prices": { "input": 5.0, "output": 25.0, "cache_read": 0.5, "cache_write": 6.25 }
+          "prices": { "input": 5.0, "output": 25.0, "cache_read": 0.5, "cache_write": 6.25 },
+          "swePro": {
+            "score": 69.2,
+            "basis": "vendor",
+            "confidence": "high",
+            "source": "https://www.morphllm.com/claude-benchmarks",
+            "effective_date": "2026-06-13"
+          }
         },
         "sonnet": {
           "name": "Claude Sonnet 4.6",
-          "prices": { "input": 3.0, "output": 15.0, "cache_read": 0.3, "cache_write": 3.75 }
+          "prices": { "input": 3.0, "output": 15.0, "cache_read": 0.3, "cache_write": 3.75 },
+          "swePro": {
+            "score": 62,
+            "basis": "estimate",
+            "confidence": "low",
+            "source": "https://labs.scale.com/leaderboard/swe_bench_pro_public",
+            "effective_date": "2026-06-13"
+          }
         },
         "haiku": {
           "name": "Claude Haiku 4.5",
-          "prices": { "input": 1.0, "output": 5.0, "cache_read": 0.1, "cache_write": 1.25 }
+          "prices": { "input": 1.0, "output": 5.0, "cache_read": 0.1, "cache_write": 1.25 },
+          "swePro": {
+            "score": 54,
+            "basis": "estimate",
+            "confidence": "low",
+            "source": "https://labs.scale.com/leaderboard/swe_bench_pro_public",
+            "effective_date": "2026-06-13"
+          }
         }
       }
     },
@@ -52,25 +80,53 @@
           "name": "GPT-5.5",
           "prices": { "input": 5.0, "cached_input": 0.5, "output": 30.0 },
           "source": "https://developers.openai.com/api/docs/pricing",
-          "effective_date": "2026-06-13"
+          "effective_date": "2026-06-13",
+          "swePro": {
+            "score": 58.6,
+            "basis": "vendor",
+            "confidence": "high",
+            "source": "https://www.morphllm.com/swe-bench-pro",
+            "effective_date": "2026-06-13"
+          }
         },
         "gpt-5.4": {
           "name": "GPT-5.4",
           "prices": { "input": 2.5, "cached_input": 0.25, "output": 15.0 },
           "source": "https://developers.openai.com/api/docs/pricing",
-          "effective_date": "2026-06-13"
+          "effective_date": "2026-06-13",
+          "swePro": {
+            "score": 55,
+            "basis": "estimate",
+            "confidence": "low",
+            "source": "https://labs.scale.com/leaderboard/swe_bench_pro_public",
+            "effective_date": "2026-06-13"
+          }
         },
         "gpt-5.4-mini": {
           "name": "GPT-5.4 mini",
           "prices": { "input": 0.75, "cached_input": 0.075, "output": 4.5 },
           "source": "https://developers.openai.com/api/docs/pricing",
-          "effective_date": "2026-06-13"
+          "effective_date": "2026-06-13",
+          "swePro": {
+            "score": 42,
+            "basis": "estimate",
+            "confidence": "low",
+            "source": "https://labs.scale.com/leaderboard/swe_bench_pro_public",
+            "effective_date": "2026-06-13"
+          }
         },
         "gpt-5.4-nano": {
           "name": "GPT-5.4 nano",
           "prices": { "input": 0.2, "cached_input": 0.02, "output": 1.25 },
           "source": "https://developers.openai.com/api/docs/pricing",
-          "effective_date": "2026-06-13"
+          "effective_date": "2026-06-13",
+          "swePro": {
+            "score": 30,
+            "basis": "estimate",
+            "confidence": "low",
+            "source": "https://labs.scale.com/leaderboard/swe_bench_pro_public",
+            "effective_date": "2026-06-13"
+          }
         }
       }
     },
@@ -91,19 +147,40 @@
           "name": "Gemini 3.1 Pro Preview",
           "prices": { "input": 2.0, "output": 12.0, "cache_read": 0.2, "cache_storage": 4.5 },
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
-          "effective_date": "2026-06-09"
+          "effective_date": "2026-06-09",
+          "swePro": {
+            "score": 46.1,
+            "basis": "vendor",
+            "confidence": "high",
+            "source": "https://www.morphllm.com/swe-bench-pro",
+            "effective_date": "2026-06-13"
+          }
         },
         "gemini-3.5-flash": {
           "name": "Gemini 3.5 Flash",
           "prices": { "input": 1.5, "output": 9.0, "cache_read": 0.15, "cache_storage": 1.0 },
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
-          "effective_date": "2026-06-09"
+          "effective_date": "2026-06-09",
+          "swePro": {
+            "score": 38,
+            "basis": "estimate",
+            "confidence": "low",
+            "source": "https://labs.scale.com/leaderboard/swe_bench_pro_public",
+            "effective_date": "2026-06-13"
+          }
         },
         "gemini-3.1-flash-lite": {
           "name": "Gemini 3.1 Flash-Lite",
           "prices": { "input": 0.25, "output": 1.5, "cache_read": 0.025, "cache_storage": 1.0 },
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
-          "effective_date": "2026-06-09"
+          "effective_date": "2026-06-09",
+          "swePro": {
+            "score": 25,
+            "basis": "estimate",
+            "confidence": "low",
+            "source": "https://labs.scale.com/leaderboard/swe_bench_pro_public",
+            "effective_date": "2026-06-13"
+          }
         }
       }
     }

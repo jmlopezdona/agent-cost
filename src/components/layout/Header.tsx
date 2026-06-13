@@ -139,29 +139,30 @@ export function Header() {
         </div>
       </div>
 
+      {/* Selector de familia/proveedor: fija el proveedor activo; visible también en presentación */}
+      <div role="group" aria-label={t.header.providerLabel} className="flex flex-wrap gap-1.5">
+        {PROVIDER_IDS.map((id) => {
+          const active = id === providerId
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => !active && setProvider(id)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                active
+                  ? 'border border-accent bg-accent-soft text-accent'
+                  : 'border border-line bg-raised hover:border-accent'
+              }`}
+            >
+              {t.providers[id]}
+            </button>
+          )
+        })}
+      </div>
+
       {!presentation && (
         <>
-          {/* Selector de familia/proveedor: fija el proveedor activo y filtra los presets */}
-          <div role="group" aria-label={t.header.providerLabel} className="flex flex-wrap gap-1.5">
-            {PROVIDER_IDS.map((id) => {
-              const active = id === providerId
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => !active && setProvider(id)}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                    active
-                      ? 'border border-accent bg-accent-soft text-accent'
-                      : 'border border-line bg-raised hover:border-accent'
-                  }`}
-                >
-                  {t.providers[id]}
-                </button>
-              )
-            })}
-          </div>
           <div
             role="group"
             aria-label={t.header.presetsLabel}

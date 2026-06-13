@@ -75,6 +75,8 @@ export const en: Strings = {
     blendLabel: 'Blend rate',
     rateLabel: (rate: string) => `${rate} active`,
     tabsLabel: 'Model family',
+    perfLabel: 'Mix performance',
+    scoreParen: (score: string) => `(${score})`,
   },
   schedule: {
     sectionTitle: 'Schedule and utilization',
@@ -104,6 +106,16 @@ export const en: Strings = {
     annual: 'Annual weighted',
     storage: 'Cache storage',
     storageHint: 'monthly cost separate from the blend',
+    swePro: 'SWE-Pro performance',
+    costPerPoint: 'Cost/point',
+    costPerPointHint: 'monthly cost per SWE-Pro point',
+  },
+  performance: {
+    approx: 'approximate',
+    approxHint: 'Includes estimated scores or scores not published by the vendor: approximate value.',
+    na: 'n/a',
+    disclaimer:
+      'SWE-bench Pro performance trusts each vendor’s own number and mixes bases (Scale standardized, vendor, and estimated). Each family uses its own scaffold, which inflates 15–30 points over the standardized one, so cross-family performance comparison is indicative, not an exact equivalence.',
   },
   charts: {
     breakdownTitle: 'Cost breakdown by token category',

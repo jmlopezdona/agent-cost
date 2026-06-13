@@ -40,10 +40,31 @@ export interface ProviderModifiers {
   regional?: { surcharge: number }
 }
 
+/**
+ * Base metodológica de un score SWE-bench Pro (D1):
+ * - `standard`: estandarizado de Scale (SEAL), mismo scaffold para todos los modelos
+ * - `vendor`: publicado por el propio proveedor con su scaffold (infla 15–30 pts sobre SEAL)
+ * - `estimate`: estimación anclada al flagship de la misma familia
+ */
+export type SweProBasis = 'standard' | 'vendor' | 'estimate'
+export type Confidence = 'high' | 'medium' | 'low'
+
+/** Desempeño de un modelo en SWE-bench Pro; dato de referencia, NO interviene en el coste (D1) */
+export interface SwePro {
+  /** % pass-rate en SWE-bench Pro (0–100) */
+  score: number
+  basis: SweProBasis
+  confidence: Confidence
+  source?: string
+  effective_date?: string
+}
+
 export interface ModelPricing {
   name: string
   /** USD/MTok por categoría; clave = CostCategory.key */
   prices: Record<string, number>
+  /** Desempeño SWE-bench Pro (opcional a nivel de tipo; puerta de cierre exige cobertura 1) */
+  swePro?: SwePro
   /** Fuente y fecha del precio (auditoría); opcional */
   source?: string
   effective_date?: string
@@ -128,6 +149,12 @@ export interface Results {
   byCategory: CategoryCost[]
   /** USD/h que cada modelo (clave local) aporta al blend (mix × tarifa) */
   byModel: Record<ModelKey, number>
+  /** Desempeño SWE-bench Pro ponderado por la mezcla (0–100), renormalizado sobre la cobertura (D2) */
+  weightedSwePro: number
+  /** Ponderado mensual USD / `weightedSwePro`; coste mensual por punto SWE-Pro; 0 si no hay scores (D3) */
+  costPerPointUSD: number
+  /** Fracción de la mezcla (0–1) con score SWE-Pro; 1 = cobertura total (D2) */
+  sweProCoverage: number
 }
 
 /** Hooks del motor con defaults neutros; los modificadores se aplican según el proveedor */

@@ -1,14 +1,15 @@
 import { SliderInput } from './SliderInput'
 import { useFormat, useStrings } from '../../i18n/hooks'
 import { pricingTable } from '../../data'
-import { PROVIDER_IDS } from '../../engine/types'
+import { PROVIDER_IDS, type ModelKey } from '../../engine/types'
 import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
+import { isApproxScore, mixHasApproxScore } from '../../lib/swePro'
 import { useScenarioStore } from '../../store/useScenarioStore'
 
 export function ModelMixSection() {
   const t = useStrings()
-  const { formatMoneyPerHour, formatPercent } = useFormat()
+  const { formatMoneyPerHour, formatPercent, formatScore } = useFormat()
   const providerId = useScenarioStore((s) => s.scenario.providerId)
   const mix = useScenarioStore((s) => s.scenario.mix)
   const setMix = useScenarioStore((s) => s.setMix)
@@ -24,6 +25,20 @@ export function ModelMixSection() {
   // Tasas del motor en USD/h → moneda activa (D3)
   const rate = (usdPerHour: number) =>
     formatMoneyPerHour(currency === 'eur' ? usdToEur(usdPerHour, fx) : usdPerHour, currency)
+
+  // Score SWE-Pro entre paréntesis junto al modelo; ≈ si no es vendor/high (D5). Sin score → null
+  const scoreParen = (key: ModelKey) => {
+    const swePro = provider.models[key].swePro
+    if (!swePro) return null
+    return t.mix.scoreParen(`${isApproxScore(swePro) ? '≈' : ''}${formatScore(swePro.score)}`)
+  }
+
+  // Desempeño ponderado del mix al pie, con marca de aproximación coherente con la tarjeta
+  const hasScore = results.weightedSwePro > 0
+  const perfApprox = hasScore && mixHasApproxScore(mix, provider)
+  const perfText = hasScore
+    ? `${perfApprox ? '≈' : ''}${formatScore(results.weightedSwePro)}`
+    : t.performance.na
 
   return (
     <div className="flex flex-col gap-4">
@@ -54,6 +69,9 @@ export function ModelMixSection() {
         <SliderInput
           key={id}
           label={provider.models[id].name}
+          labelExtra={
+            scoreParen(id) && <span className="text-xs text-muted tabular-nums">{scoreParen(id)}</span>
+          }
           unit="%"
           value={Math.round((mix[id] ?? 0) * 100)}
           min={0}
@@ -66,6 +84,9 @@ export function ModelMixSection() {
       <div className="flex items-center justify-between rounded-md bg-surface px-3 py-2 text-sm">
         <span>
           {provider.models[remainderKey].name}{' '}
+          {scoreParen(remainderKey) && (
+            <span className="text-xs text-muted tabular-nums">{scoreParen(remainderKey)} </span>
+          )}
           <span className="text-xs text-muted">({t.mix.haikuRest})</span>
         </span>
         <span className="tabular-nums">
@@ -79,6 +100,14 @@ export function ModelMixSection() {
         <span>{t.mix.blendLabel}</span>
         <span className="tabular-nums">{rate(results.blendedRate)}</span>
       </div>
+      <div className="flex items-center justify-between text-sm font-semibold">
+        <span>{t.mix.perfLabel}</span>
+        <span data-testid="mix-performance" className="tabular-nums">
+          {perfText}
+        </span>
+      </div>
+      {/* Disclaimer único de comparabilidad entre familias (D5) */}
+      <p className="text-xs text-muted">{t.performance.disclaimer}</p>
     </div>
   )
 }

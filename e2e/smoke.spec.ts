@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // Caso de referencia P2 (PRD §8) con el recargo Bedrock (+10%) activo por defecto:
-// ponderado ≈ 6.040 $ × 1,10 = 6625 $; blend 13,8 × 1,10 = 15,2 $/h
-const P2_WEIGHTED = '6625 $'
+// ponderado ≈ 6.040 $ × 1,10 = 6.625 $; blend 13,8 × 1,10 = 15,2 $/h
+const P2_WEIGHTED = '6.625 $'
 const USD = 'Mostrar cifras en dólares'
 
 // La configuración vive en un acordeón exclusivo (Régimen abierto por defecto);
@@ -112,9 +112,9 @@ test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: USD }).click()
   await page.getByRole('button', { name: /Evolutivos sobre código maduro/ }).click()
-  // P4 con recargo +10%: blend 10,1591 × 1,10 = 11,2 $/h · ponderado ≈ 5695 $
+  // P4 con recargo +10%: blend 10,1591 × 1,10 = 11,2 $/h · ponderado ≈ 5.695 $
   await expect(page.getByTestId('metric-blend')).toHaveText('11,2 $/h')
-  await expect(page.getByTestId('metric-weighted')).toHaveText('5695 $')
+  await expect(page.getByTestId('metric-weighted')).toHaveText('5.695 $')
 })
 
 test('cambiar de familia carga su preset, filtra modelos y comparte con pr', async ({
@@ -146,6 +146,38 @@ test('cambiar de familia carga su preset, filtra modelos y comparte con pr', asy
     'true',
   )
   await freshContext.close()
+})
+
+test('desempeño SWE-Pro: tarjetas, paréntesis por modelo y recálculo al mover el mix', async ({
+  page,
+}) => {
+  await page.goto('./')
+  // Tarjetas no héroe del caso P2: desempeño ponderado aproximado y coste/punto en EUR
+  await expect(page.getByTestId('metric-swePro')).toHaveText('≈61 %')
+  await expect(page.getByTestId('metric-costPerPoint')).toHaveText(/ €$/)
+
+  // Abrir la mezcla: score por modelo entre paréntesis (Opus vendor sin ≈, Sonnet estimado con ≈)
+  await page.getByRole('button', { name: 'Mezcla de modelos' }).click()
+  await expect(page.getByText('(69 %)')).toBeVisible()
+  await expect(page.getByText('(≈62 %)')).toBeVisible()
+  const perf = page.getByTestId('mix-performance')
+  await expect(perf).toHaveText('≈61 %')
+
+  // Bajar Sonnet a 0 deja la mezcla en 15% Opus / 85% Haiku → 0,15×69,2 + 0,85×54 = 56,28
+  await page.getByRole('spinbutton', { name: 'Claude Sonnet 4.6' }).fill('0')
+  await expect(perf).toHaveText('≈56 %')
+  await expect(page.getByTestId('metric-swePro')).toHaveText('≈56 %')
+})
+
+test('cambiar de familia muestra los scores propios de cada proveedor', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Google · Gemini' }).click()
+  await page.getByRole('button', { name: 'Mezcla de modelos' }).click()
+  // Gemini 3.1 Pro lleva score de proveedor (sin ≈); Flash-Lite (resto) va estimado (con ≈)
+  await expect(page.getByText('(46 %)')).toBeVisible()
+  await expect(page.getByText('(≈25 %)')).toBeVisible()
+  // El desempeño ponderado refleja el mix de Google, no el de Anthropic
+  await expect(page.getByTestId('metric-swePro')).toHaveText(/≈\d+ %/)
 })
 
 test('el disclaimer de la comparativa salarial es visible', async ({ page }) => {
@@ -185,6 +217,21 @@ test('present=1 arranca en modo presentación y el conmutador restaura los contr
   // Y se puede volver a entrar
   await page.getByRole('button', { name: 'Presentación' }).click()
   await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
+})
+
+test('en presentación se puede cambiar entre las tres familias de modelos', async ({ page }) => {
+  await page.goto('./?present=1')
+  // Los controles siguen ocultos, pero el selector de familia está disponible
+  await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
+  const anthropic = page.getByRole('button', { name: 'Anthropic · Claude' })
+  const google = page.getByRole('button', { name: 'Google · Gemini' })
+  await expect(anthropic).toHaveAttribute('aria-pressed', 'true')
+
+  // Cambiar a Google fija el proveedor activo y las métricas se mantienen visibles
+  await google.click()
+  await expect(google).toHaveAttribute('aria-pressed', 'true')
+  await expect(anthropic).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByTestId('metric-weighted')).toBeVisible()
 })
 
 test('en presentación, el botón atrás del navegador vuelve a la calculadora', async ({ page }) => {

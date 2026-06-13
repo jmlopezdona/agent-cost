@@ -37,6 +37,24 @@ function isCostCategory(v: unknown): v is CostCategory {
   )
 }
 
+const SWE_PRO_BASIS = ['standard', 'vendor', 'estimate']
+const CONFIDENCE = ['high', 'medium', 'low']
+
+/** Valida el bloque `swePro` cuando existe: score ∈ [0,100], basis y confidence en dominio (D6) */
+function isSwePro(v: unknown): boolean {
+  if (typeof v !== 'object' || v === null) return false
+  const s = v as Record<string, unknown>
+  return (
+    isFiniteNumber(s.score) &&
+    s.score >= 0 &&
+    s.score <= 100 &&
+    typeof s.basis === 'string' &&
+    SWE_PRO_BASIS.includes(s.basis) &&
+    typeof s.confidence === 'string' &&
+    CONFIDENCE.includes(s.confidence)
+  )
+}
+
 /** Valida un modelo: nombre + un precio finito por cada categoría del `costModel` */
 function isModelPricing(v: unknown, costModel: CostCategory[]): v is ModelPricing {
   if (typeof v !== 'object' || v === null) return false
@@ -44,7 +62,10 @@ function isModelPricing(v: unknown, costModel: CostCategory[]): v is ModelPricin
   if (!isNonEmptyString(p.name)) return false
   const prices = p.prices as Record<string, unknown> | undefined
   if (prices == null || typeof prices !== 'object') return false
-  return costModel.every((cat) => isFiniteNumber(prices[cat.key]))
+  if (!costModel.every((cat) => isFiniteNumber(prices[cat.key]))) return false
+  // `swePro` es opcional a nivel de tipo; si existe, debe cumplir su dominio (D6)
+  if (p.swePro !== undefined && !isSwePro(p.swePro)) return false
+  return true
 }
 
 function isProviderData(v: unknown): v is ProviderData {
@@ -221,6 +242,26 @@ export function defaultPresetFor(providerId: ProviderId): Preset {
     presets.find((p) => p.provider === providerId)
   if (!preset) throw new Error(`Sin preset para el proveedor: ${providerId}`)
   return preset
+}
+
+/** Prefijo de id de preset por familia (P1–P6 · O1–O6 · G1–G6) */
+const PROVIDER_PRESET_PREFIX: Record<ProviderId, string> = {
+  anthropic: 'P',
+  openai: 'O',
+  google: 'G',
+}
+
+/**
+ * Preset análogo (mismo caso de uso) en otra familia: P3 → O3 → G3. Permite conservar el
+ * escenario al cambiar de proveedor. Cae al preset por defecto de la familia si no hay análogo.
+ */
+export function analogPresetFor(presetId: string, providerId: ProviderId): Preset {
+  const num = presetId.replace(/^[A-Za-z]+/, '')
+  const candidate = PROVIDER_PRESET_PREFIX[providerId] + num
+  return (
+    presets.find((p) => p.id === candidate && p.provider === providerId) ??
+    defaultPresetFor(providerId)
+  )
 }
 
 /** Defaults neutros de los modificadores de configuración avanzada (Fase 2) */
