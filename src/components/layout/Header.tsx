@@ -13,6 +13,8 @@ export function Header() {
   const currency = useScenarioStore((s) => s.currency)
   const setCurrency = useScenarioStore((s) => s.setCurrency)
   const presentation = useScenarioStore((s) => s.presentation)
+  const serializeCurrent = useScenarioStore((s) => s.serializeCurrent)
+  const reset = useScenarioStore((s) => s.reset)
   const dark = useTheme((s) => s.dark)
   const toggleTheme = useTheme((s) => s.toggle)
 
@@ -26,7 +28,10 @@ export function Header() {
   useEffect(() => () => clearTimeout(copiedTimer.current), [])
 
   const copyLink = async () => {
-    const url = window.location.href
+    // La URL se construye bajo demanda desde el estado (la barra queda limpia durante la edición, D4)
+    const query = serializeCurrent()
+    const { origin, pathname } = window.location
+    const url = `${origin}${pathname}${query ? `?${query}` : ''}`
     try {
       await navigator.clipboard.writeText(url)
     } catch {
@@ -82,6 +87,14 @@ export function Header() {
             className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
           >
             {copied ? strings.header.copied : strings.header.copyLink}
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            aria-label={strings.header.resetAria}
+            className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
+          >
+            {strings.header.reset}
           </button>
           <ExportMenu />
           <PresentationToggle />

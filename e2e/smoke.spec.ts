@@ -36,7 +36,36 @@ test('mover un control recalcula las métricas al instante', async ({ page }) =>
   ).toBeVisible()
 })
 
-test('copiar URL y abrirla en un contexto nuevo reproduce resultados idénticos', async ({
+test('editar un valor no ensucia la URL y el estado sobrevive al refresco', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
+
+  // La barra de direcciones permanece limpia (persistencia en sessionStorage, no en la URL)
+  expect(new URL(page.url()).search).toBe('')
+
+  // Refrescar conserva el escenario editado desde sessionStorage
+  await page.reload()
+  await expect(page.getByRole('spinbutton', { name: 'Cache read' })).toHaveValue('60')
+  expect(new URL(page.url()).search).toBe('')
+})
+
+test('Reset devuelve al preset por defecto', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
+  await expect(
+    page.getByText('Personalizado (basado en Agente de delivery balanceado)'),
+  ).toBeVisible()
+
+  await page.getByRole('button', { name: 'Restablecer el escenario al preset por defecto' }).click()
+
+  // Vuelve al valor por defecto de P2 (cache read 30) y deja de estar personalizado
+  await expect(page.getByRole('spinbutton', { name: 'Cache read' })).toHaveValue('30')
+  await expect(
+    page.getByText('Personalizado (basado en Agente de delivery balanceado)'),
+  ).toBeHidden()
+})
+
+test('copiar enlace genera una URL con los diffs y abrirla restaura el escenario con la URL limpia', async ({
   page,
   browser,
 }) => {
@@ -48,12 +77,13 @@ test('copiar URL y abrirla en un contexto nuevo reproduce resultados idénticos'
   await page.getByRole('button', { name: 'Copiar enlace del escenario' }).click()
   await expect(page.getByRole('button', { name: 'Enlace copiado' })).toBeVisible()
 
-  // El portapapeles contiene la URL con el estado serializado (replaceState)
+  // El portapapeles lleva los diffs aunque la barra de direcciones esté limpia
   const sharedUrl = await page.evaluate(() => navigator.clipboard.readText())
-  expect(sharedUrl).toBe(page.url())
+  expect(new URL(page.url()).search).toBe('')
   expect(sharedUrl).toContain('cr=60')
   expect(sharedUrl).toContain('dc=80')
 
+  // Abrir el enlace en un contexto limpio restaura el escenario y deja la URL limpia
   const freshContext = await browser.newContext()
   const freshPage = await freshContext.newPage()
   await freshPage.goto(sharedUrl)
@@ -61,6 +91,7 @@ test('copiar URL y abrirla en un contexto nuevo reproduce resultados idénticos'
   await expect(
     freshPage.getByText('Personalizado (basado en Agente de delivery balanceado)'),
   ).toBeVisible()
+  expect(new URL(freshPage.url()).search).toBe('')
   await freshContext.close()
 })
 

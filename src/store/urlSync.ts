@@ -331,3 +331,50 @@ export function writeUrl(query: string): void {
   const url = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
   history.replaceState(null, '', url)
 }
+
+/**
+ * Persistencia del escenario por pestaña en sessionStorage (D1/D2). Mismo formato
+ * que la URL de compartir; sobrevive al refresco, se descarta al cerrar la pestaña.
+ */
+const SESSION_KEY = 'agentcost-scenario'
+
+/** Claves reconocidas como "estado de escenario" en una query entrante (D3) */
+const RECOGNIZED_KEYS = new Set<string>([
+  'p',
+  ...PARAMS.map((param) => param.key),
+  'fx',
+  'cur',
+  'b',
+  'bd',
+  'em',
+  'eh',
+  'px',
+  'present',
+])
+
+/** true si la query trae al menos una clave de escenario reconocida (D3) */
+export function hasScenarioParams(search: string): boolean {
+  if (!search) return false
+  for (const key of new URLSearchParams(search).keys()) {
+    if (RECOGNIZED_KEYS.has(key)) return true
+  }
+  return false
+}
+
+/** Guarda la query serializada en sessionStorage; no-op fuera del navegador */
+export function writeSession(query: string): void {
+  if (typeof sessionStorage === 'undefined') return
+  sessionStorage.setItem(SESSION_KEY, query)
+}
+
+/** Lee la query persistida; null si no hay nada o fuera del navegador */
+export function readSession(): string | null {
+  if (typeof sessionStorage === 'undefined') return null
+  return sessionStorage.getItem(SESSION_KEY)
+}
+
+/** Vacía el escenario persistido (usado por Reset); no-op fuera del navegador */
+export function clearSession(): void {
+  if (typeof sessionStorage === 'undefined') return
+  sessionStorage.removeItem(SESSION_KEY)
+}

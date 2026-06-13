@@ -9,6 +9,8 @@ export const strings = {
     customized: (presetName: string) => `Personalizado (basado en ${presetName})`,
     copyLink: 'Copiar enlace del escenario',
     copied: 'Enlace copiado',
+    reset: 'Reset',
+    resetAria: 'Restablecer el escenario al preset por defecto',
     themeToggle: 'Cambiar entre modo claro y oscuro',
     currencyLabel: 'Moneda de presentación',
     currencyEur: '€',

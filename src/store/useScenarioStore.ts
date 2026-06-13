@@ -15,10 +15,14 @@ import {
 } from '../data'
 import { clamp, RANGES } from '../lib/ranges'
 import {
+  clearSession,
   deserializeScenario,
+  hasScenarioParams,
   mixRemainder,
+  readSession,
   scenarioFromPreset,
   serializeScenario,
+  writeSession,
   writeUrl,
   type ModifierDefaults,
 } from './urlSync'
@@ -69,6 +73,10 @@ interface ScenarioStore {
   setPriceOverride: (model: ModelId, field: PriceField, value: number) => void
   resetPriceOverrides: () => void
   togglePresentation: () => void
+  /** Query serializada del estado actual (compartir + persistencia, D4) */
+  serializeCurrent: () => string
+  /** Vacía sessionStorage y vuelve al preset por defecto (D5) */
+  reset: () => void
 }
 
 const TOKEN_RANGE = {
@@ -98,8 +106,14 @@ function presetById(id: string) {
   return preset
 }
 
+// Precedencia al cargar (D3): URL con estado → sessionStorage → preset por defecto.
+// Un enlace entrante gana; el aviso de versión (`staleVersion`) se calcula aquí, de su
+// query, antes de limpiar la URL más abajo. Si no hay enlace, se restaura la sesión.
+const incomingSearch = typeof window === 'undefined' ? '' : window.location.search
+const fromUrl = hasScenarioParams(incomingSearch)
+const initialQuery = fromUrl ? incomingSearch : (readSession() ?? '')
 const initial = deserializeScenario(
-  typeof window === 'undefined' ? '' : window.location.search,
+  initialQuery,
   presets,
   DEFAULT_PRESET_ID,
   DEFAULT_FX_EUR_PER_USD,
@@ -109,7 +123,8 @@ const initial = deserializeScenario(
 )
 
 export const useScenarioStore = create<ScenarioStore>((set, get) => {
-  const syncUrl = () => {
+  // Query serializada del estado actual; reutilizada por la persistencia y por "Copiar enlace"
+  const buildQuery = () => {
     const {
       scenario,
       presetId,
@@ -123,33 +138,34 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
       priceOverrides,
       presentation,
     } = get()
-    writeUrl(
-      serializeScenario(
-        scenario,
-        presetId,
-        fx,
-        DEFAULT_FX_EUR_PER_USD,
-        pricingTable.version,
-        presetById(presetId),
-        currency,
-        DEFAULT_CURRENCY,
-        {
-          batchEnabled,
-          batchFraction,
-          regional,
-          employerMultiplier,
-          effectiveHours,
-          priceOverrides,
-          presentation,
-        },
-        MOD_DEFAULTS,
-      ),
+    return serializeScenario(
+      scenario,
+      presetId,
+      fx,
+      DEFAULT_FX_EUR_PER_USD,
+      pricingTable.version,
+      presetById(presetId),
+      currency,
+      DEFAULT_CURRENCY,
+      {
+        batchEnabled,
+        batchFraction,
+        regional,
+        employerMultiplier,
+        effectiveHours,
+        priceOverrides,
+        presentation,
+      },
+      MOD_DEFAULTS,
     )
   }
 
+  // Persiste el escenario en sessionStorage (la URL ya no se ensucia durante la edición, D2)
+  const syncSession = () => writeSession(buildQuery())
+
   const update = (partial: Partial<ScenarioStore>) => {
     set(partial)
-    syncUrl()
+    syncSession()
   }
 
   return {
@@ -260,5 +276,34 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     resetPriceOverrides: () => update({ priceOverrides: {} }),
 
     togglePresentation: () => update({ presentation: !get().presentation }),
+
+    serializeCurrent: buildQuery,
+
+    reset: () => {
+      // Vacía la sesión y vuelve al preset por defecto con modificadores neutros (D5).
+      // currency y fx se conservan: son preferencia de presentación, no escenario.
+      clearSession()
+      const preset = presetById(DEFAULT_PRESET_ID)
+      set({
+        scenario: scenarioFromPreset(preset),
+        presetId: DEFAULT_PRESET_ID,
+        isCustomized: false,
+        staleVersion: null,
+        batchEnabled: false,
+        batchFraction: DEFAULT_BATCH_FRACTION,
+        regional: DEFAULT_REGIONAL,
+        employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
+        effectiveHours: DEFAULT_EFFECTIVE_HOURS,
+        priceOverrides: {},
+        presentation: false,
+      })
+    },
   }
 })
+
+// Adopción de un enlace entrante (D3): se guarda en sessionStorage y la URL se limpia.
+// El estado ya se cargó arriba desde `incomingSearch`, incluido el aviso de versión.
+if (fromUrl) {
+  writeSession(useScenarioStore.getState().serializeCurrent())
+  writeUrl('')
+}
