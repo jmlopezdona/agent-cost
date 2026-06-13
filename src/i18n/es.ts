@@ -132,7 +132,8 @@ export const strings = {
     sectionHint: 'Precios, Batch API, recargo regional, tipo de cambio y coste empresa',
     toggleExpand: 'Mostrar u ocultar la configuración avanzada',
     pricingTitle: 'Precios por modelo (USD/MTok)',
-    pricingHint: 'Edita las tarifas oficiales; los cambios solo viven en esta sesión y en el enlace.',
+    pricingHint:
+      'Edita las tarifas oficiales; los cambios solo viven en esta sesión y en el enlace.',
     restoreOfficial: 'Restaurar oficiales',
     priceFields: {
       input: 'Input',
@@ -192,6 +193,7 @@ export const strings = {
     estimateDisclaimer:
       'Todas las cifras son estimaciones orientativas basadas en los parámetros introducidos; no constituyen una previsión de facturación.',
     noBackend: 'Herramienta 100% estática: ningún dato sale de tu navegador.',
+    observationsLabel: 'Observaciones',
   },
 } as const
 

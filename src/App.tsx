@@ -28,7 +28,6 @@ function App() {
           <PresentationScenario />
           <ModifierBadges />
           <MetricCards large />
-          <SalaryComparison />
           <SalaryChart />
         </main>
         <Footer />

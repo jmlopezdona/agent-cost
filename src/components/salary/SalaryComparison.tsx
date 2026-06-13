@@ -16,7 +16,6 @@ import { useScenarioStore } from '../../store/useScenarioStore'
 export function SalaryComparison() {
   const setFx = useScenarioStore((s) => s.setFx)
   const setProfileGross = useScenarioStore((s) => s.setProfileGross)
-  const presentation = useScenarioStore((s) => s.presentation)
   const {
     rows,
     config,
@@ -51,97 +50,91 @@ export function SalaryComparison() {
             )}
           </p>
         </div>
-        {/* Tipo de cambio editable: control, oculto en modo presentación */}
-        {!presentation && (
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-xs text-muted">
-              {strings.salary.fxLabel} ({formatFx(fx)})
-            </span>
-            <input
-              type="number"
-              value={fx}
-              min={0.1}
-              max={10}
-              step={0.01}
-              onChange={(e) => {
-                const v = Number(e.target.value)
-                if (Number.isFinite(v)) setFx(v)
-              }}
-              aria-label={strings.salary.fxLabel}
-              className="w-20 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
-            />
-            <span className="text-xs text-muted">{strings.salary.fxUnit}</span>
-          </label>
-        )}
+        {/* Tipo de cambio editable */}
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-xs text-muted">
+            {strings.salary.fxLabel} ({formatFx(fx)})
+          </span>
+          <input
+            type="number"
+            value={fx}
+            min={0.1}
+            max={10}
+            step={0.01}
+            onChange={(e) => {
+              const v = Number(e.target.value)
+              if (Number.isFinite(v)) setFx(v)
+            }}
+            aria-label={strings.salary.fxLabel}
+            className="w-20 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
+          />
+          <span className="text-xs text-muted">{strings.salary.fxUnit}</span>
+        </label>
       </div>
 
-      {/* Tabla con inputs editables: detalle/controles, oculta en presentación */}
-      {!presentation && (
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm tabular-nums">
-            <thead>
-              <tr className="border-b border-line text-left text-xs text-muted">
-                <th scope="col" className="py-2 pr-2">
-                  {strings.salary.colProfile}
+      {/* Tabla con inputs editables */}
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm tabular-nums">
+          <thead>
+            <tr className="border-b border-line text-left text-xs text-muted">
+              <th scope="col" className="py-2 pr-2">
+                {strings.salary.colProfile}
+              </th>
+              <th scope="col" className="py-2 pr-2">
+                {strings.salary.colGross}
+              </th>
+              <th scope="col" className="py-2 pr-2 text-right">
+                {strings.salary.colEmployerYear}
+              </th>
+              <th scope="col" className="py-2 pr-2 text-right">
+                {strings.salary.colEmployerMonth}
+              </th>
+              <th scope="col" className="py-2 pr-2 text-right">
+                {strings.salary.colPerHour(CURRENCY_SYMBOL[currency])}
+              </th>
+              <th scope="col" className="py-2 text-right">
+                {strings.salary.colFte}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ profile, gross, cost, fte }) => (
+              <tr key={profile.id} className="border-b border-line last:border-0">
+                <th scope="row" className="py-2 pr-2 text-left font-medium">
+                  {profile.name}
+                  <span className="block text-xs font-normal text-muted">{profile.experience}</span>
                 </th>
-                <th scope="col" className="py-2 pr-2">
-                  {strings.salary.colGross}
-                </th>
-                <th scope="col" className="py-2 pr-2 text-right">
-                  {strings.salary.colEmployerYear}
-                </th>
-                <th scope="col" className="py-2 pr-2 text-right">
-                  {strings.salary.colEmployerMonth}
-                </th>
-                <th scope="col" className="py-2 pr-2 text-right">
-                  {strings.salary.colPerHour(CURRENCY_SYMBOL[currency])}
-                </th>
-                <th scope="col" className="py-2 text-right">
-                  {strings.salary.colFte}
-                </th>
+                <td className="py-2 pr-2">
+                  <input
+                    type="number"
+                    value={gross}
+                    min={0}
+                    step={1000}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      if (Number.isFinite(v)) setProfileGross(profile.id, v)
+                    }}
+                    aria-label={strings.salary.grossInputLabel(profile.name)}
+                    className="w-24 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
+                  />
+                </td>
+                <td className="py-2 pr-2 text-right">
+                  {formatMoney(eurToDisplay(cost.annualEUR), currency)}
+                </td>
+                <td className="py-2 pr-2 text-right">
+                  {formatMoney(eurToDisplay(cost.monthlyEUR), currency)}
+                </td>
+                <td className="py-2 pr-2 text-right">
+                  {formatMoneyPerHour(eurToDisplay(cost.perEffectiveHourEUR), currency)}
+                </td>
+                <td className="py-2 text-right font-semibold">
+                  {strings.salary.fteValue(formatRatio(fte))}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ profile, gross, cost, fte }) => (
-                <tr key={profile.id} className="border-b border-line last:border-0">
-                  <th scope="row" className="py-2 pr-2 text-left font-medium">
-                    {profile.name}
-                    <span className="block text-xs font-normal text-muted">
-                      {profile.experience}
-                    </span>
-                  </th>
-                  <td className="py-2 pr-2">
-                    <input
-                      type="number"
-                      value={gross}
-                      min={0}
-                      step={1000}
-                      onChange={(e) => {
-                        const v = Number(e.target.value)
-                        if (Number.isFinite(v)) setProfileGross(profile.id, v)
-                      }}
-                      aria-label={strings.salary.grossInputLabel(profile.name)}
-                      className="w-24 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
-                    />
-                  </td>
-                  <td className="py-2 pr-2 text-right">
-                    {formatMoney(eurToDisplay(cost.annualEUR), currency)}
-                  </td>
-                  <td className="py-2 pr-2 text-right">
-                    {formatMoney(eurToDisplay(cost.monthlyEUR), currency)}
-                  </td>
-                  <td className="py-2 pr-2 text-right">
-                    {formatMoneyPerHour(eurToDisplay(cost.perEffectiveHourEUR), currency)}
-                  </td>
-                  <td className="py-2 text-right font-semibold">
-                    {strings.salary.fteValue(formatRatio(fte))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p className="mt-1 text-xs text-muted">
         {strings.salary.multiplierNote(
           formatOneDecimal(config.employerCostMultiplier),
