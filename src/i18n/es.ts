@@ -138,7 +138,7 @@ export const es = {
     tabCeiling: 'Coste techo vs. ponderado',
   },
   salary: {
-    sectionTitle: 'Comparativa con coste empresa en España',
+    sectionTitle: 'Comparativa con coste empresa',
     fxLabel: 'Tipo de cambio',
     fxUnit: '€ por USD',
     agentMonthly: (money: string) => `Coste ponderado del escenario: ${money}/mes`,
@@ -244,7 +244,7 @@ export const es = {
       `Precios de API versión ${version} (efectivos desde ${date})`,
     pricingSourcesLabel: 'Tablas oficiales de precios',
     salarySources: (sources: string, reviewed: string) =>
-      `Fuentes salariales: ${sources} · Última revisión: ${reviewed}`,
+      `Valores por defecto (España), editables · Fuentes: ${sources} · Última revisión: ${reviewed}`,
     estimateDisclaimer:
       'Todas las cifras son estimaciones orientativas basadas en los parámetros introducidos; no constituyen una previsión de facturación.',
     noBackend: 'Herramienta 100% estática: ningún dato sale de tu navegador.',

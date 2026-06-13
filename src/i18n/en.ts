@@ -140,7 +140,7 @@ export const en: Strings = {
     tabCeiling: 'Ceiling vs. weighted cost',
   },
   salary: {
-    sectionTitle: 'Comparison with employer cost in Spain',
+    sectionTitle: 'Comparison with employer cost',
     fxLabel: 'Exchange rate',
     fxUnit: '€ per USD',
     agentMonthly: (money: string) => `Scenario weighted cost: ${money}/month`,
@@ -245,7 +245,7 @@ export const en: Strings = {
       `API prices version ${version} (effective from ${date})`,
     pricingSourcesLabel: 'Official pricing tables',
     salarySources: (sources: string, reviewed: string) =>
-      `Salary sources: ${sources} · Last reviewed: ${reviewed}`,
+      `Defaults (Spain), editable · Sources: ${sources} · Last reviewed: ${reviewed}`,
     estimateDisclaimer:
       'All figures are indicative estimates based on the parameters entered; they are not a billing forecast.',
     noBackend: '100% static tool: no data leaves your browser.',

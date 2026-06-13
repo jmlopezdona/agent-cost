@@ -141,7 +141,7 @@ export const fr: Strings = {
     tabCeiling: 'Coût plafond vs. pondéré',
   },
   salary: {
-    sectionTitle: 'Comparaison avec le coût employeur en Espagne',
+    sectionTitle: 'Comparaison avec le coût employeur',
     fxLabel: 'Taux de change',
     fxUnit: '€ par USD',
     agentMonthly: (money: string) => `Coût pondéré du scénario : ${money}/mois`,
@@ -247,7 +247,7 @@ export const fr: Strings = {
       `Prix de l'API version ${version} (effectifs depuis le ${date})`,
     pricingSourcesLabel: 'Tables officielles des prix',
     salarySources: (sources: string, reviewed: string) =>
-      `Sources salariales : ${sources} · Dernière révision : ${reviewed}`,
+      `Valeurs par défaut (Espagne), modifiables · Sources : ${sources} · Dernière révision : ${reviewed}`,
     estimateDisclaimer:
       'Tous les chiffres sont des estimations indicatives basées sur les paramètres saisis ; ils ne constituent pas une prévision de facturation.',
     noBackend: 'Outil 100 % statique : aucune donnée ne quitte votre navigateur.',
