@@ -1,10 +1,10 @@
-import { strings } from '../../i18n/es'
+import { useStrings } from '../../i18n/hooks'
 import { exportChartPNG } from '../../lib/export'
 import type { ChartId } from '../../lib/chartRegistry'
 
 /** Botón de exportar un gráfico individual como PNG (RF-09, D7) */
 export function ChartExportButton({ id, title }: { id: ChartId; title: string }) {
-  const t = strings.exporting
+  const t = useStrings().exporting
   return (
     <button
       type="button"

@@ -6,12 +6,8 @@ describe('presets.json (Fase 2)', () => {
     expect(presets.map((p) => p.id).sort()).toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P6'])
   })
 
-  it('los seis presets tienen learnings no vacíos', () => {
-    for (const preset of presets) {
-      expect(typeof preset.learnings).toBe('string')
-      expect(preset.learnings.length).toBeGreaterThan(0)
-    }
-  })
+  // La prosa (incluido `learnings`) se migró a i18n por id (D4); su cobertura en los tres
+  // idiomas se valida en src/i18n/parity.test.ts. presets.json es solo numérico/estructural.
 
   it('solo P5 trae el bloque de modificadores con Batch al 80%', () => {
     const withModifiers = presets.filter((p) => p.modifiers !== undefined)

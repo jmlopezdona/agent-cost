@@ -9,6 +9,19 @@
       const stored = localStorage.getItem('agentcost-theme')
       const dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
       document.documentElement.classList.toggle('dark', dark)
+
+      // Resuelve el idioma antes del primer paint (D6): preferencia guardada → navegador → inglés.
+      // Misma precedencia que pickLocale() en src/i18n; fija <html lang> para evitar flash de idioma.
+      const savedLang = localStorage.getItem('agentcost-lang')
+      const nav = (navigator.language || '').toLowerCase()
+      document.documentElement.lang =
+        savedLang === 'es' || savedLang === 'en' || savedLang === 'fr'
+          ? savedLang
+          : nav.startsWith('es')
+            ? 'es'
+            : nav.startsWith('fr')
+              ? 'fr'
+              : 'en'
     </script>
   </head>
   <body>

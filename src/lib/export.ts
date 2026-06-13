@@ -19,12 +19,32 @@ export interface ExportInput {
   results: Results
 }
 
-/** Objeto serializable con parámetros, modificadores y resultados (RF-09) */
-export function buildExportData(input: ExportInput) {
+/** Etiquetas de exportación en el idioma activo (D9); las cifras no dependen del idioma */
+export interface ExportLabels {
+  preset: string
+  parameters: string
+  modifiers: string
+  results: string
+  csvColKey: string
+  csvColValue: string
+}
+
+/** Etiquetas por defecto (español) si no se inyectan; mantiene el export estable sin contexto i18n */
+const DEFAULT_LABELS: ExportLabels = {
+  preset: 'preset',
+  parameters: 'parametros',
+  modifiers: 'modificadores',
+  results: 'resultados',
+  csvColKey: 'clave',
+  csvColValue: 'valor',
+}
+
+/** Objeto serializable con parámetros, modificadores y resultados (RF-09); etiquetas en idioma activo (D9) */
+export function buildExportData(input: ExportInput, labels: ExportLabels = DEFAULT_LABELS) {
   const { scenario, results } = input
   return {
-    preset: `${input.presetId} — ${input.presetName}`,
-    parametros: {
+    [labels.preset]: `${input.presetId} — ${input.presetName}`,
+    [labels.parameters]: {
       tokens: scenario.tokens,
       mix: scenario.mix,
       hoursPerDay: scenario.hoursPerDay,
@@ -32,7 +52,7 @@ export function buildExportData(input: ExportInput) {
       dutyCycle: scenario.dutyCycle,
       agents: scenario.agents,
     },
-    modificadores: {
+    [labels.modifiers]: {
       batchEnabled: input.batchEnabled,
       batchFraction: input.batchEnabled ? input.batchFraction : 0,
       regional: input.regional,
@@ -42,7 +62,7 @@ export function buildExportData(input: ExportInput) {
       effectiveHours: input.effectiveHours,
       priceOverrides: input.priceOverrides,
     },
-    resultados: {
+    [labels.results]: {
       blendedRateUSD: results.blendedRate,
       ceilingMonthlyUSD: results.ceilingMonthlyUSD,
       weightedMonthlyUSD: results.weightedMonthlyUSD,
@@ -71,14 +91,15 @@ function csvEscape(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
 
-export function toCSV(input: ExportInput): string {
-  const rows = flatten(buildExportData(input))
-  const lines = ['clave,valor', ...rows.map(([k, v]) => `${csvEscape(k)},${csvEscape(v)}`)]
+export function toCSV(input: ExportInput, labels: ExportLabels = DEFAULT_LABELS): string {
+  const rows = flatten(buildExportData(input, labels))
+  const header = `${csvEscape(labels.csvColKey)},${csvEscape(labels.csvColValue)}`
+  const lines = [header, ...rows.map(([k, v]) => `${csvEscape(k)},${csvEscape(v)}`)]
   return lines.join('\n')
 }
 
-export function toJSON(input: ExportInput): string {
-  return JSON.stringify(buildExportData(input), null, 2)
+export function toJSON(input: ExportInput, labels: ExportLabels = DEFAULT_LABELS): string {
+  return JSON.stringify(buildExportData(input, labels), null, 2)
 }
 
 function download(filename: string, mime: string, content: string): void {
@@ -104,12 +125,12 @@ function downloadDataUrl(filename: string, dataUrl: string): void {
   a.remove()
 }
 
-export function exportJSON(input: ExportInput, fileBase: string): void {
-  download(`${fileBase}.json`, 'application/json', toJSON(input))
+export function exportJSON(input: ExportInput, fileBase: string, labels?: ExportLabels): void {
+  download(`${fileBase}.json`, 'application/json', toJSON(input, labels))
 }
 
-export function exportCSV(input: ExportInput, fileBase: string): void {
-  download(`${fileBase}.csv`, 'text/csv;charset=utf-8', toCSV(input))
+export function exportCSV(input: ExportInput, fileBase: string, labels?: ExportLabels): void {
+  download(`${fileBase}.csv`, 'text/csv;charset=utf-8', toCSV(input, labels))
 }
 
 /** Dibuja un canvas sobre fondo del tema activo y devuelve el dataURL PNG */

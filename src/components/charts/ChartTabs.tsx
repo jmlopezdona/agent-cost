@@ -1,7 +1,7 @@
 import { useRef, useState, type ComponentType } from 'react'
 import { CategoryDonut, CategoryDonutAlt } from './CategoryDonut'
 import { CeilingVsWeightedChart, CeilingVsWeightedAlt } from './CeilingVsWeightedChart'
-import { strings } from '../../i18n/es'
+import { useStrings } from '../../i18n/hooks'
 
 type TabId = 'donut' | 'ceiling'
 
@@ -11,14 +11,15 @@ type TabId = 'donut' | 'ceiling'
  * a tamaño 0); las alternativas textuales de ambos gráficos se renderizan siempre,
  * fuera de los paneles, para no perder accesibilidad del gráfico no visible.
  */
-const TABS: Array<{ id: TabId; label: string; Chart: ComponentType }> = [
-  { id: 'donut', label: strings.charts.tabBreakdown, Chart: CategoryDonut },
-  { id: 'ceiling', label: strings.charts.tabCeiling, Chart: CeilingVsWeightedChart },
-]
-
 export function ChartTabs() {
+  const t = useStrings()
   const [active, setActive] = useState<TabId>('donut')
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
+
+  const TABS: Array<{ id: TabId; label: string; Chart: ComponentType }> = [
+    { id: 'donut', label: t.charts.tabBreakdown, Chart: CategoryDonut },
+    { id: 'ceiling', label: t.charts.tabCeiling, Chart: CeilingVsWeightedChart },
+  ]
 
   // Navegación con flechas dentro del tablist (patrón WAI-ARIA)
   const onKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -31,7 +32,7 @@ export function ChartTabs() {
 
   return (
     <div>
-      <div role="tablist" aria-label={strings.charts.tabsLabel} className="flex gap-1">
+      <div role="tablist" aria-label={t.charts.tabsLabel} className="flex gap-1">
         {TABS.map(({ id, label }, index) => {
           const isActive = active === id
           return (

@@ -1,9 +1,8 @@
 export interface SalaryProfile {
   id: string
-  name: string
-  experience: string
   grossAnnualEUR: number
   rangeEUR: [number, number]
+  // El nombre de rol y la experiencia viven en i18n, resueltos por id (D4)
 }
 
 export interface SalaryConfig {

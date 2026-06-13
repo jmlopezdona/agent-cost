@@ -5,7 +5,6 @@ import presetsJson from './presets.json'
 import salariesJson from './salaries.json'
 
 export interface SalaryData extends SalaryConfig {
-  source: string
   last_reviewed: string
   profiles: SalaryProfile[]
 }
@@ -43,8 +42,8 @@ function isPreset(v: unknown): v is Preset {
   const p = v as Record<string, unknown>
   const tokens = p.tokens as Record<string, unknown> | undefined
   const mix = p.mix as Record<string, unknown> | undefined
-  if (!isNonEmptyString(p.id) || !isNonEmptyString(p.name) || !isNonEmptyString(p.description))
-    return false
+  // La prosa (name/description/learnings) vive en i18n por id (D4); el JSON es solo numérico
+  if (!isNonEmptyString(p.id)) return false
   if (
     tokens == null ||
     !isFiniteNumber(tokens.inputK) ||
@@ -56,8 +55,6 @@ function isPreset(v: unknown): v is Preset {
   if (mix == null || !MODEL_IDS.every((id) => isFiniteNumber(mix[id]))) return false
   const mixSum = MODEL_IDS.reduce((s, id) => s + (mix[id] as number), 0)
   if (Math.abs(mixSum - 1) > 1e-9) return false
-  // El campo `learnings` es obligatorio en todos los presets (Fase 2, D1)
-  if (!isNonEmptyString(p.learnings)) return false
   // El bloque `modifiers` es opcional; si existe, sus campos deben ser válidos
   if (p.modifiers !== undefined) {
     const m = p.modifiers as Record<string, unknown>
@@ -76,10 +73,9 @@ function isPreset(v: unknown): v is Preset {
 function isSalaryProfile(v: unknown): v is SalaryProfile {
   if (typeof v !== 'object' || v === null) return false
   const p = v as Record<string, unknown>
+  // El nombre de rol y la experiencia viven en i18n por id (D4); el JSON es solo numérico
   return (
     isNonEmptyString(p.id) &&
-    isNonEmptyString(p.name) &&
-    isNonEmptyString(p.experience) &&
     isFiniteNumber(p.grossAnnualEUR) &&
     Array.isArray(p.rangeEUR) &&
     p.rangeEUR.length === 2 &&
@@ -90,8 +86,8 @@ function isSalaryProfile(v: unknown): v is SalaryProfile {
 function isSalaryData(v: unknown): v is SalaryData {
   if (typeof v !== 'object' || v === null) return false
   const s = v as Record<string, unknown>
+  // La fuente salarial mostrada vive en i18n (D4); el JSON conserva fecha y datos numéricos
   return (
-    isNonEmptyString(s.source) &&
     isNonEmptyString(s.last_reviewed) &&
     isFiniteNumber(s.employerCostMultiplier) &&
     isFiniteNumber(s.effectiveHoursPerYear) &&

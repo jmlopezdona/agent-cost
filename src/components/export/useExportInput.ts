@@ -1,10 +1,13 @@
 import { presets } from '../../data'
+import { useStrings } from '../../i18n/hooks'
+import { presetProse } from '../../i18n'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import type { ExportInput } from '../../lib/export'
 
 /** Reúne el estado actual para la exportación (coherente con lo mostrado) */
 export function useExportInput(): ExportInput {
+  const t = useStrings()
   const presetId = useScenarioStore((s) => s.presetId)
   const scenario = useScenarioStore((s) => s.scenario)
   const fx = useScenarioStore((s) => s.fx)
@@ -17,7 +20,8 @@ export function useExportInput(): ExportInput {
   const priceOverrides = useScenarioStore((s) => s.priceOverrides)
   const results = useResults()
 
-  const presetName = presets.find((p) => p.id === presetId)?.name ?? presetId
+  const preset = presets.find((p) => p.id === presetId)
+  const presetName = preset ? presetProse(t, preset.id).name : presetId
 
   return {
     presetId,

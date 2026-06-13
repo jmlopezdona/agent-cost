@@ -87,7 +87,7 @@ test('copiar enlace genera una URL con los diffs y abrirla restaura el escenario
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
   const weighted = await page.getByTestId('metric-weighted').textContent()
 
-  await page.getByRole('button', { name: 'Copiar enlace del escenario' }).click()
+  await page.getByRole('button', { name: 'Compartir' }).click()
   await expect(page.getByRole('button', { name: 'Enlace copiado' })).toBeVisible()
 
   // El portapapeles lleva los diffs aunque la barra de direcciones esté limpia
@@ -111,7 +111,7 @@ test('copiar enlace genera una URL con los diffs y abrirla restaura el escenario
 test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: USD }).click()
-  await page.getByRole('button', { name: /Sonnet-first con escalación/ }).click()
+  await page.getByRole('button', { name: /Evolutivos sobre código maduro/ }).click()
   // P4 con recargo +10%: blend 10,1591 × 1,10 = 11,2 $/h · ponderado ≈ 5695 $
   await expect(page.getByTestId('metric-blend')).toHaveText('11,2 $/h')
   await expect(page.getByTestId('metric-weighted')).toHaveText('5695 $')
@@ -148,11 +148,11 @@ test('present=1 arranca en modo presentación y el conmutador restaura los contr
   await expect(page.getByTestId('metric-weighted')).toBeVisible()
 
   // Salir restaura los controles
-  await page.getByRole('button', { name: 'Salir del modo presentación' }).click()
+  await page.getByRole('button', { name: 'Calculadora' }).click()
   await expect(page.getByText('Tasa de tokens E/S')).toBeVisible()
 
   // Y se puede volver a entrar
-  await page.getByRole('button', { name: 'Modo presentación' }).click()
+  await page.getByRole('button', { name: 'Presentación' }).click()
   await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
 })
 

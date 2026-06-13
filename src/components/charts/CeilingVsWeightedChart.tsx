@@ -5,8 +5,7 @@ import { chartTheme } from './chartSetup'
 import { barValueLabels } from './barValueLabels'
 import { registerChart } from '../../lib/chartRegistry'
 import { ChartExportButton } from '../export/ChartExportButton'
-import { strings } from '../../i18n/es'
-import { formatMoney } from '../../lib/format'
+import { useFormat, useStrings } from '../../i18n/hooks'
 import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
@@ -14,6 +13,8 @@ import { useTheme } from '../../lib/theme'
 
 /** Barras techo vs. ponderado mensual (RF-07.2) */
 export function CeilingVsWeightedChart() {
+  const t = useStrings()
+  const { formatMoney } = useFormat()
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -31,7 +32,7 @@ export function CeilingVsWeightedChart() {
     const theme = chartTheme()
     return {
       data: {
-        labels: [strings.charts.ceilingBar, strings.charts.weightedBar],
+        labels: [t.charts.ceilingBar, t.charts.weightedBar],
         datasets: [
           {
             data: [ceiling, weighted],
@@ -67,7 +68,7 @@ export function CeilingVsWeightedChart() {
       },
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ceiling, weighted, currency, dark])
+  }, [ceiling, weighted, currency, dark, t])
 
   return (
     <div
@@ -76,8 +77,8 @@ export function CeilingVsWeightedChart() {
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-sm font-semibold">{strings.charts.ceilingVsWeightedTitle}</h2>
-        <ChartExportButton id="ceiling" title={strings.charts.ceilingVsWeightedTitle} />
+        <h2 className="text-sm font-semibold">{t.charts.ceilingVsWeightedTitle}</h2>
+        <ChartExportButton id="ceiling" title={t.charts.ceilingVsWeightedTitle} />
       </div>
       <div
         className={`mt-3 h-56 ${presentation ? 'lg:h-auto lg:min-h-0 lg:flex-1' : ''}`}
@@ -99,6 +100,8 @@ export function CeilingVsWeightedChart() {
  * Se renderiza siempre, fuera del canvas condicionado por la pestaña.
  */
 export function CeilingVsWeightedAlt() {
+  const t = useStrings()
+  const { formatMoney } = useFormat()
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -107,14 +110,14 @@ export function CeilingVsWeightedAlt() {
 
   return (
     <table className="sr-only">
-      <caption>{strings.charts.ceilingVsWeightedTitle}</caption>
+      <caption>{t.charts.ceilingVsWeightedTitle}</caption>
       <tbody>
         <tr>
-          <th scope="row">{strings.charts.ceilingBar}</th>
+          <th scope="row">{t.charts.ceilingBar}</th>
           <td>{formatMoney(toDisplay(results.ceilingMonthlyUSD), currency)}</td>
         </tr>
         <tr>
-          <th scope="row">{strings.charts.weightedBar}</th>
+          <th scope="row">{t.charts.weightedBar}</th>
           <td>{formatMoney(toDisplay(results.weightedMonthlyUSD), currency)}</td>
         </tr>
       </tbody>

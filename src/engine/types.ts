@@ -57,12 +57,9 @@ export interface PresetModifiers {
 
 export interface Preset extends Scenario {
   id: string
-  name: string
-  description: string
-  /** 1-2 frases de "qué observar" en el escenario (PRD §8) */
-  learnings: string
   /** Defaults de modificadores del preset (p. ej. P5 → Batch 80%) */
   modifiers?: PresetModifiers
+  // La prosa (name/description/learnings) vive en i18n, resuelta por id (D4)
 }
 
 export const TOKEN_CATEGORIES = ['cacheRead', 'output', 'cacheWrite', 'input'] as const

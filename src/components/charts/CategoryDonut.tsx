@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Doughnut } from 'react-chartjs-2'
 import type { Chart as ChartJS } from 'chart.js'
-import { CATEGORY_BORDER_DASH, CATEGORY_LABELS, chartTheme } from './chartSetup'
+import { CATEGORY_BORDER_DASH, categoryLabels, chartTheme } from './chartSetup'
 import { registerChart } from '../../lib/chartRegistry'
 import { ChartExportButton } from '../export/ChartExportButton'
-import { strings } from '../../i18n/es'
-import { CURRENCY_SYMBOL, formatMoneyPerHour, formatPercent } from '../../lib/format'
+import { useFormat, useStrings } from '../../i18n/hooks'
+import { CURRENCY_SYMBOL } from '../../lib/format'
 import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
@@ -13,6 +13,9 @@ import { useTheme } from '../../lib/theme'
 
 /** Desglose del coste por categoría de token (RF-07.1) */
 export function CategoryDonut() {
+  const t = useStrings()
+  const { formatMoneyPerHour, formatPercent } = useFormat()
+  const labels = categoryLabels(t)
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -29,7 +32,7 @@ export function CategoryDonut() {
     const theme = chartTheme()
     return {
       data: {
-        labels: results.byCategory.map((c) => CATEGORY_LABELS[c.category]),
+        labels: results.byCategory.map((c) => labels[c.category]),
         datasets: [
           {
             data: results.byCategory.map((c) => c.usdPerHour),
@@ -52,7 +55,7 @@ export function CategoryDonut() {
               // Leyenda con valor + % (CA del spec results-display)
               generateLabels: () =>
                 results.byCategory.map((c, i) => ({
-                  text: `${CATEGORY_LABELS[c.category]}: ${rate(c.usdPerHour)} (${formatPercent(c.share)})`,
+                  text: `${labels[c.category]}: ${rate(c.usdPerHour)} (${formatPercent(c.share)})`,
                   fillStyle: chartTheme().categoryColors[c.category],
                   strokeStyle: chartTheme().categoryColors[c.category],
                   fontColor: chartTheme().ink,
@@ -73,7 +76,7 @@ export function CategoryDonut() {
     }
     // `dark` fuerza releer las CSS variables del tema (CA-07.1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results, currency, fx, dark])
+  }, [results, currency, fx, dark, t])
 
   return (
     <div
@@ -83,10 +86,10 @@ export function CategoryDonut() {
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold">{strings.charts.breakdownTitle}</h2>
-          <p className="text-xs text-muted">{strings.charts.breakdownHint}</p>
+          <h2 className="text-sm font-semibold">{t.charts.breakdownTitle}</h2>
+          <p className="text-xs text-muted">{t.charts.breakdownHint}</p>
         </div>
-        <ChartExportButton id="breakdown" title={strings.charts.breakdownTitle} />
+        <ChartExportButton id="breakdown" title={t.charts.breakdownTitle} />
       </div>
       <div
         className={`mt-3 h-64 ${presentation ? 'lg:h-auto lg:min-h-0 lg:flex-1' : ''}`}
@@ -104,6 +107,9 @@ export function CategoryDonut() {
  * sigan disponibles aunque su canvas no esté montado.
  */
 export function CategoryDonutAlt() {
+  const t = useStrings()
+  const { formatMoneyPerHour, formatPercent } = useFormat()
+  const labels = categoryLabels(t)
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -113,18 +119,18 @@ export function CategoryDonutAlt() {
 
   return (
     <table className="sr-only">
-      <caption>{strings.charts.breakdownTitle}</caption>
+      <caption>{t.charts.breakdownTitle}</caption>
       <thead>
         <tr>
-          <th scope="col">{strings.charts.colCategory}</th>
-          <th scope="col">{strings.charts.colCost(CURRENCY_SYMBOL[currency])}</th>
-          <th scope="col">{strings.charts.colShare}</th>
+          <th scope="col">{t.charts.colCategory}</th>
+          <th scope="col">{t.charts.colCost(CURRENCY_SYMBOL[currency])}</th>
+          <th scope="col">{t.charts.colShare}</th>
         </tr>
       </thead>
       <tbody>
         {results.byCategory.map((c) => (
           <tr key={c.category}>
-            <th scope="row">{CATEGORY_LABELS[c.category]}</th>
+            <th scope="row">{labels[c.category]}</th>
             <td>{rate(c.usdPerHour)}</td>
             <td>{formatPercent(c.share)}</td>
           </tr>

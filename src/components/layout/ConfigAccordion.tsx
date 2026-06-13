@@ -1,5 +1,5 @@
 import { useState, type ComponentType } from 'react'
-import { strings } from '../../i18n/es'
+import { useStrings } from '../../i18n/hooks'
 import { ScheduleSection } from '../controls/ScheduleSection'
 import { ModelMixSection } from '../controls/ModelMixSection'
 import { TokenRatesSection } from '../controls/TokenRatesSection'
@@ -13,39 +13,30 @@ type SectionId = 'schedule' | 'mix' | 'tokens' | 'advanced'
  * exactamente una abierta (click en la abierta no la cierra). El orden es
  * Régimen → Mezcla → Tokens → Avanzada.
  */
-const ITEMS: Array<{
-  id: SectionId
-  title: string
-  hint?: string
-  Body: ComponentType
-}> = [
-  { id: 'schedule', title: strings.schedule.sectionTitle, Body: ScheduleSection },
-  {
-    id: 'mix',
-    title: strings.mix.sectionTitle,
-    hint: strings.mix.sectionHint,
-    Body: ModelMixSection,
-  },
-  {
-    id: 'tokens',
-    title: strings.tokens.sectionTitle,
-    hint: strings.tokens.sectionHint,
-    Body: TokenRatesSection,
-  },
-  {
-    id: 'advanced',
-    title: strings.advanced.sectionTitle,
-    hint: strings.advanced.sectionHint,
-    Body: AdvancedConfigSection,
-  },
-]
-
 export function ConfigAccordion() {
+  const t = useStrings()
   const [open, setOpen] = useState<SectionId>('schedule')
+
+  const items: Array<{ id: SectionId; title: string; hint?: string; Body: ComponentType }> = [
+    { id: 'schedule', title: t.schedule.sectionTitle, Body: ScheduleSection },
+    { id: 'mix', title: t.mix.sectionTitle, hint: t.mix.sectionHint, Body: ModelMixSection },
+    {
+      id: 'tokens',
+      title: t.tokens.sectionTitle,
+      hint: t.tokens.sectionHint,
+      Body: TokenRatesSection,
+    },
+    {
+      id: 'advanced',
+      title: t.advanced.sectionTitle,
+      hint: t.advanced.sectionHint,
+      Body: AdvancedConfigSection,
+    },
+  ]
 
   return (
     <div className="flex flex-col gap-3">
-      {ITEMS.map(({ id, title, hint, Body }) => {
+      {items.map(({ id, title, hint, Body }) => {
         const isOpen = open === id
         const headerId = `config-acc-h-${id}`
         const panelId = `config-acc-p-${id}`

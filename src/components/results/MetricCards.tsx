@@ -1,10 +1,11 @@
-import { strings } from '../../i18n/es'
-import { formatMoney, formatMoneyPerHour } from '../../lib/format'
+import { useFormat, useStrings } from '../../i18n/hooks'
 import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
 
 export function MetricCards({ large = false }: { large?: boolean }) {
+  const t = useStrings()
+  const { formatMoney, formatMoneyPerHour } = useFormat()
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -15,26 +16,26 @@ export function MetricCards({ large = false }: { large?: boolean }) {
   const cards = [
     {
       id: 'blend',
-      label: strings.metrics.blend,
+      label: t.metrics.blend,
       value: formatMoneyPerHour(toDisplay(results.blendedRate), currency),
       hero: false,
     },
     {
       id: 'ceiling',
-      label: strings.metrics.ceiling,
+      label: t.metrics.ceiling,
       value: formatMoney(toDisplay(results.ceilingMonthlyUSD), currency),
       hero: false,
     },
     {
       id: 'weighted',
-      label: strings.metrics.weighted,
+      label: t.metrics.weighted,
       value: formatMoney(toDisplay(results.weightedMonthlyUSD), currency),
-      hint: strings.metrics.weightedHint,
+      hint: t.metrics.weightedHint,
       hero: true,
     },
     {
       id: 'annual',
-      label: strings.metrics.annual,
+      label: t.metrics.annual,
       value: formatMoney(toDisplay(results.weightedAnnualUSD), currency),
       hero: false,
     },

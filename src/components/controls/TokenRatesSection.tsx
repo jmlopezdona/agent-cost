@@ -1,8 +1,7 @@
 import { SliderInput } from './SliderInput'
 import { HelpTip } from './HelpTip'
-import { strings } from '../../i18n/es'
+import { useFormat, useStrings } from '../../i18n/hooks'
 import { RANGES } from '../../lib/ranges'
-import { formatMoneyPerHour, formatPercent } from '../../lib/format'
 import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
@@ -11,35 +10,31 @@ import type { TokenCategory, TokenRates } from '../../engine/types'
 const CONTROLS: Array<{
   field: keyof TokenRates
   category: TokenCategory
-  copy: { label: string; unit: string; help: string }
+  copyKey: 'input' | 'output' | 'cacheRead' | 'cacheWrite'
   range: { min: number; max: number }
   step: number
 }> = [
-  { field: 'inputK', category: 'input', copy: strings.tokens.input, range: RANGES.inputK, step: 1 },
-  {
-    field: 'outputK',
-    category: 'output',
-    copy: strings.tokens.output,
-    range: RANGES.outputK,
-    step: 5,
-  },
+  { field: 'inputK', category: 'input', copyKey: 'input', range: RANGES.inputK, step: 1 },
+  { field: 'outputK', category: 'output', copyKey: 'output', range: RANGES.outputK, step: 5 },
   {
     field: 'cacheReadM',
     category: 'cacheRead',
-    copy: strings.tokens.cacheRead,
+    copyKey: 'cacheRead',
     range: RANGES.cacheReadM,
     step: 1,
   },
   {
     field: 'cacheWriteK',
     category: 'cacheWrite',
-    copy: strings.tokens.cacheWrite,
+    copyKey: 'cacheWrite',
     range: RANGES.cacheWriteK,
     step: 10,
   },
 ]
 
 export function TokenRatesSection() {
+  const t = useStrings()
+  const { formatMoneyPerHour, formatPercent } = useFormat()
   const tokens = useScenarioStore((s) => s.scenario.tokens)
   const setToken = useScenarioStore((s) => s.setToken)
   const currency = useScenarioStore((s) => s.currency)
@@ -52,7 +47,8 @@ export function TokenRatesSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      {CONTROLS.map(({ field, category, copy, range, step }) => {
+      {CONTROLS.map(({ field, category, copyKey, range, step }) => {
+        const copy = t.tokens[copyKey]
         const cost = results.byCategory.find((c) => c.category === category)!
         return (
           <SliderInput
@@ -64,11 +60,8 @@ export function TokenRatesSection() {
             max={range.max}
             step={step}
             onChange={(v) => setToken(field, v)}
-            labelExtra={<HelpTip label={strings.tokens.helpButton(copy.label)} text={copy.help} />}
-            detail={strings.tokens.categoryDetail(
-              rate(cost.usdPerHour),
-              formatPercent(cost.share),
-            )}
+            labelExtra={<HelpTip label={t.tokens.helpButton(copy.label)} text={copy.help} />}
+            detail={t.tokens.categoryDetail(rate(cost.usdPerHour), formatPercent(cost.share))}
           />
         )
       })}

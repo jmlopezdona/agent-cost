@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { strings } from '../../i18n/es'
+import { useStrings } from '../../i18n/hooks'
 import { exportAllChartsPNG, exportCSV, exportJSON } from '../../lib/export'
 import { useExportInput } from './useExportInput'
 
 /** Botón "Exportar" con desplegable de formatos en la cabecera (RF-09) */
 export function ExportMenu() {
   const input = useExportInput()
-  const t = strings.exporting
+  const t = useStrings().exporting
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -26,9 +26,19 @@ export function ExportMenu() {
     }
   }, [open])
 
+  // Etiquetas del export en el idioma activo (D9); las cifras no dependen del idioma
+  const labels = {
+    preset: t.fields.preset,
+    parameters: t.fields.parameters,
+    modifiers: t.fields.modifiers,
+    results: t.fields.results,
+    csvColKey: t.csvColKey,
+    csvColValue: t.csvColValue,
+  }
+
   const items = [
-    { label: t.json, action: () => exportJSON(input, t.fileBase) },
-    { label: t.csv, action: () => exportCSV(input, t.fileBase) },
+    { label: t.json, action: () => exportJSON(input, t.fileBase, labels) },
+    { label: t.csv, action: () => exportCSV(input, t.fileBase, labels) },
     { label: t.pngAll, action: () => exportAllChartsPNG(t.fileBase) },
   ]
 

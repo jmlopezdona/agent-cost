@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from 'chart.js'
 import { cssVar } from '../../lib/theme'
-import { strings } from '../../i18n/es'
+import type { Strings } from '../../i18n'
 import type { TokenCategory } from '../../engine/types'
 
 // Registro selectivo: solo lo que usan donut y barras (D3, presupuesto de bundle)
@@ -25,7 +25,10 @@ Chart.register(
   Tooltip,
 )
 
-export const CATEGORY_LABELS: Record<TokenCategory, string> = strings.charts.categories
+/** Etiquetas de categoría del locale activo; el componente con el hook pasa su tabla (D3) */
+export function categoryLabels(t: Strings): Record<TokenCategory, string> {
+  return t.charts.categories
+}
 
 export const CATEGORY_CSS_VARS: Record<TokenCategory, string> = {
   cacheRead: '--chart-cache-read',

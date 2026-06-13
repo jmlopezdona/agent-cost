@@ -2,9 +2,6 @@
   "presets": [
     {
       "id": "P1",
-      "name": "Pair programming supervisado",
-      "description": "Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens representativo de una sesión interactiva de desarrollo.",
-      "learnings": "El duty bajo (el agente espera al humano) hace que el coste real sea una fracción del techo: la palanca aquí es cuánto del tiempo programado factura de verdad, no la tarifa por hora.",
       "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
       "mix": { "fable": 0, "opus": 0, "sonnet": 0.8, "haiku": 0.2 },
       "hoursPerDay": 8,
@@ -14,9 +11,6 @@
     },
     {
       "id": "P2",
-      "name": "Agente de delivery balanceado",
-      "description": "Agente integrado en el flujo de un equipo: Opus planifica la feature y revisa el PR final, Sonnet implementa, Haiku ejecuta el ciclo de tests/lint. Corre de forma continua atendiendo una cola de tareas con esperas de build y CI.",
-      "learnings": "El cache read concentra la mayor parte del coste por hora; la palanca de ahorro es la ingeniería de contexto, no cambiar de modelo.",
       "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
       "mix": { "fable": 0, "opus": 0.15, "sonnet": 0.65, "haiku": 0.2 },
       "hoursPerDay": 24,
@@ -26,9 +20,6 @@
     },
     {
       "id": "P3",
-      "name": "Diseño intensivo / greenfield",
-      "description": "Arranque de producto o arquitectura compleja: el modelo frontera (Fable) y Opus llevan el peso del diseño, los ADRs y la revisión profunda; Sonnet prototipa. Output alto por documentos y razonamiento extenso. Jornada laboral con supervisión frecuente.",
-      "learnings": "Único escenario con el modelo frontera: esa franja, sumada al peso de Opus, dispara la tarifa por hora frente a los escenarios Sonnet-first con tokens parecidos. La palanca es cuánto del razonamiento puede bajar a Sonnet sin perder calidad de diseño.",
       "tokens": { "inputK": 50, "outputK": 280, "cacheReadM": 25, "cacheWriteK": 600 },
       "mix": { "fable": 0.2, "opus": 0.4, "sonnet": 0.35, "haiku": 0.05 },
       "hoursPerDay": 8,
@@ -38,9 +29,6 @@
     },
     {
       "id": "P4",
-      "name": "Evolutivos sobre código maduro",
-      "description": "Mantenimiento y evolutivos sobre código maduro: Sonnet resuelve la mayoría de tareas y Opus solo entra como escalación cuando el agente se atasca. Haiku absorbe el trabajo trivial. Alta autonomía.",
-      "learnings": "Con Sonnet-first y Haiku absorbiendo lo trivial, la tarifa por hora baja; el coste mensual lo marcan el duty alto y el régimen 24×7, no el precio del modelo.",
       "tokens": { "inputK": 42, "outputK": 190, "cacheReadM": 28, "cacheWriteK": 500 },
       "mix": { "fable": 0, "opus": 0.05, "sonnet": 0.55, "haiku": 0.4 },
       "hoursPerDay": 24,
@@ -50,9 +38,6 @@
     },
     {
       "id": "P5",
-      "name": "Enjambre QA nocturno",
-      "description": "Flota de agentes de testing (personas sintéticas, regresión E2E, evals y análisis de vulnerabilidades) que corre fuera de horario. Mayoría Haiku-heavy en contextos cortos, con una franja del modelo frontera (Fable) para el análisis de seguridad profundo. Candidato ideal a Batch API (−50%) por no requerir latencia.",
-      "learnings": "La Batch API (−50%) sobre el 80% elegible es la mayor palanca de ahorro y el coste escala linealmente con el número de agentes; aun así, basta una franja del 5% de Fable para el análisis de seguridad para concentrar ~¼ del coste por hora: vigila cuánto trabajo enrutas al modelo frontera.",
       "tokens": { "inputK": 25, "outputK": 120, "cacheReadM": 12, "cacheWriteK": 300 },
       "mix": { "fable": 0.05, "opus": 0, "sonnet": 0.25, "haiku": 0.7 },
       "hoursPerDay": 12,
@@ -63,9 +48,6 @@
     },
     {
       "id": "P6",
-      "name": "Agente autónomo de mantenimiento",
-      "description": "Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7. Duty alto al no esperar aprobaciones; contexto grande por repos extensos — el cache read domina el coste.",
-      "learnings": "El cache read concentra >70% del coste — la palanca es la ingeniería de contexto, no el modelo. El duty alto al no esperar aprobaciones acerca el coste mensual al techo.",
       "tokens": { "inputK": 45, "outputK": 220, "cacheReadM": 50, "cacheWriteK": 600 },
       "mix": { "fable": 0, "opus": 0.1, "sonnet": 0.7, "haiku": 0.2 },
       "hoursPerDay": 24,

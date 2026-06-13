@@ -1,10 +1,9 @@
 import { SliderInput } from './SliderInput'
 import { HelpTip } from './HelpTip'
-import { strings } from '../../i18n/es'
+import { useFormat, useStrings } from '../../i18n/hooks'
 import { pricingTable } from '../../data'
 import { MODEL_IDS, PRICE_FIELDS } from '../../engine/types'
 import { RANGES } from '../../lib/ranges'
-import { formatFx } from '../../lib/format'
 import { useScenarioStore } from '../../store/useScenarioStore'
 
 /** Casilla de activación accesible reutilizada por los toggles del panel */
@@ -94,8 +93,9 @@ export function AdvancedConfigSection() {
   const effectiveHours = useScenarioStore((s) => s.effectiveHours)
   const setEffectiveHours = useScenarioStore((s) => s.setEffectiveHours)
 
+  const { formatFx } = useFormat()
   const hasOverrides = MODEL_IDS.some((id) => priceOverrides[id] !== undefined)
-  const t = strings.advanced
+  const t = useStrings().advanced
 
   return (
     <div className="flex flex-col gap-5">

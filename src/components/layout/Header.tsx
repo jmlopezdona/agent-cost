@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { strings } from '../../i18n/es'
+import { useStrings } from '../../i18n/hooks'
+import { presetProse } from '../../i18n'
 import { presets } from '../../data'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import { useTheme } from '../../lib/theme'
+import { LanguageSelector } from './LanguageSelector'
 import { PresentationToggle } from './PresentationToggle'
 import { ExportMenu } from '../export/ExportMenu'
 
 export function Header() {
+  const t = useStrings()
   const presetId = useScenarioStore((s) => s.presetId)
   const isCustomized = useScenarioStore((s) => s.isCustomized)
   const loadPreset = useScenarioStore((s) => s.loadPreset)
@@ -19,8 +22,8 @@ export function Header() {
   const toggleTheme = useTheme((s) => s.toggle)
 
   const currencyOptions = [
-    { id: 'eur', label: strings.header.currencyEur, aria: strings.header.currencyEurAria },
-    { id: 'usd', label: strings.header.currencyUsd, aria: strings.header.currencyUsdAria },
+    { id: 'eur', label: t.header.currencyEur, aria: t.header.currencyEurAria },
+    { id: 'usd', label: t.header.currencyUsd, aria: t.header.currencyUsdAria },
   ] as const
 
   const [copied, setCopied] = useState(false)
@@ -49,6 +52,7 @@ export function Header() {
   }
 
   const activePreset = presets.find((p) => p.id === presetId)!
+  const activeProse = presetProse(t, activePreset.id)
 
   return (
     <header className="flex flex-col gap-4">
@@ -75,14 +79,15 @@ export function Header() {
                 <path d="M4 12H2M22 12h-2" />
               </svg>
             </span>
-            {strings.app.title}
+            {t.app.title}
           </h1>
-          <p className="text-sm text-muted">{strings.app.subtitle}</p>
+          <p className="text-sm text-muted">{t.app.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
+          <LanguageSelector />
           <div
             role="group"
-            aria-label={strings.header.currencyLabel}
+            aria-label={t.header.currencyLabel}
             className="flex overflow-hidden rounded-md border border-line bg-raised"
           >
             {currencyOptions.map((opt) => {
@@ -108,22 +113,22 @@ export function Header() {
             onClick={copyLink}
             className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
           >
-            {copied ? strings.header.copied : strings.header.copyLink}
+            {copied ? t.header.copied : t.header.copyLink}
           </button>
           <button
             type="button"
             onClick={reset}
-            aria-label={strings.header.resetAria}
+            aria-label={t.header.resetAria}
             className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
           >
-            {strings.header.reset}
+            {t.header.reset}
           </button>
           <ExportMenu />
           <PresentationToggle />
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label={strings.header.themeToggle}
+            aria-label={t.header.themeToggle}
             className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
           >
             {dark ? '☀️' : '🌙'}
@@ -135,11 +140,12 @@ export function Header() {
         <>
           <div
             role="group"
-            aria-label={strings.header.presetsLabel}
+            aria-label={t.header.presetsLabel}
             className="grid gap-2 sm:grid-cols-3"
           >
             {presets.map((preset) => {
           const active = preset.id === presetId
+          const prose = presetProse(t, preset.id)
           return (
             <button
               key={preset.id}
@@ -152,8 +158,8 @@ export function Header() {
                   : 'border-line bg-raised hover:border-accent'
               }`}
             >
-              <span className="block text-sm font-semibold">{preset.name}</span>
-              <span className="mt-0.5 block truncate text-xs text-muted">{preset.description}</span>
+              <span className="block text-sm font-semibold">{prose.name}</span>
+              <span className="mt-0.5 block truncate text-xs text-muted">{prose.description}</span>
             </button>
           )
             })}
@@ -162,12 +168,12 @@ export function Header() {
           <p className="text-sm">
             {isCustomized ? (
               <span className="font-medium text-accent">
-                {strings.header.customized(activePreset.name)}
+                {t.header.customized(activeProse.name)}
               </span>
             ) : (
-              <span className="font-medium">{activePreset.name}</span>
+              <span className="font-medium">{activeProse.name}</span>
             )}
-            <span className="text-muted"> — {activePreset.description}</span>
+            <span className="text-muted"> — {activeProse.description}</span>
           </p>
         </>
       )}

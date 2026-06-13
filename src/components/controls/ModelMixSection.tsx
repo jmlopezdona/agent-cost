@@ -1,7 +1,6 @@
 import { SliderInput } from './SliderInput'
-import { strings } from '../../i18n/es'
+import { useFormat, useStrings } from '../../i18n/hooks'
 import { pricingTable } from '../../data'
-import { formatMoneyPerHour, formatPercent } from '../../lib/format'
 import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
@@ -9,6 +8,8 @@ import { useScenarioStore } from '../../store/useScenarioStore'
 const SLIDER_MODELS = ['fable', 'opus', 'sonnet'] as const
 
 export function ModelMixSection() {
+  const t = useStrings()
+  const { formatMoneyPerHour, formatPercent } = useFormat()
   const mix = useScenarioStore((s) => s.scenario.mix)
   const setMix = useScenarioStore((s) => s.setMix)
   const currency = useScenarioStore((s) => s.currency)
@@ -31,23 +32,23 @@ export function ModelMixSection() {
           max={100}
           step={1}
           onChange={(v) => setMix(id, v / 100)}
-          detail={strings.mix.rateLabel(rate(results.perModelRate[id]))}
+          detail={t.mix.rateLabel(rate(results.perModelRate[id]))}
         />
       ))}
       <div className="flex items-center justify-between rounded-md bg-surface px-3 py-2 text-sm">
         <span>
           {pricingTable.models.haiku.name}{' '}
-          <span className="text-xs text-muted">({strings.mix.haikuRest})</span>
+          <span className="text-xs text-muted">({t.mix.haikuRest})</span>
         </span>
         <span className="tabular-nums">
           {formatPercent(mix.haiku)}{' '}
           <span className="text-xs text-muted">
-            · {strings.mix.rateLabel(rate(results.perModelRate.haiku))}
+            · {t.mix.rateLabel(rate(results.perModelRate.haiku))}
           </span>
         </span>
       </div>
       <div className="flex items-center justify-between border-t border-line pt-3 text-sm font-semibold">
-        <span>{strings.mix.blendLabel}</span>
+        <span>{t.mix.blendLabel}</span>
         <span className="tabular-nums">{rate(results.blendedRate)}</span>
       </div>
     </div>
