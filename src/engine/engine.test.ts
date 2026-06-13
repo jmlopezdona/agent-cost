@@ -122,7 +122,7 @@ describe('casos dorados P1 y P4', () => {
     const results = computeResults(P4, pricingTable)
     // 0,05 × 22,085 + 0,55 × 13,251 + 0,4 × 4,417 = 10,1591 $/h
     expect(results.blendedRate).toBeCloseTo(10.1591, 4)
-    expect(results.weightedMonthlyUSD).toBeCloseTo(10.1591 * 728 * 0.7, 2)
+    expect(results.weightedMonthlyUSD).toBeCloseTo(10.1591 * 260 * 0.7, 2)
   })
 })
 

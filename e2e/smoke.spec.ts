@@ -112,9 +112,9 @@ test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: USD }).click()
   await page.getByRole('button', { name: /Evolutivos sobre código maduro/ }).click()
-  // P4 sin recargo: blend ≈ 10,2 $/h · ponderado ≈ 5.177 $
+  // P4 sin recargo (12×5): blend ≈ 10,2 $/h · ponderado ≈ 1.849 $
   await expect(page.getByTestId('metric-blend')).toHaveText('10,2 $/h')
-  await expect(page.getByTestId('metric-weighted')).toHaveText('5.177 $')
+  await expect(page.getByTestId('metric-weighted')).toHaveText('1.849 $')
 })
 
 test('cambiar de familia carga su preset, filtra modelos y comparte con pr', async ({

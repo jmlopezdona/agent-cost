@@ -75,8 +75,8 @@
         "sonnet": 0.55,
         "haiku": 0.4
       },
-      "hoursPerDay": 24,
-      "daysPerWeek": 7,
+      "hoursPerDay": 12,
+      "daysPerWeek": 5,
       "dutyCycle": 0.7,
       "agents": 1
     },
@@ -195,8 +195,8 @@
         "gpt-5.4-mini": 0.4,
         "gpt-5.4-nano": 0
       },
-      "hoursPerDay": 24,
-      "daysPerWeek": 7,
+      "hoursPerDay": 12,
+      "daysPerWeek": 5,
       "dutyCycle": 0.7,
       "agents": 1
     },
@@ -313,8 +313,8 @@
         "gemini-3.5-flash": 0.55,
         "gemini-3.1-flash-lite": 0.4
       },
-      "hoursPerDay": 24,
-      "daysPerWeek": 7,
+      "hoursPerDay": 12,
+      "daysPerWeek": 5,
       "dutyCycle": 0.7,
       "agents": 1
     },
