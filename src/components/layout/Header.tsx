@@ -87,6 +87,23 @@ export function Header() {
           <p className="text-sm text-muted">{t.app.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={copyLink}
+            className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
+          >
+            {copied ? t.header.copied : t.header.copyLink}
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            aria-label={t.header.resetAria}
+            className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
+          >
+            {t.header.reset}
+          </button>
+          <ExportMenu />
+          <PresentationToggle />
           <LanguageSelector />
           <div
             role="group"
@@ -111,23 +128,6 @@ export function Header() {
               )
             })}
           </div>
-          <button
-            type="button"
-            onClick={copyLink}
-            className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
-          >
-            {copied ? t.header.copied : t.header.copyLink}
-          </button>
-          <button
-            type="button"
-            onClick={reset}
-            aria-label={t.header.resetAria}
-            className="rounded-md border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent"
-          >
-            {t.header.reset}
-          </button>
-          <ExportMenu />
-          <PresentationToggle />
           <button
             type="button"
             onClick={toggleTheme}
