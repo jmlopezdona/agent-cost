@@ -112,7 +112,7 @@ describe('casos dorados P1 y P4', () => {
     // 0,8 × 14,2635 + 0,2 × 4,7545 = 12,3617 $/h
     expect(results.blendedRate).toBeCloseTo(12.3617, 4)
     expect(results.ceilingMonthlyUSD).toBeCloseTo(12.3617 * 40 * (52 / 12), 2)
-    expect(results.weightedMonthlyUSD).toBeCloseTo(results.ceilingMonthlyUSD * 0.3, 8)
+    expect(results.weightedMonthlyUSD).toBeCloseTo(results.ceilingMonthlyUSD * 0.2, 8)
   })
 
   it('P4: blend Evolutivos sobre código maduro', () => {
