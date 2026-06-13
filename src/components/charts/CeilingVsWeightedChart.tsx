@@ -69,8 +69,6 @@ export function CeilingVsWeightedChart() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ceiling, weighted, currency, dark])
 
-  const ariaLabel = `${strings.charts.ceilingVsWeightedTitle}: ${strings.charts.ceilingBar} ${formatMoney(ceiling, currency)}, ${strings.charts.weightedBar} ${formatMoney(weighted, currency)}`
-
   return (
     <div
       className={`rounded-lg border border-line bg-raised p-4 ${
@@ -83,8 +81,7 @@ export function CeilingVsWeightedChart() {
       </div>
       <div
         className={`mt-3 h-56 ${presentation ? 'lg:h-auto lg:min-h-0 lg:flex-1' : ''}`}
-        role="img"
-        aria-label={ariaLabel}
+        aria-hidden="true"
       >
         <Bar
           ref={chartRef}
@@ -94,5 +91,33 @@ export function CeilingVsWeightedChart() {
         />
       </div>
     </div>
+  )
+}
+
+/**
+ * Alternativa textual accesible al gráfico de techo vs. ponderado (regla 9, D4).
+ * Se renderiza siempre, fuera del canvas condicionado por la pestaña.
+ */
+export function CeilingVsWeightedAlt() {
+  const results = useResults()
+  const currency = useScenarioStore((s) => s.currency)
+  const fx = useScenarioStore((s) => s.fx)
+
+  const toDisplay = (usd: number) => (currency === 'eur' ? usdToEur(usd, fx) : usd)
+
+  return (
+    <table className="sr-only">
+      <caption>{strings.charts.ceilingVsWeightedTitle}</caption>
+      <tbody>
+        <tr>
+          <th scope="row">{strings.charts.ceilingBar}</th>
+          <td>{formatMoney(toDisplay(results.ceilingMonthlyUSD), currency)}</td>
+        </tr>
+        <tr>
+          <th scope="row">{strings.charts.weightedBar}</th>
+          <td>{formatMoney(toDisplay(results.weightedMonthlyUSD), currency)}</td>
+        </tr>
+      </tbody>
+    </table>
   )
 }

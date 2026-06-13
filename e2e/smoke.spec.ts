@@ -1,9 +1,14 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 // Caso de referencia P2 (PRD §8) con el recargo Bedrock (+10%) activo por defecto:
 // ponderado ≈ 6.040 $ × 1,10 = 6625 $; blend 13,8 × 1,10 = 15,2 $/h
 const P2_WEIGHTED = '6625 $'
 const USD = 'Mostrar cifras en dólares'
+
+// La configuración vive en un acordeón exclusivo (Régimen abierto por defecto);
+// abrir la sección de Tokens es necesario para acceder al slider Cache read.
+const openTokens = (page: Page) =>
+  page.getByRole('button', { name: 'Tasa de tokens E/S' }).click()
 
 test('carga P2 por defecto en EUR y el selector propaga el símbolo a las métricas', async ({
   page,
@@ -26,6 +31,7 @@ test('mover un control recalcula las métricas al instante', async ({ page }) =>
   await expect(weighted).toHaveText(P2_WEIGHTED)
 
   // Cache read 30 → 60 M/h recalcula al instante (con recargo +10% por defecto)
+  await openTokens(page)
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
 
   await expect(weighted).not.toHaveText(P2_WEIGHTED)
@@ -38,19 +44,23 @@ test('mover un control recalcula las métricas al instante', async ({ page }) =>
 
 test('editar un valor no ensucia la URL y el estado sobrevive al refresco', async ({ page }) => {
   await page.goto('./')
+  await openTokens(page)
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
 
   // La barra de direcciones permanece limpia (persistencia en sessionStorage, no en la URL)
   expect(new URL(page.url()).search).toBe('')
 
-  // Refrescar conserva el escenario editado desde sessionStorage
+  // Refrescar conserva el escenario editado desde sessionStorage; el estado de UI
+  // (sección abierta) no se persiste, así que hay que reabrir Tokens
   await page.reload()
+  await openTokens(page)
   await expect(page.getByRole('spinbutton', { name: 'Cache read' })).toHaveValue('60')
   expect(new URL(page.url()).search).toBe('')
 })
 
 test('Reset devuelve al preset por defecto', async ({ page }) => {
   await page.goto('./')
+  await openTokens(page)
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
   await expect(
     page.getByText('Personalizado (basado en Agente de delivery balanceado)'),
@@ -70,8 +80,11 @@ test('copiar enlace genera una URL con los diffs y abrirla restaura el escenario
   browser,
 }) => {
   await page.goto('./')
-  await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
+  // Duty cycle vive en "Régimen y utilización" (abierta por defecto); Cache read en
+  // "Tasa de tokens E/S" (abrirla cierra Régimen), de ahí el orden
   await page.getByRole('spinbutton', { name: 'Duty cycle' }).fill('80')
+  await openTokens(page)
+  await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
   const weighted = await page.getByTestId('metric-weighted').textContent()
 
   await page.getByRole('button', { name: 'Copiar enlace del escenario' }).click()

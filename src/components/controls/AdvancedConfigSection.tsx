@@ -76,7 +76,7 @@ function NumberField({
   )
 }
 
-/** Panel colapsable de configuración avanzada (RF-08, D3) */
+/** Cuerpo de configuración avanzada (RF-08); su cabecera la aporta el acordeón */
 export function AdvancedConfigSection() {
   const priceOverrides = useScenarioStore((s) => s.priceOverrides)
   const setPriceOverride = useScenarioStore((s) => s.setPriceOverride)
@@ -98,16 +98,7 @@ export function AdvancedConfigSection() {
   const t = strings.advanced
 
   return (
-    <details className="rounded-lg border border-line bg-raised p-4">
-      <summary
-        aria-label={t.toggleExpand}
-        className="cursor-pointer list-none text-sm font-semibold [&::-webkit-details-marker]:hidden"
-      >
-        {t.sectionTitle}
-        <span className="ml-2 text-xs font-normal text-muted">{t.sectionHint}</span>
-      </summary>
-
-      <div className="mt-4 flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
         {/* Tabla de precios editable */}
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -229,7 +220,6 @@ export function AdvancedConfigSection() {
             help={t.effectiveHoursHelp}
           />
         </div>
-      </div>
-    </details>
+    </div>
   )
 }

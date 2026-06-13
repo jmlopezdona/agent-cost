@@ -1,4 +1,3 @@
-import { Section } from '../layout/Section'
 import { SliderInput } from './SliderInput'
 import { strings } from '../../i18n/es'
 import { pricingTable } from '../../data'
@@ -21,7 +20,7 @@ export function ModelMixSection() {
     formatMoneyPerHour(currency === 'eur' ? usdToEur(usdPerHour, fx) : usdPerHour, currency)
 
   return (
-    <Section title={strings.mix.sectionTitle} hint={strings.mix.sectionHint}>
+    <div className="flex flex-col gap-4">
       {SLIDER_MODELS.map((id) => (
         <SliderInput
           key={id}
@@ -51,6 +50,6 @@ export function ModelMixSection() {
         <span>{strings.mix.blendLabel}</span>
         <span className="tabular-nums">{rate(results.blendedRate)}</span>
       </div>
-    </Section>
+    </div>
   )
 }

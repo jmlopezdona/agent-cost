@@ -61,12 +61,16 @@ Nuevo layout desktop:
 
 ```
 cols:  1   2  │  3   4   5
-row1  CFG-acc │  metrics
+row1  metrics (cols 1–5, full width: PresetLearnings, ModifierBadges, MetricCards)
 row2  CFG-acc │  ChartTabs (un gráfico)
 row3  SalaryComparison (cols 1–5, full width)
 ```
 
-`SalaryComparison` pasa a `lg:col-span-5 lg:col-start-1 lg:row-start-3`. La columna de configuración pasa de `row-span-3` a `row-span-2` (acompaña a metrics + charts). En móvil todo sigue apilado en una columna (orden: config, metrics, charts, salary) y el acordeón/pestañas son el patrón nativo idóneo a 360px.
+Las métricas (KPI strip) ocupan toda la anchura en la fila superior; debajo, la fila central enfrenta **solo** configuración (cols 1–2) y gráficos (cols 3–5), dos bloques de altura muy similar. `SalaryComparison` pasa a `lg:col-span-5 lg:col-start-1 lg:row-start-3`.
+
+- **Por qué metrics full-width arriba (revisado tras feedback)**: la versión inicial dejaba metrics en cols 3–5 con la configuración abarcando `row-span-2` a su izquierda. Como `metrics + charts` (derecha) es más alto que el acordeón (izquierda), la fila full-width de salary arrancaba por debajo de ambas columnas y quedaba un hueco muerto bajo la configuración. Subir las métricas a una franja superior a todo el ancho deja la fila central con dos bloques de altura pareja (acordeón con una sección abierta ≈ tarjeta de gráfico), eliminando el hueco. Los KPIs siguen visibles y actualizándose en vivo.
+
+En móvil todo sigue apilado en una columna (orden: metrics, config, charts, salary) y el acordeón/pestañas son el patrón nativo idóneo a 360px.
 
 ### D6 — Estado de UI no persistido
 
@@ -74,7 +78,7 @@ row3  SalaryComparison (cols 1–5, full width)
 
 ## Risks / Trade-offs
 
-- **[Hueco en desktop si la sección abierta es corta]** La columna izquierda colapsada puede quedar más baja que la derecha → la salary full-width abajo absorbe el desbalance (ya no cuelga de esa columna); el posible hueco residual es aceptable y la derecha es la zona de lectura principal.
+- **[Hueco en desktop si la sección abierta es corta]** Resuelto subiendo las métricas a una franja full-width superior (ver D5): la fila central enfrenta solo configuración y gráficos, de altura pareja, así que no queda hueco muerto bajo la columna izquierda. Un desbalance residual mínimo según qué sección esté abierta es absorbido por la salary full-width inferior.
 - **[Pérdida de comparación visual entre los dos gráficos]** Antes se veían los dos apilados; ahora uno a la vez → es la decisión explícita del usuario (no se necesita ver ambos a la vez); la alternativa textual de ambos permanece siempre disponible.
 - **[Re-montaje de Chart.js al cambiar pestaña]** Pequeño coste de init → despreciable para charts de este tamaño; elimina por completo el bug de canvas a tamaño 0.
 - **[Refactor de las *Section podría tocar tests e2e]** Los tests de humo Playwright pueden depender de que los controles estén visibles sin interacción → si una sección queda cerrada por defecto, el test debe abrir su acordeón antes de interactuar. Revisar `test:e2e`.

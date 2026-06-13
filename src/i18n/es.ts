@@ -97,6 +97,9 @@ export const strings = {
     colCategory: 'Categoría',
     colCost: (symbol: string) => `${symbol}/h`,
     colShare: '% del blend',
+    tabsLabel: 'Gráficos de resultados',
+    tabBreakdown: 'Desglose por token',
+    tabCeiling: 'Coste techo vs. ponderado',
   },
   salary: {
     sectionTitle: 'Comparativa con coste empresa en España',

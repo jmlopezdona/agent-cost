@@ -1,4 +1,3 @@
-import { Section } from '../layout/Section'
 import { SliderInput } from './SliderInput'
 import { HelpTip } from './HelpTip'
 import { strings } from '../../i18n/es'
@@ -52,7 +51,7 @@ export function TokenRatesSection() {
     formatMoneyPerHour(currency === 'eur' ? usdToEur(usdPerHour, fx) : usdPerHour, currency)
 
   return (
-    <Section title={strings.tokens.sectionTitle} hint={strings.tokens.sectionHint}>
+    <div className="flex flex-col gap-4">
       {CONTROLS.map(({ field, category, copy, range, step }) => {
         const cost = results.byCategory.find((c) => c.category === category)!
         return (
@@ -73,6 +72,6 @@ export function TokenRatesSection() {
           />
         )
       })}
-    </Section>
+    </div>
   )
 }

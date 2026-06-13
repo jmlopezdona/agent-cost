@@ -94,26 +94,42 @@ export function CategoryDonut() {
       >
         <Doughnut ref={chartRef} data={data} options={options} />
       </div>
-      {/* Alternativa textual accesible al canvas */}
-      <table className="sr-only">
-        <caption>{strings.charts.tableCaption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{strings.charts.colCategory}</th>
-            <th scope="col">{strings.charts.colCost(CURRENCY_SYMBOL[currency])}</th>
-            <th scope="col">{strings.charts.colShare}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.byCategory.map((c) => (
-            <tr key={c.category}>
-              <th scope="row">{CATEGORY_LABELS[c.category]}</th>
-              <td>{rate(c.usdPerHour)}</td>
-              <td>{formatPercent(c.share)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
+  )
+}
+
+/**
+ * Alternativa textual accesible al donut (regla 9, D4). Se renderiza siempre,
+ * fuera del canvas condicionado por la pestaña, para que los datos del gráfico
+ * sigan disponibles aunque su canvas no esté montado.
+ */
+export function CategoryDonutAlt() {
+  const results = useResults()
+  const currency = useScenarioStore((s) => s.currency)
+  const fx = useScenarioStore((s) => s.fx)
+
+  const rate = (usdPerHour: number) =>
+    formatMoneyPerHour(currency === 'eur' ? usdToEur(usdPerHour, fx) : usdPerHour, currency)
+
+  return (
+    <table className="sr-only">
+      <caption>{strings.charts.breakdownTitle}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{strings.charts.colCategory}</th>
+          <th scope="col">{strings.charts.colCost(CURRENCY_SYMBOL[currency])}</th>
+          <th scope="col">{strings.charts.colShare}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {results.byCategory.map((c) => (
+          <tr key={c.category}>
+            <th scope="row">{CATEGORY_LABELS[c.category]}</th>
+            <td>{rate(c.usdPerHour)}</td>
+            <td>{formatPercent(c.share)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }

@@ -1,4 +1,3 @@
-import { Section } from '../layout/Section'
 import { SliderInput } from './SliderInput'
 import { HelpTip } from './HelpTip'
 import { strings } from '../../i18n/es'
@@ -20,7 +19,7 @@ export function ScheduleSection() {
   const results = useResults()
 
   return (
-    <Section title={strings.schedule.sectionTitle}>
+    <div className="flex flex-col gap-4">
       <div role="group" aria-label={strings.schedule.regimeGroupLabel} className="flex gap-2">
         {REGIMES.map((regime) => {
           const active =
@@ -91,6 +90,6 @@ export function ScheduleSection() {
           formatPercent(scenario.dutyCycle),
         )}
       </p>
-    </Section>
+    </div>
   )
 }

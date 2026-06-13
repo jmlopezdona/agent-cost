@@ -1,21 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { Bar } from 'react-chartjs-2'
-import type { Chart as ChartJS, TooltipItem } from 'chart.js'
-import { chartTheme } from '../charts/chartSetup'
-import { barValueLabels } from '../charts/barValueLabels'
-import { registerChart } from '../../lib/chartRegistry'
-import { ChartExportButton } from '../export/ChartExportButton'
 import { strings } from '../../i18n/es'
-import { salaryData } from '../../data'
-import {
-  agentEurPerActiveHour,
-  employerCost,
-  eurToUsd,
-  fteEffectiveHoursPerMonth,
-  fteEquivalence,
-  hoursRatio,
-  usdToEur,
-} from '../../engine/salary'
+import { fteEffectiveHoursPerMonth, hoursRatio } from '../../engine/salary'
 import {
   formatFx,
   formatHours,
@@ -26,96 +10,23 @@ import {
   formatRatio,
   CURRENCY_SYMBOL,
 } from '../../lib/format'
-import { useResults } from '../../lib/useResults'
+import { useSalary } from '../../lib/useSalary'
 import { useScenarioStore } from '../../store/useScenarioStore'
-import { useTheme } from '../../lib/theme'
 
 export function SalaryComparison() {
-  const fx = useScenarioStore((s) => s.fx)
   const setFx = useScenarioStore((s) => s.setFx)
-  const currency = useScenarioStore((s) => s.currency)
-  const profileGross = useScenarioStore((s) => s.profileGross)
   const setProfileGross = useScenarioStore((s) => s.setProfileGross)
-  const employerMultiplier = useScenarioStore((s) => s.employerMultiplier)
-  const effectiveHours = useScenarioStore((s) => s.effectiveHours)
   const presentation = useScenarioStore((s) => s.presentation)
-  const results = useResults()
-  const dark = useTheme((s) => s.dark)
-  const chartRef = useRef<ChartJS<'bar'>>(null)
-  useEffect(() => registerChart('salary', () => chartRef.current?.canvas ?? null), [])
-
-  // Configuración salarial editable en la configuración avanzada (RF-08, D2)
-  const config = {
-    employerCostMultiplier: employerMultiplier,
-    effectiveHoursPerYear: effectiveHours,
-  }
-
-  // Coste del agente: USD nativo → moneda activa. Nóminas: EUR nativo → moneda activa (D3).
-  const agentToDisplay = (usd: number) => (currency === 'eur' ? usdToEur(usd, fx) : usd)
-  const eurToDisplay = (eur: number) => (currency === 'usd' ? eurToUsd(eur, fx) : eur)
-
-  // Base EUR para las equivalencias FTE (ratio independiente de la moneda mostrada)
-  const agentMonthlyEUR = usdToEur(results.weightedMonthlyUSD, fx)
-  const agentMonthlyDisplay = agentToDisplay(results.weightedMonthlyUSD)
-  const agentPerHourDisplay = agentEurPerActiveHour(agentMonthlyDisplay, results.activeHoursMonth)
-
-  const rows = salaryData.profiles.map((profile) => {
-    const gross = profileGross[profile.id] ?? profile.grossAnnualEUR
-    const cost = employerCost(gross, config)
-    return { profile, gross, cost, fte: fteEquivalence(agentMonthlyEUR, cost.monthlyEUR) }
-  })
-  const monthlyCostsKey = rows.map((r) => r.cost.monthlyEUR).join(',')
-
-  const { data, options } = useMemo(() => {
-    const theme = chartTheme()
-    return {
-      data: {
-        labels: [strings.salary.agentBarLabel, ...rows.map((r) => r.profile.name)],
-        datasets: [
-          {
-            data: [agentMonthlyDisplay, ...rows.map((r) => eurToDisplay(r.cost.monthlyEUR))],
-            backgroundColor: [theme.agent, ...rows.map(() => theme.human)],
-            // Señal secundaria además del color (CA-06.1): la barra del agente lleva borde discontinuo
-            borderColor: [theme.ink, ...rows.map(() => theme.human)],
-            borderWidth: [2, 0, 0, 0, 0],
-            borderDash: [6, 3],
-          },
-        ],
-      },
-      options: {
-        indexAxis: 'y' as const,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx: TooltipItem<'bar'>) => formatMoney(Number(ctx.parsed.x), currency),
-            },
-          },
-        },
-        scales: {
-          x: {
-            // Headroom para que la etiqueta de valor al final de la barra no se recorte
-            grace: '15%',
-            ticks: {
-              color: theme.muted,
-              callback: (v: string | number) => formatMoney(Number(v), currency),
-            },
-            grid: { color: theme.grid },
-          },
-          y: { ticks: { color: theme.ink }, grid: { display: false } },
-        },
-      },
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentMonthlyDisplay, monthlyCostsKey, currency, fx, dark])
-
-  const chartAria = [
-    `${strings.salary.agentBarLabel}: ${formatMoney(agentMonthlyDisplay, currency)}`,
-    ...rows.map(
-      (r) => `${r.profile.name}: ${formatMoney(eurToDisplay(r.cost.monthlyEUR), currency)}`,
-    ),
-  ].join(', ')
+  const {
+    rows,
+    config,
+    currency,
+    fx,
+    activeHoursMonth,
+    agentMonthlyDisplay,
+    agentPerHourDisplay,
+    eurToDisplay,
+  } = useSalary()
 
   return (
     <section className="rounded-lg border border-line bg-raised p-4">
@@ -134,9 +45,9 @@ export function SalaryComparison() {
           <p className="text-xs text-muted tabular-nums">
             {strings.salary.agentPerHour(formatMoneyPerHour(agentPerHourDisplay, currency))} ·{' '}
             {strings.salary.hoursLine(
-              formatHours(results.activeHoursMonth),
+              formatHours(activeHoursMonth),
               formatInt(fteEffectiveHoursPerMonth(config)),
-              formatRatio(hoursRatio(results.activeHoursMonth, config)),
+              formatRatio(hoursRatio(activeHoursMonth, config)),
             )}
           </p>
         </div>
@@ -233,25 +144,10 @@ export function SalaryComparison() {
       )}
       <p className="mt-1 text-xs text-muted">
         {strings.salary.multiplierNote(
-          formatOneDecimal(employerMultiplier),
-          formatInt(effectiveHours),
+          formatOneDecimal(config.employerCostMultiplier),
+          formatInt(config.effectiveHoursPerYear),
         )}
       </p>
-
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold text-muted">
-          {strings.salary.chartTitle(currency === 'eur' ? 'EUR' : 'USD')}
-        </h3>
-        <ChartExportButton id="salary" title={strings.salary.sectionTitle} />
-      </div>
-      <div className="mt-2 h-56" role="img" aria-label={chartAria}>
-        <Bar
-          ref={chartRef}
-          data={data}
-          options={options}
-          plugins={[barValueLabels((v) => formatMoney(v, currency))]}
-        />
-      </div>
     </section>
   )
 }
