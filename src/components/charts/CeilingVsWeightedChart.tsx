@@ -17,6 +17,7 @@ export function CeilingVsWeightedChart() {
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
+  const presentation = useScenarioStore((s) => s.presentation)
   const dark = useTheme((s) => s.dark)
   const chartRef = useRef<ChartJS<'bar'>>(null)
   useEffect(() => registerChart('ceiling', () => chartRef.current?.canvas ?? null), [])
@@ -71,12 +72,20 @@ export function CeilingVsWeightedChart() {
   const ariaLabel = `${strings.charts.ceilingVsWeightedTitle}: ${strings.charts.ceilingBar} ${formatMoney(ceiling, currency)}, ${strings.charts.weightedBar} ${formatMoney(weighted, currency)}`
 
   return (
-    <div className="rounded-lg border border-line bg-raised p-4">
+    <div
+      className={`rounded-lg border border-line bg-raised p-4 ${
+        presentation ? 'lg:flex lg:h-[28rem] lg:flex-col' : ''
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <h2 className="text-sm font-semibold">{strings.charts.ceilingVsWeightedTitle}</h2>
         <ChartExportButton id="ceiling" title={strings.charts.ceilingVsWeightedTitle} />
       </div>
-      <div className="mt-3 h-56" role="img" aria-label={ariaLabel}>
+      <div
+        className={`mt-3 h-56 ${presentation ? 'lg:h-auto lg:min-h-0 lg:flex-1' : ''}`}
+        role="img"
+        aria-label={ariaLabel}
+      >
         <Bar
           ref={chartRef}
           data={data}

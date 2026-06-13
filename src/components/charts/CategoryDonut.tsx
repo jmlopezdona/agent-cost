@@ -16,6 +16,7 @@ export function CategoryDonut() {
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
+  const presentation = useScenarioStore((s) => s.presentation)
   const dark = useTheme((s) => s.dark)
   const chartRef = useRef<ChartJS<'doughnut'>>(null)
   useEffect(() => registerChart('breakdown', () => chartRef.current?.canvas ?? null), [])
@@ -75,7 +76,11 @@ export function CategoryDonut() {
   }, [results, currency, fx, dark])
 
   return (
-    <div className="rounded-lg border border-line bg-raised p-4">
+    <div
+      className={`rounded-lg border border-line bg-raised p-4 ${
+        presentation ? 'lg:flex lg:h-[28rem] lg:flex-col' : ''
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold">{strings.charts.breakdownTitle}</h2>
@@ -83,7 +88,10 @@ export function CategoryDonut() {
         </div>
         <ChartExportButton id="breakdown" title={strings.charts.breakdownTitle} />
       </div>
-      <div className="mt-3 h-64" aria-hidden="true">
+      <div
+        className={`mt-3 h-64 ${presentation ? 'lg:h-auto lg:min-h-0 lg:flex-1' : ''}`}
+        aria-hidden="true"
+      >
         <Doughnut ref={chartRef} data={data} options={options} />
       </div>
       {/* Alternativa textual accesible al canvas */}
