@@ -209,7 +209,7 @@ export const DEFAULT_PRESET_ID = 'P2'
 export const DEFAULT_PROVIDER: ProviderId = 'anthropic'
 export const DEFAULT_FX_EUR_PER_USD = 0.92
 
-/** true si el proveedor declara el modificador de recargo regional (Anthropic, OpenAI) */
+/** true si el proveedor declara el modificador de recargo regional (los tres lo declaran) */
 export function offersRegional(providerId: ProviderId): boolean {
   return pricingTable.providers[providerId].modifiers.regional !== undefined
 }
@@ -219,12 +219,9 @@ export function offersBatch(providerId: ProviderId): boolean {
   return pricingTable.providers[providerId].modifiers.batch !== undefined
 }
 
-/**
- * Default del recargo regional por proveedor (D5): Anthropic ON (Bedrock como caso base),
- * OpenAI OFF (residencia regional opt-in), Google sin recargo.
- */
-export function defaultRegional(providerId: ProviderId): boolean {
-  return providerId === 'anthropic'
+/** Default del recargo regional: deshabilitado (opt-in en las tres familias) */
+export function defaultRegional(): boolean {
+  return DEFAULT_REGIONAL
 }
 
 /** Preset de entrada de cada familia (análogo a P2: delivery balanceado 24×7) */
@@ -270,9 +267,9 @@ export const DEFAULT_BATCH_ENABLED = false
 export const DEFAULT_BATCH_FRACTION = 0.5
 /** Descuento de la Batch API (−50%) */
 export const BATCH_DISCOUNT = 0.5
-/** Recargo regional/Bedrock activo por defecto (acceso vía Bedrock como caso base) */
-export const DEFAULT_REGIONAL = true
-/** Recargo regional/Bedrock cuando está activo (+10%) */
+/** Recargo regional deshabilitado por defecto (opt-in en las tres familias) */
+export const DEFAULT_REGIONAL = false
+/** Recargo regional cuando está activo (+10%) */
 export const REGIONAL_SURCHARGE = 1.1
 /** Término de almacenamiento de caché (Gemini) apagado por defecto (caché implícita, D3) */
 export const DEFAULT_STORAGE_ENABLED = false

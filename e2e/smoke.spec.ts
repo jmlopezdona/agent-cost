@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// Caso de referencia P2 (PRD §8) con el recargo Bedrock (+10%) activo por defecto:
-// ponderado ≈ 6.040 $ × 1,10 = 6.625 $; blend 13,8 × 1,10 = 15,2 $/h
-const P2_WEIGHTED = '6.625 $'
+// Caso de referencia P2 (PRD §8) sin recargo regional (deshabilitado por defecto):
+// ponderado ≈ 6.040 $; blend ≈ 13,8 $/h
+const P2_WEIGHTED = '6.023 $'
 const USD = 'Mostrar cifras en dólares'
 
 // La configuración vive en un acordeón exclusivo (Régimen abierto por defecto);
@@ -20,7 +20,7 @@ test('carga P2 por defecto en EUR y el selector propaga el símbolo a las métri
   // Cambiar a USD propaga el símbolo $ y muestra la referencia en USD nativo
   await page.getByRole('button', { name: USD }).click()
   await expect(page.getByTestId('metric-weighted')).toHaveText(P2_WEIGHTED)
-  await expect(page.getByTestId('metric-blend')).toHaveText('15,2 $/h')
+  await expect(page.getByTestId('metric-blend')).toHaveText('13,8 $/h')
 })
 
 test('mover un control recalcula las métricas al instante', async ({ page }) => {
@@ -29,12 +29,12 @@ test('mover un control recalcula las métricas al instante', async ({ page }) =>
   const weighted = page.getByTestId('metric-weighted')
   await expect(weighted).toHaveText(P2_WEIGHTED)
 
-  // Cache read 30 → 60 M/h recalcula al instante (con recargo +10% por defecto)
+  // Cache read 30 → 60 M/h recalcula al instante
   await openTokens(page)
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
 
   await expect(weighted).not.toHaveText(P2_WEIGHTED)
-  await expect(weighted).toHaveText('10.805 $')
+  await expect(weighted).toHaveText('9.823 $')
   // Estado personalizado (CA del spec scenario-presets)
   await expect(
     page.getByText('Personalizado (basado en Agente de delivery balanceado)'),
@@ -112,9 +112,9 @@ test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: USD }).click()
   await page.getByRole('button', { name: /Evolutivos sobre código maduro/ }).click()
-  // P4 con recargo +10%: blend 10,1591 × 1,10 = 11,2 $/h · ponderado ≈ 5.695 $
-  await expect(page.getByTestId('metric-blend')).toHaveText('11,2 $/h')
-  await expect(page.getByTestId('metric-weighted')).toHaveText('5.695 $')
+  // P4 sin recargo: blend ≈ 10,2 $/h · ponderado ≈ 5.177 $
+  await expect(page.getByTestId('metric-blend')).toHaveText('10,2 $/h')
+  await expect(page.getByTestId('metric-weighted')).toHaveText('5.177 $')
 })
 
 test('cambiar de familia carga su preset, filtra modelos y comparte con pr', async ({

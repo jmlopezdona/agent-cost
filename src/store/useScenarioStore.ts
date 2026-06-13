@@ -40,13 +40,14 @@ import {
 
 type ScheduleField = 'hoursPerDay' | 'daysPerWeek' | 'dutyCycle' | 'agents'
 
-/** Estado de una familia memorizado para restaurarlo al volver a ella (régimen, mix, modificadores) */
+/**
+ * Estado de una familia memorizado para restaurarlo al volver a ella (régimen, mix, escenario).
+ * Batch y recargo regional NO se memorizan aquí: son globales (compartidos por las tres familias).
+ * El almacenamiento de caché es propio de Gemini, así que sí se recuerda por familia.
+ */
 interface ProviderMemory {
   scenario: Scenario
   presetId: string
-  batchEnabled: boolean
-  batchFraction: number
-  regional: boolean
   storageEnabled: boolean
 }
 
@@ -67,11 +68,12 @@ interface ScenarioStore {
   /** Brutos anuales editados en sesión (sin persistencia) */
   profileGross: Record<string, number>
 
-  // Modificadores de configuración avanzada (Fase 2, D2)
+  // Modificadores de configuración avanzada (Fase 2, D2).
+  // Batch y recargo regional son GLOBALES: se aplican a las tres familias a la vez.
   batchEnabled: boolean
   batchFraction: number
   regional: boolean
-  /** Término de almacenamiento de caché (Gemini) activo (D3) */
+  /** Término de almacenamiento de caché (Gemini) activo; propio de cada familia (D3) */
   storageEnabled: boolean
   employerMultiplier: number
   effectiveHours: number
@@ -205,7 +207,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     syncSession()
   }
 
-  // Aplica un preset: su bloque de modificadores; al cambiar de familia resetea regional/storage
+  // Aplica un preset: su bloque de batch (P5/O5/G5 lo activan); el almacenamiento (propio de
+  // Gemini) se resetea al cambiar de familia. El recargo regional es global y no se toca aquí.
   const applyPreset = (id: string) => {
     const preset = presetById(id)
     const providerChanged = preset.provider !== get().scenario.providerId
@@ -215,9 +218,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
       isCustomized: false,
       batchEnabled: preset.modifiers?.batchEnabled ?? false,
       batchFraction: preset.modifiers?.batchFraction ?? DEFAULT_BATCH_FRACTION,
-      ...(providerChanged
-        ? { regional: defaultRegional(preset.provider), storageEnabled: DEFAULT_STORAGE_ENABLED }
-        : {}),
+      ...(providerChanged ? { storageEnabled: DEFAULT_STORAGE_ENABLED } : {}),
     })
   }
 
@@ -242,8 +243,9 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
 
     // Cambio de proveedor activo. Modelo "tokens globales": las tasas de token con clave compartida
     // (input/output/cache read) describen la carga del agente y se aplican a las tres familias; el
-    // régimen, la mezcla, los modificadores y las categorías de token propias (cache write,
-    // almacenamiento) se recuerdan POR FAMILIA. Al volver a una familia ya visitada se restaura su
+    // régimen, la mezcla y las categorías de token propias (cache write, almacenamiento) se recuerdan
+    // POR FAMILIA. Batch y recargo regional también son GLOBALES: no se memorizan ni se resetean al
+    // cambiar de familia, persisten tal cual. Al volver a una familia ya visitada se restaura su
     // estado (no se resetea por el ida y vuelta); la primera vez se ancla a su preset análogo limpio
     // (P3↔O3↔G3). En ambos casos las tasas compartidas se sincronizan con las globales actuales.
     setProvider: (providerId) => {
@@ -251,15 +253,12 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
       const { scenario, presetId } = state
       if (providerId === scenario.providerId) return
 
-      // Memoriza el estado per-familia de la que se abandona
+      // Memoriza el estado per-familia de la que se abandona (sin batch/regional, que son globales)
       const providerCache = {
         ...state.providerCache,
         [scenario.providerId]: {
           scenario,
           presetId,
-          batchEnabled: state.batchEnabled,
-          batchFraction: state.batchFraction,
-          regional: state.regional,
           storageEnabled: state.storageEnabled,
         },
       }
@@ -282,15 +281,13 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
           scenario: restored,
           presetId: cached.presetId,
           isCustomized: !sameScenarioAsPreset(restored, presetById(cached.presetId)),
-          batchEnabled: cached.batchEnabled,
-          batchFraction: cached.batchFraction,
-          regional: cached.regional,
           storageEnabled: cached.storageEnabled,
         })
         return
       }
 
-      // Primera vez en la familia: preset análogo limpio (régimen, mezcla, modificadores) + tokens globales
+      // Primera vez en la familia: preset análogo limpio (régimen, mezcla) + tokens globales.
+      // Batch y recargo regional son globales: se conservan tal cual (no se toman del análogo).
       const preset = analogPresetFor(presetId, providerId)
       const next = { ...scenarioFromPreset(preset), tokens: withGlobalTokens(preset.tokens) }
       update({
@@ -298,9 +295,6 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         scenario: next,
         presetId: preset.id,
         isCustomized: !sameScenarioAsPreset(next, preset),
-        batchEnabled: preset.modifiers?.batchEnabled ?? false,
-        batchFraction: preset.modifiers?.batchFraction ?? DEFAULT_BATCH_FRACTION,
-        regional: defaultRegional(preset.provider),
         storageEnabled: DEFAULT_STORAGE_ENABLED,
       })
     },
@@ -397,7 +391,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         staleVersion: null,
         batchEnabled: false,
         batchFraction: DEFAULT_BATCH_FRACTION,
-        regional: defaultRegional(preset.provider),
+        regional: defaultRegional(),
         storageEnabled: DEFAULT_STORAGE_ENABLED,
         employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
         effectiveHours: DEFAULT_EFFECTIVE_HOURS,

@@ -94,7 +94,7 @@ describe('reset (D5)', () => {
   })
 })
 
-describe('cambio de proveedor: tokens globales, régimen/mezcla/modificadores por familia', () => {
+describe('cambio de proveedor: tokens y modificadores (batch/regional) globales, régimen/mezcla por familia', () => {
   it('sincroniza las tasas de token compartidas pero el régimen viene del preset análogo', async () => {
     const { store } = await loadStore('', null)
     const O3 = presets.find((p) => p.id === 'O3')!
@@ -120,8 +120,8 @@ describe('cambio de proveedor: tokens globales, régimen/mezcla/modificadores po
     expect(Object.keys(s.scenario.mix).sort()).toEqual(
       Object.keys(pricingTable.providers.openai.models).sort(),
     )
-    // Modificadores POR FAMILIA → O3 no trae batch, vuelve a su default
-    expect(s.batchEnabled).toBe(false)
+    // Batch es GLOBAL → activado en Anthropic, sigue activo al pasar a OpenAI
+    expect(s.batchEnabled).toBe(true)
     // Personalizado porque la tasa global difiere del preset O3
     expect(s.isCustomized).toBe(true)
   })
@@ -167,6 +167,32 @@ describe('cambio de proveedor: tokens globales, régimen/mezcla/modificadores po
     expect(store.getState().scenario.providerId).toBe('google')
     expect(store.getState().scenario.mix).toEqual(edited)
     expect(store.getState().isCustomized).toBe(true)
+  })
+
+  it('batch y recargo regional son globales: configurados en una familia aplican a las tres', async () => {
+    const { store } = await loadStore('', null)
+    // Configurados en Anthropic
+    store.getState().setBatchEnabled(true)
+    store.getState().setBatchFraction(0.3)
+    store.getState().setRegional(true)
+
+    // Primera visita a Google: se conservan (no se toman del análogo ni se resetean)
+    store.getState().setProvider('google')
+    expect(store.getState().batchEnabled).toBe(true)
+    expect(store.getState().batchFraction).toBeCloseTo(0.3, 10)
+    expect(store.getState().regional).toBe(true)
+
+    // Editados en Google: se propagan a OpenAI
+    store.getState().setRegional(false)
+    store.getState().setProvider('openai')
+    expect(store.getState().batchEnabled).toBe(true)
+    expect(store.getState().batchFraction).toBeCloseTo(0.3, 10)
+    expect(store.getState().regional).toBe(false)
+
+    // Y al volver a Anthropic (familia ya visitada) siguen siendo los globales, no los de origen
+    store.getState().setProvider('anthropic')
+    expect(store.getState().batchEnabled).toBe(true)
+    expect(store.getState().regional).toBe(false)
   })
 })
 

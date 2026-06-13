@@ -164,13 +164,13 @@ describe('modificadores por proveedor', () => {
     expect(batched).toBeCloseTo(base * 0.8, 10)
   })
 
-  it('Google no declara regional: ignora el recargo aunque se pase', () => {
+  it('Google declara regional: aplica el recargo igual que Anthropic y OpenAI', () => {
     const tokens = { inputK: 40, outputK: 200, cacheReadM: 10 }
     const base = hourlyRate(tokens, google.models['gemini-3.5-flash'], google)
     const surcharged = hourlyRate(tokens, google.models['gemini-3.5-flash'], google, {
       regionalSurcharge: 1.1,
     })
-    expect(surcharged).toBe(base)
+    expect(surcharged).toBeCloseTo(base * 1.1, 10)
   })
 
   it('composición batch 40% + recargo 1,10 en Anthropic multiplica por 0,88', () => {
@@ -238,7 +238,7 @@ describe('hooks neutros del motor', () => {
     expect(batched.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 0.8, 10)
   })
 
-  it('recargo Bedrock multiplica el coste por 1,10', () => {
+  it('recargo regional multiplica el coste por 1,10', () => {
     const base = computeResults(P2, pricingTable)
     const surcharged = computeResults(P2, pricingTable, { regionalSurcharge: 1.1 })
     expect(surcharged.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 1.1, 10)

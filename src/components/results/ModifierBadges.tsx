@@ -18,7 +18,7 @@ export function ModifierBadges() {
   const badges: string[] = []
   if (batchEnabled) badges.push(t.badges.batch(formatPercent(batchFraction)))
   // El recargo regional solo aplica si el proveedor activo lo ofrece
-  if (regional && offersRegional(providerId)) badges.push(t.badges.bedrock)
+  if (regional && offersRegional(providerId)) badges.push(t.badges.regional)
   if (storageEnabled && storageCategory(providerId)) badges.push(t.badges.storage)
   if (hasOverrides) badges.push(t.badges.pricesEdited)
 

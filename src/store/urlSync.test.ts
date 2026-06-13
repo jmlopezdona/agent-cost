@@ -172,12 +172,12 @@ describe('serialización en URL', () => {
     expect(restored.currency).toBe('eur')
   })
 
-  it('batch y la desactivación del recargo (no-defecto) se serializan y restauran', () => {
+  it('batch y la activación del recargo (no-defecto) se serializan y restauran', () => {
     const mods: ModifierState = {
       ...NEUTRAL_MODS,
       batchEnabled: true,
       batchFraction: 0.4,
-      regional: false,
+      regional: true,
     }
     const { query, restored } = roundTrip(
       scenarioFromPreset(P2),
@@ -188,10 +188,10 @@ describe('serialización en URL', () => {
     )
     const params = new URLSearchParams(query)
     expect(params.get('b')).toBe('40')
-    expect(params.get('bd')).toBe('0')
+    expect(params.get('bd')).toBe('1')
     expect(restored.batchEnabled).toBe(true)
     expect(restored.batchFraction).toBeCloseTo(0.4, 10)
-    expect(restored.regional).toBe(false)
+    expect(restored.regional).toBe(true)
   })
 
   it('con los modificadores por defecto no aparecen b ni bd en la URL', () => {
@@ -200,7 +200,7 @@ describe('serialización en URL', () => {
     expect(params.has('b')).toBe(false)
     expect(params.has('bd')).toBe(false)
     expect(restored.batchEnabled).toBe(false)
-    expect(restored.regional).toBe(true)
+    expect(restored.regional).toBe(false)
   })
 
   it('multiplicador y horas efectivas se serializan solo si difieren del defecto', () => {
@@ -278,7 +278,7 @@ describe('multi-proveedor y retrocompatibilidad (D8)', () => {
       'gemini-3.5-flash': 0.5,
       'gemini-3.1-flash-lite': 0.25,
     }
-    // Google no ofrece regional → su default es false; no debe serializar bd
+    // Google ofrece regional con default false; desactivado no debe serializar bd
     const mods: ModifierState = { ...NEUTRAL_MODS, regional: false }
     const { query, restored } = roundTrip(scenario, 'G2', DEFAULT_FX_EUR_PER_USD, 'eur', mods)
     const params = new URLSearchParams(query)

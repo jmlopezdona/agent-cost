@@ -139,7 +139,8 @@
         { "key": "cache_storage", "kind": "storage", "rateKey": "cacheStorageM", "unit": "M" }
       ],
       "modifiers": {
-        "batch": { "discount": 0.5 }
+        "batch": { "discount": 0.5 },
+        "regional": { "surcharge": 1.1 }
       },
       "remainderModel": "gemini-3.1-flash-lite",
       "models": {

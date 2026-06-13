@@ -235,8 +235,8 @@ export function serializeScenario(
   if (currency !== defaultCurrency) params.set('cur', currency)
   // Modificadores de configuración avanzada: solo si difieren del defecto (D4)
   if (mods.batchEnabled) params.set('b', compact(mods.batchFraction * 100))
-  // El default del recargo regional depende del proveedor (D5)
-  if (mods.regional !== defaultRegional(scenario.providerId))
+  // Recargo regional deshabilitado por defecto en todas las familias; solo se serializa si difiere
+  if (mods.regional !== defaultRegional())
     params.set('bd', mods.regional ? '1' : '0')
   if (mods.storageEnabled) params.set('st', '1')
   if (mods.employerMultiplier !== modDefaults.employerMultiplier)
@@ -336,7 +336,7 @@ export function deserializeScenario(
     : modDefaults.batchFraction
 
   const rawBd = params.get('bd')
-  const regional = rawBd === null ? defaultRegional(providerId) : rawBd === '1'
+  const regional = rawBd === null ? defaultRegional() : rawBd === '1'
 
   const storageEnabled = params.get('st') === '1'
 

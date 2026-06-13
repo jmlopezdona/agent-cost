@@ -226,7 +226,7 @@ export function AdvancedConfigSection() {
         )}
       </div>
 
-      {/* Recargo regional / Bedrock: solo si el proveedor activo lo ofrece (Anthropic, OpenAI) */}
+      {/* Recargo regional: las tres familias lo ofrecen; deshabilitado por defecto */}
       {providerOffersRegional && (
         <div className="flex items-center gap-1.5 border-t border-line pt-4">
           <Toggle checked={regional} onChange={setRegional} label={t.regionalTitle} />

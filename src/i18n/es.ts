@@ -189,10 +189,10 @@ export const es = {
       'La Batch API procesa peticiones de forma asíncrona con un 50% de descuento. Indica qué fracción del trabajo no requiere latencia y puede ir por batch.',
     batchFractionLabel: '% del trabajo elegible',
     batchUnit: '%',
-    regionalTitle: 'Recargo regional/Bedrock (+10%)',
-    regionalToggle: 'Activar recargo regional/Bedrock',
+    regionalTitle: 'Recargo regional',
+    regionalToggle: 'Activar recargo regional',
     regionalHelp:
-      'Algunas regiones aplican un recargo aproximado del 10% sobre todas las categorías: el acceso vía Amazon Bedrock en Anthropic, los endpoints de residencia regional en OpenAI.',
+      'Algunas regiones aplican un recargo aproximado del 10% sobre todas las categorías de tokens. Aplica a Anthropic, OpenAI y Google (p. ej. acceso vía Amazon Bedrock o endpoints de residencia regional).',
     storageTitle: 'Almacenamiento de caché (Gemini)',
     storageToggle: 'Activar coste de almacenamiento de caché',
     storageHelp:
@@ -211,7 +211,7 @@ export const es = {
   },
   badges: {
     batch: (percent: string) => `batch ${percent} aplicado`,
-    bedrock: 'Bedrock +10%',
+    regional: 'Regional +10%',
     storage: 'almacenamiento caché',
     pricesEdited: 'precios editados',
     label: 'Modificadores activos',

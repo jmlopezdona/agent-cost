@@ -192,10 +192,10 @@ export const fr: Strings = {
       'La Batch API traite les requêtes de manière asynchrone avec une remise de 50 %. Indiquez quelle fraction du travail ne nécessite pas de latence et peut passer par batch.',
     batchFractionLabel: '% du travail éligible',
     batchUnit: '%',
-    regionalTitle: 'Surcoût régional/Bedrock (+10%)',
-    regionalToggle: 'Activer le surcoût régional/Bedrock',
+    regionalTitle: 'Surcoût régional',
+    regionalToggle: 'Activer le surcoût régional',
     regionalHelp:
-      "Certaines régions appliquent un surcoût d'environ 10 % sur toutes les catégories : l'accès via Amazon Bedrock chez Anthropic, les endpoints de résidence régionale chez OpenAI.",
+      "Certaines régions appliquent un surcoût d'environ 10 % sur toutes les catégories de tokens. S'applique à Anthropic, OpenAI et Google (par ex. l'accès via Amazon Bedrock ou les endpoints de résidence régionale).",
     storageTitle: 'Stockage de cache (Gemini)',
     storageToggle: 'Activer le coût de stockage de cache',
     storageHelp:
@@ -214,7 +214,7 @@ export const fr: Strings = {
   },
   badges: {
     batch: (percent: string) => `batch ${percent} appliqué`,
-    bedrock: 'Bedrock +10%',
+    regional: 'Regional +10%',
     storage: 'stockage de cache',
     pricesEdited: 'prix modifiés',
     label: 'Modificateurs actifs',
