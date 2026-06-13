@@ -54,7 +54,29 @@ export function Header() {
     <header className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">{strings.app.title}</h1>
+          <h1 className="flex items-center gap-2 text-xl font-bold">
+            <span
+              aria-hidden="true"
+              className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-5"
+              >
+                <rect x="4" y="8" width="16" height="11" rx="2" />
+                <path d="M12 8V4" />
+                <circle cx="12" cy="3" r="1" />
+                <path d="M9 13h.01M15 13h.01" />
+                <path d="M4 12H2M22 12h-2" />
+              </svg>
+            </span>
+            {strings.app.title}
+          </h1>
           <p className="text-sm text-muted">{strings.app.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
