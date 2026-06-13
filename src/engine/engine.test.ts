@@ -97,7 +97,7 @@ describe('casos dorados P1 y P4', () => {
     expect(results.weightedMonthlyUSD).toBeCloseTo(results.ceilingMonthlyUSD * 0.3, 8)
   })
 
-  it('P4: blend Sonnet-first con escalación', () => {
+  it('P4: blend Evolutivos sobre código maduro', () => {
     const results = computeResults(P4, pricingTable)
     // 0,05 × 22,085 + 0,55 × 13,251 + 0,4 × 4,417 = 10,1591 $/h
     expect(results.blendedRate).toBeCloseTo(10.1591, 4)

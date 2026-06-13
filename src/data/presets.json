@@ -38,7 +38,7 @@
     },
     {
       "id": "P4",
-      "name": "Sonnet-first con escalación",
+      "name": "Evolutivos sobre código maduro",
       "description": "Mantenimiento y evolutivos sobre código maduro: Sonnet resuelve la mayoría de tareas y Opus solo entra como escalación cuando el agente se atasca. Haiku absorbe el trabajo trivial. Alta autonomía.",
       "learnings": "Con Sonnet-first y Haiku absorbiendo lo trivial, la tarifa por hora baja; el coste mensual lo marcan el duty alto y el régimen 24×7, no el precio del modelo.",
       "tokens": { "inputK": 42, "outputK": 190, "cacheReadM": 28, "cacheWriteK": 500 },

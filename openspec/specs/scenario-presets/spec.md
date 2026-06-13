@@ -8,7 +8,7 @@ Escenarios predefinidos (P1, P2, P4) cargados desde `presets.json` que aplican t
 
 ### Requirement: Presets P1, P2 y P4 desde fichero de datos
 
-La aplicación DEBE incluir los seis presets del PRD §8 —P1 (Pair programming supervisado), P2 (Agente de delivery balanceado), P3 (Diseño intensivo / greenfield), P4 (Sonnet-first con escalación), P5 (Enjambre QA nocturno) y P6 (Agente autónomo de mantenimiento)— definidos en `src/data/presets.json`, separados de la lógica (CA-05.2), con todos los valores del PRD §8: tokens, mezcla de modelos, régimen, duty cycle y número de agentes, más nombre, descripción de 2-3 frases en lenguaje de negocio (CA-05.1) y campo `learnings`.
+La aplicación DEBE incluir los seis presets del PRD §8 —P1 (Pair programming supervisado), P2 (Agente de delivery balanceado), P3 (Diseño intensivo / greenfield), P4 (Evolutivos sobre código maduro), P5 (Enjambre QA nocturno) y P6 (Agente autónomo de mantenimiento)— definidos en `src/data/presets.json`, separados de la lógica (CA-05.2), con todos los valores del PRD §8: tokens, mezcla de modelos, régimen, duty cycle y número de agentes, más nombre, descripción de 2-3 frases en lenguaje de negocio (CA-05.1) y campo `learnings`.
 
 #### Scenario: Valores completos del preset P2
 
