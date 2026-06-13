@@ -2,47 +2,47 @@
 
 ## Purpose
 
-Escenarios predefinidos (P1, P2, P4) cargados desde `presets.json` que aplican todos los parámetros de una vez, muestran su descripción en lenguaje de negocio y marcan el estado "Personalizado (basado en …)" al modificar cualquier valor. P2 es el escenario inicial por defecto.
+Escenarios predefinidos (P1, P2, P4) cargados desde `presets.json` que aplican todos los parámetros de una vez, muestran su descripción en lenguaje de negocio (resuelta desde i18n por el id del preset) y marcan el estado "Personalizado (basado en …)" al modificar cualquier valor. P2 es el escenario inicial por defecto.
 
 ## Requirements
 
 ### Requirement: Presets P1, P2 y P4 desde fichero de datos
 
-La aplicación DEBE incluir los seis presets del PRD §8 —P1 (Pair programming supervisado), P2 (Agente de delivery balanceado), P3 (Diseño intensivo / greenfield), P4 (Evolutivos sobre código maduro), P5 (Enjambre QA nocturno) y P6 (Agente autónomo de mantenimiento)— definidos en `src/data/presets.json`, separados de la lógica (CA-05.2), con todos los valores del PRD §8: tokens, mezcla de modelos, régimen, duty cycle y número de agentes, más nombre, descripción de 2-3 frases en lenguaje de negocio (CA-05.1) y campo `learnings`.
+La aplicación DEBE incluir presets definidos en `src/data/presets.json`, separados de la lógica (CA-05.2), cada uno etiquetado con su `provider` (`anthropic`, `openai` o `google`). Los seis presets del PRD §8 —P1…P6— se etiquetan como `anthropic` con todos sus valores actuales (tokens, mezcla, régimen, duty cycle, número de agentes, nombre, descripción y `learnings`). Para OpenAI y Google se añaden presets análogos que replican la intención de P1–P6 (pair programming, delivery balanceado, QA nocturno, etc.) con la mezcla y el perfil de tokens propios del catálogo de cada proveedor. La mezcla de cada preset solo referencia modelos de su `provider` y suma 1.
 
 #### Scenario: Valores completos del preset P2
 
 - **WHEN** se carga `presets.json`
-- **THEN** P2 contiene input 42 k/h, output 210 k/h, cache read 30 M/h, cache write 530 k/h, mezcla 0/15/65/20, régimen 24×7, duty 60% y 1 agente, con su nombre, descripción y `learnings`
+- **THEN** P2 está etiquetado `provider: anthropic` y contiene input 42 k/h, output 210 k/h, cache read 30 M/h, cache write 530 k/h, mezcla 0/15/65/20, régimen 24×7, duty 60% y 1 agente, con su nombre, descripción y `learnings`
 
-#### Scenario: Valores completos del preset P5
-
-- **WHEN** se carga `presets.json`
-- **THEN** P5 contiene input 25 k/h, output 120 k/h, cache read 12 M/h, cache write 300 k/h, mezcla 0/0/30/70, régimen 12×7, duty 85% y 5 agentes, con su `learnings` y el bloque de modificadores que activa Batch al 80%
-
-#### Scenario: Valores completos del preset P6
+#### Scenario: Presets análogos por proveedor
 
 - **WHEN** se carga `presets.json`
-- **THEN** P6 contiene input 45 k/h, output 220 k/h, cache read 50 M/h, cache write 600 k/h, mezcla 0/10/70/20, régimen 24×7, duty 80% y 1 agente, con su `learnings`
+- **THEN** existen presets etiquetados `provider: openai` y `provider: google` que replican la intención de los escenarios P1–P6 con mezclas formadas solo por modelos de su respectivo proveedor
+
+#### Scenario: Type guard valida coherencia preset-proveedor
+
+- **WHEN** un preset declara una mezcla con un modelo que no pertenece a su `provider`
+- **THEN** el type guard de presets lo rechaza como inválido
 
 ### Requirement: Selección de preset carga todos los parámetros
 
-Al seleccionar un preset desde el selector de cabecera, la aplicación DEBE cargar todos los parámetros del escenario de una vez, mostrar la descripción del preset y aplicar el bloque de modificadores por defecto que el preset declare (p. ej. P5 activa Batch al 80%), dejando neutros los modificadores en los presets que no lo declaren (RF-05).
+Al seleccionar un preset desde el selector de cabecera, la aplicación DEBE cargar todos los parámetros del escenario de una vez, fijar el proveedor activo al `provider` del preset, mostrar la descripción del preset y aplicar el bloque de modificadores por defecto que el preset declare (p. ej. P5 activa Batch al 80%), dejando neutros los modificadores en los presets que no lo declaren (RF-05). El selector DEBE filtrar los presets mostrados por la familia activa.
 
-#### Scenario: Cambio de preset
+#### Scenario: Cambio de preset dentro de la familia activa
 
-- **WHEN** el usuario selecciona P4 estando activo P2
+- **WHEN** el usuario selecciona P4 estando activo P2 (ambos de Anthropic)
 - **THEN** todos los controles (tokens, mezcla, régimen, duty, agentes) adoptan los valores de P4, la descripción mostrada pasa a la de P4 y los resultados se recalculan
+
+#### Scenario: Selección de preset de otra familia fija el proveedor activo
+
+- **WHEN** el usuario selecciona un preset etiquetado `provider: google`
+- **THEN** el proveedor activo pasa a Google, los controles adoptan los valores del preset y la mezcla solo contiene modelos de Google
 
 #### Scenario: Preset con modificadores por defecto
 
 - **WHEN** el usuario selecciona P5
 - **THEN** además de los tokens, mezcla, régimen, duty y agentes de P5, el toggle de Batch API queda activo con 80% de trabajo elegible y aparece el badge correspondiente
-
-#### Scenario: Preset sin modificadores deja el estado neutro
-
-- **WHEN** el usuario selecciona P2 estando activo P5
-- **THEN** el toggle de Batch API queda desactivado y no se aplica ningún descuento
 
 ### Requirement: Estado personalizado al modificar un preset
 
@@ -69,14 +69,14 @@ Al abrir la aplicación sin parámetros en la URL, DEBE cargarse el preset P2 co
 
 ### Requirement: Campo learnings por preset mostrado en la UI
 
-Cada preset en `presets.json` DEBE incluir un campo `learnings` con 1-2 frases de "qué observar" en el escenario (PRD §8), y la UI DEBE mostrarlo junto a la descripción del escenario activo.
+Cada preset DEBE tener asociado un texto `learnings` con 1-2 frases de "qué observar" en el escenario (PRD §8), resuelto desde las tablas de i18n por el id del preset, y la UI DEBE mostrarlo en el idioma activo junto a la descripción del escenario activo. Para cada id de preset DEBE existir su `learnings` en los tres idiomas.
 
-#### Scenario: Learnings de P6 visible
+#### Scenario: Learnings de P6 visible en el idioma activo
 
-- **WHEN** el escenario activo es P6
-- **THEN** la UI muestra su `learnings` señalando que el cache read concentra la mayor parte del coste y que la palanca es la ingeniería de contexto, no el modelo
+- **WHEN** el escenario activo es P6 y el idioma es francés
+- **THEN** la UI muestra su `learnings` en francés, señalando que el cache read concentra la mayor parte del coste y que la palanca es la ingeniería de contexto, no el modelo
 
-#### Scenario: Todos los presets tienen learnings
+#### Scenario: Todos los presets tienen learnings en los tres idiomas
 
-- **WHEN** se valida `presets.json` al arrancar
-- **THEN** los seis presets (P1–P6) incluyen un campo `learnings` no vacío y el type guard rechaza un preset sin él
+- **WHEN** se valida la app al arrancar
+- **THEN** los seis presets (P1–P6) tienen `learnings` no vacío en `es`, `en` y `fr`, y la ausencia en cualquiera de ellos se detecta como error

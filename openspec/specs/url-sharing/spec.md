@@ -8,27 +8,27 @@ Compartición de escenarios por URL: serialización compacta de todos los parám
 
 ### Requirement: Serialización del estado en la URL
 
-Todos los parámetros del escenario (tokens, mezcla, régimen, duty, número de agentes, tipo de cambio, moneda de presentación, preset base) y los modificadores de configuración avanzada (Batch API on/%, recargo regional/Bedrock, multiplicador de coste empresa, horas efectivas y overrides de precios) DEBEN serializarse de forma compacta en la query string con claves cortas, incluyendo la versión de precios (`pv`) usada (RF-09, CA-09.1). Solo se serializan los valores que difieren de su defecto. La moneda usa la clave `cur`; los nuevos parámetros usan claves cortas (p. ej. `b` para % de batch, `bd` para Bedrock, `em` para el multiplicador, `eh` para horas efectivas, `px` para los overrides de precios). El modo presentación se serializa aparte como `present=1`. La URL DEBE actualizarse con `history.replaceState` sin crear entradas de historial.
+Todos los parámetros del escenario (proveedor activo, tokens, mezcla, régimen, duty, número de agentes, tipo de cambio, moneda de presentación, preset base) y los modificadores de configuración avanzada (Batch API on/%, recargo regional/Bedrock cuando aplique, multiplicador de coste empresa, horas efectivas y overrides de precios) DEBEN serializarse de forma compacta en la query string con claves cortas, incluyendo la versión de precios (`pv`) usada (RF-09, CA-09.1). Solo se serializan los valores que difieren de su defecto. El proveedor activo usa la clave `pr` (omitida cuando es el default `anthropic`). Las claves de mezcla se generan por modelo del proveedor activo (p. ej. `m.opus`) y las del perfil de tokens por categoría `rate`; solo se serializan los diffs frente al preset base. La moneda usa la clave `cur`; los modificadores usan claves cortas (`b` batch, `bd` Bedrock, `em`, `eh`, `px` overrides). El modo presentación se serializa como `present=1`. La serialización ocurre **bajo demanda** (al copiar el enlace) a partir del estado en memoria: la edición NO escribe la URL y la barra de direcciones permanece limpia durante el uso (el escenario se persiste en `sessionStorage`, ver capability `session-persistence`). `history.replaceState` solo se usa para limpiar la URL a la ruta pelada al adoptar un enlace entrante, sin crear entradas de historial.
 
-#### Scenario: URL refleja el estado actual
+#### Scenario: La serialización refleja el estado en memoria
 
-- **WHEN** el usuario modifica el duty cycle a 70%
-- **THEN** la query string de la URL se actualiza para incluir ese valor sin recargar la página ni añadir entrada al historial
+- **WHEN** el usuario modifica el duty cycle a 70% y pulsa "Copiar enlace del escenario"
+- **THEN** la query string del enlace generado incluye ese valor; la barra de direcciones no cambia durante la edición ni se añade entrada al historial
 
 #### Scenario: Solo se serializan las diferencias con el preset
 
 - **WHEN** el escenario es exactamente el preset P2 sin modificar, la moneda es la de defecto (EUR) y no hay modificadores activos
-- **THEN** la URL contiene únicamente la referencia al preset y la versión de precios, sin el resto de parámetros, `cur`, modificadores ni overrides
+- **THEN** la URL contiene únicamente la referencia al preset y la versión de precios, sin `pr`, ni el resto de parámetros, `cur`, modificadores ni overrides
 
-#### Scenario: La moneda no-defecto se serializa
+#### Scenario: El proveedor no-defecto se serializa
 
-- **WHEN** el usuario cambia la moneda de presentación a USD
-- **THEN** la query string incluye `cur` con el valor correspondiente a USD; al volver a EUR, `cur` desaparece de la URL
+- **WHEN** el escenario activo usa el proveedor Google
+- **THEN** la query string incluye `pr` con el valor de Google y las claves de mezcla/perfil corresponden a los modelos y categorías de Google
 
 #### Scenario: Los modificadores que difieren del defecto se serializan
 
-- **WHEN** el usuario activa Batch API al 40% y desactiva el recargo regional/Bedrock (que está activo por defecto)
-- **THEN** la query string incluye `b` con el porcentaje y `bd=0`; al volver a los valores por defecto (batch off, recargo on), esas claves desaparecen de la URL
+- **WHEN** el usuario activa Batch API al 40% y desactiva el recargo regional/Bedrock (que está activo por defecto en Anthropic)
+- **THEN** la query string del enlace generado incluye `b` con el porcentaje y `bd=0`; al volver a los valores por defecto, esas claves no aparecen en el enlace
 
 #### Scenario: Los overrides de precios se serializan como deltas
 
@@ -37,17 +37,12 @@ Todos los parámetros del escenario (tokens, mezcla, régimen, duty, número de 
 
 ### Requirement: Restauración exacta del escenario desde URL
 
-Abrir un enlace con estado serializado DEBE reproducir el escenario exacto: mismos valores en todos los controles, mismos modificadores y overrides de precios, y resultados idénticos a los del momento de compartir con la misma versión de precios (CA-09.1).
+Abrir un enlace con estado serializado DEBE reproducir el escenario exacto: mismo proveedor activo, mismos valores en todos los controles, mismos modificadores y overrides de precios, y resultados idénticos a los del momento de compartir con la misma versión de precios (CA-09.1).
 
-#### Scenario: Apertura en otro navegador
+#### Scenario: Restauración de un escenario multi-proveedor
 
-- **WHEN** se abre en un navegador limpio una URL generada con un escenario personalizado con Batch API activo y un precio editado
-- **THEN** todos los controles, el toggle de batch, su % y el precio editado muestran los valores compartidos y las métricas son idénticas a las del navegador de origen
-
-#### Scenario: Parámetros inválidos en la URL
-
-- **WHEN** la URL contiene un parámetro fuera de rango, no numérico o un override de precio con modelo/campo desconocido
-- **THEN** ese parámetro u override se descarta con fallback al valor por defecto correspondiente, sin romper la carga
+- **WHEN** se abre un enlace con `pr` de Google y sus parámetros de mezcla y perfil
+- **THEN** el proveedor activo, la mezcla, el perfil de tokens, los modificadores y los resultados coinciden exactamente con los del momento de compartir
 
 ### Requirement: Aviso por versión de precios distinta
 
@@ -60,9 +55,23 @@ Si la versión de precios (`pv`) de la URL difiere de la versión actual de `pri
 
 ### Requirement: Botón copiar enlace del escenario
 
-La cabecera DEBE incluir un botón "Copiar enlace del escenario" que copie la URL completa actual al portapapeles y confirme la acción al usuario.
+La cabecera DEBE incluir un botón "Copiar enlace del escenario" que serialice el estado actual del escenario **bajo demanda** en una URL completa, la copie al portapapeles y confirme la acción al usuario. La URL se construye en el momento de pulsar a partir del estado en memoria, no de la barra de direcciones (que permanece limpia durante el uso).
 
 #### Scenario: Copia del enlace
 
-- **WHEN** el usuario pulsa "Copiar enlace del escenario"
-- **THEN** la URL con el estado serializado queda en el portapapeles y se muestra una confirmación breve (p. ej. "Enlace copiado")
+- **WHEN** el usuario, con un escenario personalizado, pulsa "Copiar enlace del escenario"
+- **THEN** se genera una URL con el estado serializado (solo los diffs frente al preset), queda en el portapapeles y se muestra una confirmación breve (p. ej. "Enlace copiado")
+
+### Requirement: Retrocompatibilidad de enlaces previos a multi-proveedor
+
+Abrir un enlace anterior a multi-proveedor (sin clave `pr`) DEBE interpretarse como proveedor `anthropic`: las claves de mezcla legacy `mf/mo/ms` mapean a Fable/Opus/Sonnet de Anthropic con Haiku como resto, y los overrides `px` con prefijos legacy (p. ej. `fable.input`) se interpretan como overrides de los modelos de Anthropic. El escenario restaurado DEBE ser idéntico al que producía la versión previa.
+
+#### Scenario: Enlace antiguo sin proveedor
+
+- **WHEN** se abre un enlace que contiene `mf/mo/ms` y no contiene `pr`
+- **THEN** el proveedor activo es Anthropic, la mezcla se restaura desde esas claves con Haiku como resto y el resultado coincide con el de la versión previa
+
+#### Scenario: Overrides legacy de precios
+
+- **WHEN** un enlace antiguo incluye `px=fable.input:10`
+- **THEN** se interpreta como override de `anthropic:fable` y se aplica al modelo correspondiente

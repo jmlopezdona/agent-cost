@@ -8,7 +8,7 @@ Panel colapsable de configuración avanzada que expone modificadores del escenar
 
 ### Requirement: Tabla de precios editable por modelo y categoría
 
-El panel de configuración avanzada DEBE mostrar una tabla de precios editable con las cuatro categorías (input, output, cache read, cache write) por cada modelo (Fable, Opus, Sonnet, Haiku), partiendo de los valores oficiales de `pricing.json`. Las ediciones se aplican como overrides sobre la tabla versionada y recalculan los resultados de forma reactiva, sin alterar `pricing.json` en disco (RF-08).
+El panel de configuración avanzada DEBE mostrar una tabla de precios editable organizada en pestañas por familia/proveedor (la del proveedor activo seleccionada por defecto). Cada pestaña muestra las categorías del `costModel` de ese proveedor por cada uno de sus modelos, partiendo de los valores oficiales de `pricing.json`. Las ediciones se aplican como overrides sobre la tabla versionada y recalculan los resultados de forma reactiva, sin alterar `pricing.json` en disco (RF-08).
 
 #### Scenario: Edición de un precio recalcula el blend
 
@@ -19,6 +19,11 @@ El panel de configuración avanzada DEBE mostrar una tabla de precios editable c
 
 - **WHEN** el usuario, tras editar uno o más precios, pulsa "restaurar oficiales"
 - **THEN** todos los overrides se descartan y la tabla y los resultados vuelven a los valores de `pricing.json`
+
+#### Scenario: Categorías según el proveedor de la pestaña
+
+- **WHEN** el usuario abre la pestaña de precios de OpenAI
+- **THEN** la tabla muestra las columnas `input`, `cached_input` y `output` para los modelos de OpenAI, sin columna de escritura de caché
 
 ### Requirement: Toggle de Batch API con porcentaje elegible
 
@@ -36,17 +41,22 @@ El panel DEBE ofrecer un toggle de **Batch API (−50%)** y un slider de "% del 
 
 ### Requirement: Toggle de recargo regional/Bedrock
 
-El panel DEBE ofrecer un toggle de **Recargo regional/Bedrock (+10%)** que, cuando está activo, aplica un recargo del 10% a todas las categorías de todos los modelos (RF-08). Está **activado por defecto** (el acceso vía Amazon Bedrock se toma como caso base), de modo que la cifra por defecto incluye el recargo; el usuario puede desactivarlo.
+El panel DEBE ofrecer un toggle de **Recargo regional (+10%)** únicamente cuando el proveedor activo declara el modificador regional (Anthropic y OpenAI). Cuando está activo, aplica un recargo del 10% a todas las categorías de todos los modelos (RF-08). El estado por defecto depende del proveedor: en Anthropic está **activado por defecto** (el acceso vía Amazon Bedrock se toma como caso base); en OpenAI está **desactivado por defecto** (los endpoints de residencia regional son opt-in). El usuario puede cambiarlo. Para proveedores que no ofrecen el modificador (Google), el toggle no se muestra.
 
-#### Scenario: Recargo activo por defecto
+#### Scenario: Recargo activo por defecto en Anthropic
 
-- **WHEN** la aplicación arranca sin interacción del usuario
-- **THEN** el toggle de recargo regional/Bedrock está activo y todas las métricas de coste ya incluyen el ×1,10
+- **WHEN** el proveedor activo es Anthropic y no se ha tocado el toggle
+- **THEN** el recargo del 10% está aplicado y aparece su badge junto a los resultados
 
-#### Scenario: Desactivar el recargo recalcula sin él
+#### Scenario: Recargo disponible pero inactivo por defecto en OpenAI
 
-- **WHEN** el usuario desactiva el recargo regional/Bedrock
-- **THEN** el blend y todas las métricas de coste pasan a calcularse sin el ×1,10 y se recalculan al instante
+- **WHEN** el proveedor activo es OpenAI y no se ha tocado el toggle
+- **THEN** el toggle de recargo regional se muestra desactivado y el cálculo no aplica recargo hasta que el usuario lo active
+
+#### Scenario: Toggle ausente en proveedores sin recargo
+
+- **WHEN** el proveedor activo es Google
+- **THEN** el toggle de recargo regional no se muestra y el cálculo no aplica recargo
 
 ### Requirement: Tipo de cambio USD→EUR editable
 
@@ -87,9 +97,28 @@ Cuando un modificador está activo, la UI DEBE mostrar un badge visible junto a 
 
 ### Requirement: Panel colapsable de configuración avanzada
 
-La configuración avanzada DEBE vivir en un panel colapsable dentro de la columna de controles, plegado por defecto, sin que su contenido bloquee el uso básico de la calculadora (§10, RF-08).
+La configuración avanzada DEBE vivir como una sección del acordeón exclusivo de la columna de controles, cerrada por defecto, sin que su contenido bloquee el uso básico de la calculadora (§10, RF-08). Al abrirla, las demás secciones del acordeón se cierran conforme a la regla de exclusividad; los controles básicos (tokens, mezcla, régimen) son accesibles abriendo su sección correspondiente.
 
 #### Scenario: Panel plegado por defecto
 
 - **WHEN** la aplicación arranca sin interacción del usuario
-- **THEN** el panel de configuración avanzada está plegado y los controles básicos (tokens, mezcla, régimen) son usables sin desplegarlo
+- **THEN** la sección de configuración avanzada está cerrada y los controles básicos son usables a través del acordeón sin desplegar la avanzada
+
+#### Scenario: Abrir la avanzada cierra las demás
+
+- **WHEN** el usuario abre la sección de configuración avanzada
+- **THEN** se muestra su contenido y la sección que estuviera abierta antes se cierra, quedando solo la avanzada abierta
+
+### Requirement: Modificadores condicionales al proveedor activo
+
+El panel DEBE mostrar únicamente los modificadores que ofrece el proveedor activo según su declaración `modifiers` en `pricing.json`. El toggle de Batch API se muestra para los tres proveedores; el recargo regional solo para los que lo declaran (Anthropic y OpenAI). Los badges de modificadores activos reflejan solo los aplicables al proveedor activo.
+
+#### Scenario: Batch disponible en todos los proveedores
+
+- **WHEN** el proveedor activo es Google
+- **THEN** el toggle de Batch API está disponible y, al activarlo al 40%, reduce el coste en un 20% con su badge correspondiente
+
+#### Scenario: Conjunto de modificadores cambia con el proveedor
+
+- **WHEN** el usuario cambia el proveedor activo de Anthropic a Google
+- **THEN** desaparece el toggle de recargo regional y permanece el de Batch API

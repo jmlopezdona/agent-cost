@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Selector global de moneda de presentación (EUR/USD, defecto EUR) que determina la unidad de todas las cifras monetarias de la aplicación. La conversión se aplica solo en la capa de presentación con el tipo de cambio `fx` configurable, manteniendo el motor en USD con precisión completa, y el formateo consciente de moneda vive en `src/lib/format.ts` respetando la convención es-ES.
+Selector global de moneda de presentación (EUR/USD, defecto EUR) que determina la unidad de todas las cifras monetarias de la aplicación. La conversión se aplica solo en la capa de presentación con el tipo de cambio `fx` configurable, manteniendo el motor en USD con precisión completa, y el formateo consciente de moneda vive en `src/lib/format.ts` respetando la convención de separadores, decimales y colocación del símbolo del idioma activo (`es-ES`, `fr-FR` o `en-US`).
 
 ## Requirements
 
@@ -39,16 +39,26 @@ El motor (`src/engine/`) DEBE seguir calculando en USD con precisión completa c
 - **WHEN** la moneda seleccionada es USD y `fx` = 0,92
 - **THEN** los costes empresa de los perfiles (nativos en EUR) se muestran convertidos EUR→USD (dividiendo por `fx`)
 
-### Requirement: Formateo consciente de moneda en convención es-ES
+### Requirement: Formateo consciente de moneda en convención del locale activo
 
-El formateo de toda cifra monetaria DEBE vivir en `src/lib/format.ts` y producir el símbolo de la moneda activa (€ o $) respetando la convención es-ES de separadores de miles y decimales (enteros para importes mensuales/anuales, 1 decimal para tarifas por hora). Ningún componente ni gráfico DEBE contener literales de símbolo de moneda hardcodeados.
+El formateo de toda cifra monetaria DEBE vivir en `src/lib/format.ts` y producir el símbolo de la moneda activa (€ o $) respetando la convención de **separadores y decimales del idioma activo** (`es-ES`, `fr-FR` o `en-US`: enteros para importes mensuales/anuales, 1 decimal para tarifas por hora). La **colocación del símbolo** DEBE seguir el idioma: sufijo con espacio en español y francés (p. ej. `6038 $`), prefijo pegado en inglés (p. ej. `$6,038`). El formateo DEBE recibir el locale activo (no fijar `es-ES`) y ningún componente ni gráfico DEBE contener literales de símbolo de moneda hardcodeados ni asumir un locale concreto.
 
-#### Scenario: Importe mensual en cada moneda
+#### Scenario: Importe mensual en español
 
-- **WHEN** se formatea un importe mensual de 10.060
-- **THEN** en EUR se muestra "10.060 €" y en USD "10.060 $", con el separador de miles es-ES
+- **WHEN** se formatea un importe mensual de 10.060 con idioma español
+- **THEN** en EUR se muestra "10.060 €" y en USD "10.060 $", con el separador de miles es-ES y el símbolo como sufijo
 
-#### Scenario: Tarifa por hora con un decimal
+#### Scenario: Importe mensual en inglés
+
+- **WHEN** se formatea un importe mensual de 10060 con idioma inglés
+- **THEN** en USD se muestra "$10,060" y en EUR "€10,060", con el separador de miles en-US y el símbolo como prefijo
+
+#### Scenario: Importe mensual en francés
+
+- **WHEN** se formatea un importe mensual de 10060 con idioma francés
+- **THEN** se muestra con la convención fr-FR de separadores (espacio de miles) y el símbolo de la moneda activa como sufijo
+
+#### Scenario: Tarifa por hora con un decimal según locale
 
 - **WHEN** se formatea una tarifa de 13,8 por hora activa
-- **THEN** en EUR se muestra "13,8 €/h" y en USD "13,8 $/h"
+- **THEN** en español/francés se muestra "13,8 €/h" o "13,8 $/h" y en inglés "$13.8/h" o "€13.8/h", según el idioma y la moneda activos
