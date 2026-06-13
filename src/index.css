@@ -76,3 +76,14 @@ body {
     Roboto,
     sans-serif;
 }
+
+/* Cursor de "mano" en elementos pulsables (Tailwind v4 no lo aplica por
+   defecto); las utilidades cursor-* por componente siguen teniendo prioridad. */
+button:not(:disabled),
+summary,
+[role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
