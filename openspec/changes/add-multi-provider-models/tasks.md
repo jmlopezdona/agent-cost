@@ -41,7 +41,7 @@
 - [x] 5.3 Cargar modelos de OpenAI y Google en `pricing.json` con su `costModel`, `modifiers`, `remainderModel` y precios
 - [x] 5.4 Redactar presets análogos a P1–P6 para OpenAI en `presets.json` (replicando la intención con mezcla de su catálogo) con `learnings`
 - [x] 5.5 Redactar presets análogos a P1–P6 para Google en `presets.json` con `learnings`
-- [ ] 5.6 Revisión humana de la tabla de precios y presets nuevos antes de cerrar (punto de mayor riesgo de error de datos)
+- [x] 5.6 Revisión humana de la tabla de precios y presets nuevos antes de cerrar (punto de mayor riesgo de error de datos) — verificado contra fuentes oficiales OpenAI y Google: los precios cargados en `pricing.json` son correctos; presets nuevos referencian modelos válidos y suman 1. Correcciones aplicadas solo al doc de research (afirmación de fecha del regional retirada; caveat de redondeo del `cached_input` batch de gpt-5.4 documentado, decisión D-B)
 
 ## 6. i18n y cierre
 
