@@ -156,6 +156,15 @@ test('present=1 arranca en modo presentación y el conmutador restaura los contr
   await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
 })
 
+test('en presentación, el botón atrás del navegador vuelve a la calculadora', async ({ page }) => {
+  await page.goto('./?present=1')
+  await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
+
+  // "Atrás" del navegador sale del modo presentación en vez de abandonar la página
+  await page.goBack()
+  await expect(page.getByText('Tasa de tokens E/S')).toBeVisible()
+})
+
 test('exportar JSON desde el menú de la cabecera descarga el escenario', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: 'Exportar', exact: true }).click()

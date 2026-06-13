@@ -10,6 +10,7 @@ import { ChartTabs } from './components/charts/ChartTabs'
 import { SalaryChart } from './components/charts/SalaryChart'
 import { SalaryComparison } from './components/salary/SalaryComparison'
 import { useScenarioStore } from './store/useScenarioStore'
+import { usePresentationHistory } from './lib/usePresentationHistory'
 
 /**
  * Layout (§10): escritorio = controles (~40%) | resultados (~60%);
@@ -18,6 +19,8 @@ import { useScenarioStore } from './store/useScenarioStore'
  */
 function App() {
   const presentation = useScenarioStore((s) => s.presentation)
+  // En presentación, el "atrás" del navegador vuelve a la calculadora (no abandona la página)
+  usePresentationHistory()
 
   if (presentation) {
     return (
