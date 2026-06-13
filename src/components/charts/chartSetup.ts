@@ -34,6 +34,17 @@ export const CATEGORY_CSS_VARS: Record<TokenCategory, string> = {
   input: '--chart-input',
 }
 
+/**
+ * Señal secundaria al color por categoría (CA-07.2): cada serie del donut suma
+ * un patrón de borde distinto, de modo que sea diferenciable sin percibir color.
+ */
+export const CATEGORY_BORDER_DASH: Record<TokenCategory, number[]> = {
+  cacheRead: [], // continuo
+  output: [6, 3], // discontinuo
+  cacheWrite: [2, 2], // punteado
+  input: [8, 3, 2, 3], // trazo-punto
+}
+
 /** Colores del tema activo para Chart.js; recalcular cuando cambie `dark` (CA-07.1) */
 export function chartTheme() {
   return {

@@ -51,6 +51,42 @@ Una sola sesión de Claude Code, con **Fable 5 como modelo en todas las fases**,
 - **Cómo se midió el reparto por fase**: con un snapshot de `/usage` tras el apply y otro al final; la diferencia es atribuible a la fase intermedia. Propose y apply siguen agregados (sin snapshot entre ellos). El ~16% de coste en Opus/Haiku es overhead del harness, no atribuible a una fase.
 - El ciclo completo spec-driven (especificar + implementar + verificar + archivar) salió por 31,91 $ con las 42 tareas completadas en una sola pasada, sin retrabajo.
 
+### 2026-06-13 — Diseño de la spec "Fase 2 — v1.0" (`/openspec-propose`, solo propuesta)
+
+Sesión de Claude Code con **Opus 4.8 (1M context) como único modelo** (loop principal, sin subagentes), dedicada únicamente a la **fase de propuesta** de la change `agentcost-fase2`: leer el PRD §13 y el estado real del repo (specs activas, motor, store, datos), y generar los 4 artefactos OpenSpec —proposal, design (8 decisiones), 7 deltas de specs (3 capacidades nuevas + 4 modificadas) y tasks (9 secciones)—. **No incluye implementación** (`/opsx:apply` queda pendiente), a diferencia de la sesión del MVP, que cubría el ciclo completo.
+
+| Métrica | Valor |
+|---|---|
+| Coste total | **2,75 $** |
+| Duración API (≈ horas activas) | 7 min 16 s |
+| Duración de pared | 16 min 42 s |
+| Código | +512 / −0 líneas (artefactos Markdown) |
+| Coste por línea añadida | ~0,005 $ |
+| Coste por hora activa | ~22,7 $/h |
+| Versión de precios | 2026-06 (`pricing.json`) |
+
+**Desglose por modelo (acumulado de sesión):**
+
+| Modelo | Rol | Input | Output | Cache read | Cache write | Coste |
+|---|---|---|---|---|---|---|
+| Opus 4.8 (1M context) | Loop principal (toda la sesión) | 14,7 k | 30,1 k | 2,1 M | 84,5 k | 2,75 $ |
+
+**Perfil de tokens por hora activa** (sobre ~0,12 h de API):
+
+| Categoría | Esta sesión | Preset P2 (referencia) |
+|---|---|---|
+| Input fresco | ~121 k/h | 42 k/h |
+| Output | ~249 k/h | 210 k/h |
+| Cache read | ~17,3 M/h | 30 M/h |
+| Cache write | ~698 k/h | 530 k/h |
+
+**Observaciones:**
+
+- **Proponer es barato frente al ciclo completo**: 2,75 $ por los 4 artefactos, ~12× menos que los 31,91 $ del ciclo completo del MVP (propose + apply + archive). La fase de diseño/spec es una fracción pequeña del coste total de entregar una feature; el grueso está en la implementación y verificación.
+- **El cache read sigue siendo la mayor partida de coste** incluso en una sesión de solo diseño: ~2,1 MTok × 0,50 $/MTok ≈ 1,05 $, por encima del output (~0,75 $) y la escritura de caché (~0,53 $). Confirma el insight de AgentCost también sin escribir código.
+- **Pero el cache read por hora (~17,3 M/h) es notablemente menor que en P2 (30 M/h)** y que en la sesión de implementación del MVP (~30,7 M/h): una sesión de propuesta relee menos contexto grande de forma repetida (más lectura puntual del PRD y escritura de artefactos, menos ciclos de ida y vuelta sobre ficheros de código). El **output por hora, en cambio, es alto** (~249 k/h) por la redacción densa de specs y tasks.
+- **Modelo único, sin overhead de harness**: a diferencia del MVP (que repartió ~16% en subagentes Opus/Haiku auxiliares), aquí no se lanzaron subagentes; el 100% del coste es atribuible al loop principal. El coste real (2,75 $) supera la estimación a precios estándar de Opus (~2,40 $) por el premium del contexto de 1M tokens.
+
 ## Cómo añadir una entrada
 
 1. Ejecuta `/usage` en Claude Code **al final de cada fase relevante** (no solo al cerrar la sesión): la diferencia entre snapshots es la única forma de atribuir coste por fase, porque `/usage` desglosa por modelo, no por comando.

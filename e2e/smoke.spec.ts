@@ -76,3 +76,45 @@ test('el disclaimer de la comparativa salarial es visible', async ({ page }) => 
   await page.goto('./')
   await expect(page.getByText(/no implica equivalencia de capacidades/)).toBeVisible()
 })
+
+test('la configuración avanzada activa batch y muestra el badge', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: USD }).click()
+  const weighted = page.getByTestId('metric-weighted')
+  await expect(weighted).toHaveText(P2_WEIGHTED)
+
+  // El panel está plegado por defecto; al desplegarlo aparecen sus controles
+  await expect(page.getByRole('checkbox', { name: /Batch API/ })).toBeHidden()
+  await page.getByText('Configuración avanzada').click()
+  await page.getByRole('checkbox', { name: /Batch API/ }).check()
+
+  // Badge visible (50% por defecto) y resultados con el descuento ×0,75
+  await expect(page.getByText(/batch 50\s*% aplicado/)).toBeVisible()
+  await expect(weighted).not.toHaveText(P2_WEIGHTED)
+})
+
+test('present=1 arranca en modo presentación y el conmutador restaura los controles', async ({
+  page,
+}) => {
+  await page.goto('./?present=1')
+  // En presentación se ocultan los controles (régimen, tokens, configuración avanzada)
+  await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
+  await expect(page.getByText('Configuración avanzada')).toBeHidden()
+  await expect(page.getByTestId('metric-weighted')).toBeVisible()
+
+  // Salir restaura los controles
+  await page.getByRole('button', { name: 'Salir del modo presentación' }).click()
+  await expect(page.getByText('Tasa de tokens E/S')).toBeVisible()
+
+  // Y se puede volver a entrar
+  await page.getByRole('button', { name: 'Modo presentación' }).click()
+  await expect(page.getByText('Tasa de tokens E/S')).toBeHidden()
+})
+
+test('exportar JSON descarga el escenario', async ({ page }) => {
+  await page.goto('./')
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exportar JSON' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('agentcost-escenario.json')
+})

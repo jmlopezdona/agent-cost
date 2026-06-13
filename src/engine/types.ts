@@ -10,6 +10,13 @@ export interface ModelPricing {
   cache_write: number
 }
 
+/** Campos numéricos de precio editables en la configuración avanzada (Fase 2) */
+export const PRICE_FIELDS = ['input', 'output', 'cache_read', 'cache_write'] as const
+export type PriceField = (typeof PRICE_FIELDS)[number]
+
+/** Overrides de precios por modelo aplicados sobre la tabla versionada (Fase 2, D3) */
+export type PriceOverrides = Partial<Record<ModelId, Partial<Record<PriceField, number>>>>
+
 export interface PricingTable {
   version: string
   effective_date: string
@@ -41,10 +48,21 @@ export interface Scenario {
   agents: number
 }
 
+/** Modificadores por defecto que un preset puede declarar (Fase 2, D1) */
+export interface PresetModifiers {
+  batchEnabled?: boolean
+  /** Fracción 0–1 de trabajo elegible para Batch API */
+  batchFraction?: number
+}
+
 export interface Preset extends Scenario {
   id: string
   name: string
   description: string
+  /** 1-2 frases de "qué observar" en el escenario (PRD §8) */
+  learnings: string
+  /** Defaults de modificadores del preset (p. ej. P5 → Batch 80%) */
+  modifiers?: PresetModifiers
 }
 
 export const TOKEN_CATEGORIES = ['cacheRead', 'output', 'cacheWrite', 'input'] as const

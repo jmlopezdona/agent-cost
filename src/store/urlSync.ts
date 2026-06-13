@@ -1,4 +1,12 @@
-import type { Preset, Scenario } from '../engine/types'
+import {
+  MODEL_IDS,
+  PRICE_FIELDS,
+  type ModelId,
+  type Preset,
+  type PriceField,
+  type PriceOverrides,
+  type Scenario,
+} from '../engine/types'
 import { isCurrency, type Currency } from '../data'
 import { clamp, RANGES, type Range } from '../lib/ranges'
 
@@ -8,7 +16,27 @@ import { clamp, RANGES, type Range } from '../lib/ranges'
  * van siempre. La escritura usa history.replaceState (sin entradas de historial).
  */
 
-export interface UrlState {
+/** Estado de los modificadores de configuración avanzada (Fase 2, D2) */
+export interface ModifierState {
+  batchEnabled: boolean
+  /** Fracción 0–1 de trabajo elegible para Batch API */
+  batchFraction: number
+  regional: boolean
+  employerMultiplier: number
+  effectiveHours: number
+  priceOverrides: PriceOverrides
+  /** Modo presentación: flag de vista, no de escenario (D6) */
+  presentation: boolean
+}
+
+/** Defaults neutros frente a los que se serializan los modificadores */
+export interface ModifierDefaults {
+  batchFraction: number
+  employerMultiplier: number
+  effectiveHours: number
+}
+
+export interface UrlState extends ModifierState {
   presetId: string
   scenario: Scenario
   fx: number
@@ -17,6 +45,44 @@ export interface UrlState {
   isCustomized: boolean
   /** Versión de precios de la URL cuando difiere de la actual (aviso CA-09.1) */
   staleVersion: string | null
+}
+
+/** `px` = overrides como `modelo.campo:valor` separados por comas (D4) */
+function serializeOverrides(overrides: PriceOverrides): string {
+  const parts: string[] = []
+  for (const id of MODEL_IDS) {
+    const fields = overrides[id]
+    if (!fields) continue
+    for (const field of PRICE_FIELDS) {
+      const value = fields[field]
+      if (value !== undefined) parts.push(`${id}.${field}:${compact(value)}`)
+    }
+  }
+  return parts.join(',')
+}
+
+function isModelId(v: string): v is ModelId {
+  return (MODEL_IDS as readonly string[]).includes(v)
+}
+
+function isPriceField(v: string): v is PriceField {
+  return (PRICE_FIELDS as readonly string[]).includes(v)
+}
+
+/** Deserializa `px` validando modelo/campo/valor; descarta entradas inválidas (D4) */
+function deserializeOverrides(raw: string): PriceOverrides {
+  const overrides: PriceOverrides = {}
+  if (!raw) return overrides
+  for (const entry of raw.split(',')) {
+    const [path, rawValue] = entry.split(':')
+    if (path === undefined || rawValue === undefined) continue
+    const [model, field] = path.split('.')
+    if (!isModelId(model) || !isPriceField(field)) continue
+    const value = Number(rawValue)
+    if (!Number.isFinite(value) || value < 0) continue
+    overrides[model] = { ...overrides[model], [field]: value }
+  }
+  return overrides
 }
 
 /** Evita restos de coma flotante al pasar fracciones a porcentaje */
@@ -132,6 +198,8 @@ export function serializeScenario(
   basePreset: Preset,
   currency: Currency,
   defaultCurrency: Currency,
+  mods: ModifierState,
+  modDefaults: ModifierDefaults,
 ): string {
   const params = new URLSearchParams()
   params.set('p', presetId)
@@ -144,6 +212,17 @@ export function serializeScenario(
   }
   if (fx !== defaultFx) params.set('fx', compact(fx))
   if (currency !== defaultCurrency) params.set('cur', currency)
+  // Modificadores de configuración avanzada: solo si difieren del defecto (D4)
+  if (mods.batchEnabled) params.set('b', compact(mods.batchFraction * 100))
+  if (mods.regional) params.set('bd', '1')
+  if (mods.employerMultiplier !== modDefaults.employerMultiplier)
+    params.set('em', compact(mods.employerMultiplier))
+  if (mods.effectiveHours !== modDefaults.effectiveHours)
+    params.set('eh', compact(mods.effectiveHours))
+  const px = serializeOverrides(mods.priceOverrides)
+  if (px) params.set('px', px)
+  // Modo presentación: flag de vista fuera del diff de escenario (D6)
+  if (mods.presentation) params.set('present', '1')
   return params.toString()
 }
 
@@ -154,6 +233,7 @@ export function deserializeScenario(
   defaultFx: number,
   pricingVersion: string,
   defaultCurrency: Currency,
+  modDefaults: ModifierDefaults,
 ): UrlState {
   const params = new URLSearchParams(search)
 
@@ -200,7 +280,46 @@ export function deserializeScenario(
   const urlVersion = params.get('pv')
   const staleVersion = urlVersion !== null && urlVersion !== pricingVersion ? urlVersion : null
 
-  return { presetId: basePreset.id, scenario, fx, currency, isCustomized, staleVersion }
+  // Modificadores de configuración avanzada (D4); inválido/ausente → defecto neutro
+  const rawBatch = params.get('b')
+  const parsedBatch = rawBatch === null ? NaN : Number(rawBatch) / 100
+  const batchEnabled = rawBatch !== null && Number.isFinite(parsedBatch)
+  const batchFraction = batchEnabled
+    ? clamp(parsedBatch, RANGES.batchFraction)
+    : modDefaults.batchFraction
+
+  const regional = params.get('bd') === '1'
+
+  const rawEm = params.get('em')
+  const parsedEm = rawEm === null ? NaN : Number(rawEm)
+  const employerMultiplier = Number.isFinite(parsedEm)
+    ? clamp(parsedEm, RANGES.employerMultiplier)
+    : modDefaults.employerMultiplier
+
+  const rawEh = params.get('eh')
+  const parsedEh = rawEh === null ? NaN : Number(rawEh)
+  const effectiveHours = Number.isFinite(parsedEh)
+    ? clamp(parsedEh, RANGES.effectiveHours)
+    : modDefaults.effectiveHours
+
+  const priceOverrides = deserializeOverrides(params.get('px') ?? '')
+  const presentation = params.get('present') === '1'
+
+  return {
+    presetId: basePreset.id,
+    scenario,
+    fx,
+    currency,
+    isCustomized,
+    staleVersion,
+    batchEnabled,
+    batchFraction,
+    regional,
+    employerMultiplier,
+    effectiveHours,
+    priceOverrides,
+    presentation,
+  }
 }
 
 /** Reescribe la query sin crear entradas de historial; no-op fuera del navegador */

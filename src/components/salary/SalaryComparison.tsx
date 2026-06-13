@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Bar } from 'react-chartjs-2'
-import type { TooltipItem } from 'chart.js'
+import type { Chart as ChartJS, TooltipItem } from 'chart.js'
 import { chartTheme } from '../charts/chartSetup'
+import { registerChart } from '../../lib/chartRegistry'
+import { ChartExportButton } from '../export/ChartExportButton'
 import { strings } from '../../i18n/es'
 import { salaryData } from '../../data'
 import {
@@ -33,12 +35,17 @@ export function SalaryComparison() {
   const currency = useScenarioStore((s) => s.currency)
   const profileGross = useScenarioStore((s) => s.profileGross)
   const setProfileGross = useScenarioStore((s) => s.setProfileGross)
+  const employerMultiplier = useScenarioStore((s) => s.employerMultiplier)
+  const effectiveHours = useScenarioStore((s) => s.effectiveHours)
   const results = useResults()
   const dark = useTheme((s) => s.dark)
+  const chartRef = useRef<ChartJS<'bar'>>(null)
+  useEffect(() => registerChart('salary', () => chartRef.current?.canvas ?? null), [])
 
+  // Configuración salarial editable en la configuración avanzada (RF-08, D2)
   const config = {
-    employerCostMultiplier: salaryData.employerCostMultiplier,
-    effectiveHoursPerYear: salaryData.effectiveHoursPerYear,
+    employerCostMultiplier: employerMultiplier,
+    effectiveHoursPerYear: effectiveHours,
   }
 
   // Coste del agente: USD nativo → moneda activa. Nóminas: EUR nativo → moneda activa (D3).
@@ -213,16 +220,19 @@ export function SalaryComparison() {
       </div>
       <p className="mt-1 text-xs text-muted">
         {strings.salary.multiplierNote(
-          formatOneDecimal(salaryData.employerCostMultiplier),
-          formatInt(salaryData.effectiveHoursPerYear),
+          formatOneDecimal(employerMultiplier),
+          formatInt(effectiveHours),
         )}
       </p>
 
-      <h3 className="mt-4 text-xs font-semibold text-muted">
-        {strings.salary.chartTitle(currency === 'eur' ? 'EUR' : 'USD')}
-      </h3>
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <h3 className="text-xs font-semibold text-muted">
+          {strings.salary.chartTitle(currency === 'eur' ? 'EUR' : 'USD')}
+        </h3>
+        <ChartExportButton id="salary" title={strings.salary.sectionTitle} />
+      </div>
       <div className="mt-2 h-56" role="img" aria-label={chartAria}>
-        <Bar data={data} options={options} />
+        <Bar ref={chartRef} data={data} options={options} />
       </div>
     </section>
   )

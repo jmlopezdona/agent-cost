@@ -155,6 +155,36 @@ describe('hooks neutros de Fase 2', () => {
     expect(batched.blendedRate).toBeCloseTo(base.blendedRate * (1 - 0.8 * 0.5), 10)
     expect(surcharged.blendedRate).toBeCloseTo(base.blendedRate * 1.1, 10)
   })
+
+  it('batch al 40% multiplica el coste por 0,80', () => {
+    const base = computeResults(P2, pricingTable)
+    const batched = computeResults(P2, pricingTable, { batchFraction: 0.4 })
+    expect(batched.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 0.8, 10)
+  })
+
+  it('recargo Bedrock multiplica el coste por 1,10', () => {
+    const base = computeResults(P2, pricingTable)
+    const surcharged = computeResults(P2, pricingTable, { regionalSurcharge: 1.1 })
+    expect(surcharged.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 1.1, 10)
+  })
+
+  it('composición de batch 40% y recargo 1,10 multiplica por 0,88', () => {
+    const base = computeResults(P2, pricingTable)
+    const both = computeResults(P2, pricingTable, { batchFraction: 0.4, regionalSurcharge: 1.1 })
+    expect(both.blendedRate).toBeCloseTo(base.blendedRate * 0.88, 10)
+    expect(both.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 0.88, 10)
+  })
+
+  it('caso dorado de P2 intacto con defaults neutros explícitos', () => {
+    const neutral = computeResults(P2, pricingTable, {
+      batchFraction: 0,
+      batchDiscount: 0.5,
+      regionalSurcharge: 1,
+    })
+    expectWithin1Percent(neutral.blendedRate, 13.8)
+    expectWithin1Percent(neutral.ceilingMonthlyUSD, 10060)
+    expectWithin1Percent(neutral.weightedMonthlyUSD, 6040)
+  })
 })
 
 describe('salary', () => {

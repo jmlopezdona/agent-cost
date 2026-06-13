@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Bar } from 'react-chartjs-2'
-import type { TooltipItem } from 'chart.js'
+import type { Chart as ChartJS, TooltipItem } from 'chart.js'
 import { chartTheme } from './chartSetup'
+import { registerChart } from '../../lib/chartRegistry'
+import { ChartExportButton } from '../export/ChartExportButton'
 import { strings } from '../../i18n/es'
 import { formatMoney } from '../../lib/format'
 import { usdToEur } from '../../engine/salary'
@@ -15,6 +17,8 @@ export function CeilingVsWeightedChart() {
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
   const dark = useTheme((s) => s.dark)
+  const chartRef = useRef<ChartJS<'bar'>>(null)
+  useEffect(() => registerChart('ceiling', () => chartRef.current?.canvas ?? null), [])
 
   // El motor devuelve USD; las barras se expresan en la moneda activa (D3)
   const toDisplay = (usd: number) => (currency === 'eur' ? usdToEur(usd, fx) : usd)
@@ -65,9 +69,12 @@ export function CeilingVsWeightedChart() {
 
   return (
     <div className="rounded-lg border border-line bg-raised p-4">
-      <h2 className="text-sm font-semibold">{strings.charts.ceilingVsWeightedTitle}</h2>
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="text-sm font-semibold">{strings.charts.ceilingVsWeightedTitle}</h2>
+        <ChartExportButton id="ceiling" title={strings.charts.ceilingVsWeightedTitle} />
+      </div>
       <div className="mt-3 h-56" role="img" aria-label={ariaLabel}>
-        <Bar data={data} options={options} />
+        <Bar ref={chartRef} data={data} options={options} />
       </div>
     </div>
   )

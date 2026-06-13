@@ -4,7 +4,7 @@ import { usdToEur } from '../../engine/salary'
 import { useResults } from '../../lib/useResults'
 import { useScenarioStore } from '../../store/useScenarioStore'
 
-export function MetricCards() {
+export function MetricCards({ large = false }: { large?: boolean }) {
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -51,14 +51,24 @@ export function MetricCards() {
               : 'border-line bg-raised'
           }`}
         >
-          <p className="text-xs text-muted">{card.label}</p>
+          <p className={large ? 'text-sm text-muted' : 'text-xs text-muted'}>{card.label}</p>
           <p
             data-testid={`metric-${card.id}`}
-            className={`mt-1 font-bold tabular-nums ${card.hero ? 'text-3xl text-accent' : 'text-xl'}`}
+            className={`mt-1 font-bold tabular-nums ${
+              card.hero
+                ? large
+                  ? 'text-5xl text-accent'
+                  : 'text-3xl text-accent'
+                : large
+                  ? 'text-3xl'
+                  : 'text-xl'
+            }`}
           >
             {card.value}
           </p>
-          {card.hint && <p className="mt-0.5 text-xs text-muted">{card.hint}</p>}
+          {card.hint && (
+            <p className={`mt-0.5 text-muted ${large ? 'text-sm' : 'text-xs'}`}>{card.hint}</p>
+          )}
         </div>
       ))}
     </div>

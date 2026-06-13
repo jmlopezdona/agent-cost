@@ -3,6 +3,7 @@ import { strings } from '../../i18n/es'
 import { presets } from '../../data'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import { useTheme } from '../../lib/theme'
+import { PresentationToggle } from './PresentationToggle'
 
 export function Header() {
   const presetId = useScenarioStore((s) => s.presetId)
@@ -10,6 +11,7 @@ export function Header() {
   const loadPreset = useScenarioStore((s) => s.loadPreset)
   const currency = useScenarioStore((s) => s.currency)
   const setCurrency = useScenarioStore((s) => s.setCurrency)
+  const presentation = useScenarioStore((s) => s.presentation)
   const dark = useTheme((s) => s.dark)
   const toggleTheme = useTheme((s) => s.toggle)
 
@@ -80,6 +82,7 @@ export function Header() {
           >
             {copied ? strings.header.copied : strings.header.copyLink}
           </button>
+          <PresentationToggle />
           <button
             type="button"
             onClick={toggleTheme}
@@ -91,12 +94,14 @@ export function Header() {
         </div>
       </div>
 
-      <div
-        role="group"
-        aria-label={strings.header.presetsLabel}
-        className="grid gap-2 sm:grid-cols-3"
-      >
-        {presets.map((preset) => {
+      {!presentation && (
+        <>
+          <div
+            role="group"
+            aria-label={strings.header.presetsLabel}
+            className="grid gap-2 sm:grid-cols-3"
+          >
+            {presets.map((preset) => {
           const active = preset.id === presetId
           return (
             <button
@@ -114,19 +119,21 @@ export function Header() {
               <span className="mt-0.5 block truncate text-xs text-muted">{preset.description}</span>
             </button>
           )
-        })}
-      </div>
+            })}
+          </div>
 
-      <p className="text-sm">
-        {isCustomized ? (
-          <span className="font-medium text-accent">
-            {strings.header.customized(activePreset.name)}
-          </span>
-        ) : (
-          <span className="font-medium">{activePreset.name}</span>
-        )}
-        <span className="text-muted"> — {activePreset.description}</span>
-      </p>
+          <p className="text-sm">
+            {isCustomized ? (
+              <span className="font-medium text-accent">
+                {strings.header.customized(activePreset.name)}
+              </span>
+            ) : (
+              <span className="font-medium">{activePreset.name}</span>
+            )}
+            <span className="text-muted"> — {activePreset.description}</span>
+          </p>
+        </>
+      )}
     </header>
   )
 }

@@ -1,7 +1,10 @@
 import { create } from 'zustand'
-import type { Scenario, TokenRates } from '../engine/types'
+import type { ModelId, PriceField, PriceOverrides, Scenario, TokenRates } from '../engine/types'
 import {
+  DEFAULT_BATCH_FRACTION,
   DEFAULT_CURRENCY,
+  DEFAULT_EFFECTIVE_HOURS,
+  DEFAULT_EMPLOYER_MULTIPLIER,
   DEFAULT_FX_EUR_PER_USD,
   DEFAULT_PRESET_ID,
   presets,
@@ -16,6 +19,7 @@ import {
   scenarioFromPreset,
   serializeScenario,
   writeUrl,
+  type ModifierDefaults,
 } from './urlSync'
 
 type MixSliderId = 'fable' | 'opus' | 'sonnet'
@@ -36,6 +40,16 @@ interface ScenarioStore {
   /** Brutos anuales editados en sesión (sin persistencia) */
   profileGross: Record<string, number>
 
+  // Modificadores de configuración avanzada (Fase 2, D2)
+  batchEnabled: boolean
+  batchFraction: number
+  regional: boolean
+  employerMultiplier: number
+  effectiveHours: number
+  priceOverrides: PriceOverrides
+  /** Modo presentación (flag de vista, D6) */
+  presentation: boolean
+
   loadPreset: (id: string) => void
   setToken: (field: keyof TokenRates, value: number) => void
   setMix: (model: MixSliderId, value: number) => void
@@ -45,6 +59,15 @@ interface ScenarioStore {
   setCurrency: (c: Currency) => void
   setProfileGross: (profileId: string, value: number) => void
   dismissStaleVersion: () => void
+
+  setBatchEnabled: (value: boolean) => void
+  setBatchFraction: (value: number) => void
+  setRegional: (value: boolean) => void
+  setEmployerMultiplier: (value: number) => void
+  setEffectiveHours: (value: number) => void
+  setPriceOverride: (model: ModelId, field: PriceField, value: number) => void
+  resetPriceOverrides: () => void
+  togglePresentation: () => void
 }
 
 const TOKEN_RANGE = {
@@ -61,6 +84,12 @@ const SCHEDULE_RANGE = {
   agents: RANGES.agents,
 } as const
 
+const MOD_DEFAULTS: ModifierDefaults = {
+  batchFraction: DEFAULT_BATCH_FRACTION,
+  employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
+  effectiveHours: DEFAULT_EFFECTIVE_HOURS,
+}
+
 function presetById(id: string) {
   const preset = presets.find((p) => p.id === id)
   if (!preset) throw new Error(`Preset desconocido: ${id}`)
@@ -74,11 +103,24 @@ const initial = deserializeScenario(
   DEFAULT_FX_EUR_PER_USD,
   pricingTable.version,
   DEFAULT_CURRENCY,
+  MOD_DEFAULTS,
 )
 
 export const useScenarioStore = create<ScenarioStore>((set, get) => {
   const syncUrl = () => {
-    const { scenario, presetId, fx, currency } = get()
+    const {
+      scenario,
+      presetId,
+      fx,
+      currency,
+      batchEnabled,
+      batchFraction,
+      regional,
+      employerMultiplier,
+      effectiveHours,
+      priceOverrides,
+      presentation,
+    } = get()
     writeUrl(
       serializeScenario(
         scenario,
@@ -89,6 +131,16 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         presetById(presetId),
         currency,
         DEFAULT_CURRENCY,
+        {
+          batchEnabled,
+          batchFraction,
+          regional,
+          employerMultiplier,
+          effectiveHours,
+          priceOverrides,
+          presentation,
+        },
+        MOD_DEFAULTS,
       ),
     )
   }
@@ -107,8 +159,26 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     staleVersion: initial.staleVersion,
     profileGross: Object.fromEntries(salaryData.profiles.map((p) => [p.id, p.grossAnnualEUR])),
 
+    batchEnabled: initial.batchEnabled,
+    batchFraction: initial.batchFraction,
+    regional: initial.regional,
+    employerMultiplier: initial.employerMultiplier,
+    effectiveHours: initial.effectiveHours,
+    priceOverrides: initial.priceOverrides,
+    presentation: initial.presentation,
+
     loadPreset: (id) => {
-      update({ scenario: scenarioFromPreset(presetById(id)), presetId: id, isCustomized: false })
+      // El preset aplica su bloque de modificadores; los demás quedan neutros (D1)
+      const preset = presetById(id)
+      const batchEnabled = preset.modifiers?.batchEnabled ?? false
+      const batchFraction = preset.modifiers?.batchFraction ?? DEFAULT_BATCH_FRACTION
+      update({
+        scenario: scenarioFromPreset(preset),
+        presetId: id,
+        isCustomized: false,
+        batchEnabled,
+        batchFraction,
+      })
     },
 
     setToken: (field, value) => {
@@ -166,5 +236,27 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     },
 
     dismissStaleVersion: () => set({ staleVersion: null }),
+
+    // Modificadores: como fx/currency, no marcan "Personalizado" (D2)
+    setBatchEnabled: (value) => update({ batchEnabled: value }),
+    setBatchFraction: (value) => update({ batchFraction: clamp(value, RANGES.batchFraction) }),
+    setRegional: (value) => update({ regional: value }),
+    setEmployerMultiplier: (value) =>
+      update({ employerMultiplier: clamp(value, RANGES.employerMultiplier) }),
+    setEffectiveHours: (value) => update({ effectiveHours: clamp(value, RANGES.effectiveHours) }),
+
+    setPriceOverride: (model, field, value) => {
+      const { priceOverrides } = get()
+      update({
+        priceOverrides: {
+          ...priceOverrides,
+          [model]: { ...priceOverrides[model], [field]: Math.max(0, value) },
+        },
+      })
+    },
+
+    resetPriceOverrides: () => update({ priceOverrides: {} }),
+
+    togglePresentation: () => update({ presentation: !get().presentation }),
   }
 })

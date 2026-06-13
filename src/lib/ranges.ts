@@ -16,6 +16,12 @@ export const RANGES = {
   agents: { min: 1, max: 100 },
   mix: { min: 0, max: 1 },
   fx: { min: 0.1, max: 10 },
+  /** Fracción de trabajo elegible para Batch API */
+  batchFraction: { min: 0, max: 1 },
+  /** Multiplicador de coste empresa (bruto → coste total) */
+  employerMultiplier: { min: 1, max: 3 },
+  /** Horas efectivas anuales de un FTE */
+  effectiveHours: { min: 1, max: 3000 },
 } as const satisfies Record<string, Range>
 
 export function clamp(value: number, range: Range): number {

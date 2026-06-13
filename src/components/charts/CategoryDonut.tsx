@@ -1,6 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Doughnut } from 'react-chartjs-2'
-import { CATEGORY_LABELS, chartTheme } from './chartSetup'
+import type { Chart as ChartJS } from 'chart.js'
+import { CATEGORY_BORDER_DASH, CATEGORY_LABELS, chartTheme } from './chartSetup'
+import { registerChart } from '../../lib/chartRegistry'
+import { ChartExportButton } from '../export/ChartExportButton'
 import { strings } from '../../i18n/es'
 import { CURRENCY_SYMBOL, formatMoneyPerHour, formatPercent } from '../../lib/format'
 import { usdToEur } from '../../engine/salary'
@@ -14,6 +17,8 @@ export function CategoryDonut() {
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
   const dark = useTheme((s) => s.dark)
+  const chartRef = useRef<ChartJS<'doughnut'>>(null)
+  useEffect(() => registerChart('breakdown', () => chartRef.current?.canvas ?? null), [])
 
   // Las tasas por categoría son USD/h del motor; se muestran en la moneda activa (D3)
   const rate = (usdPerHour: number) =>
@@ -28,8 +33,11 @@ export function CategoryDonut() {
           {
             data: results.byCategory.map((c) => c.usdPerHour),
             backgroundColor: results.byCategory.map((c) => theme.categoryColors[c.category]),
-            borderColor: theme.surface,
+            // Señal secundaria al color: borde con patrón distinto por categoría (CA-07.2)
+            borderColor: theme.ink,
             borderWidth: 2,
+            borderDash: (ctx: { dataIndex: number }) =>
+              CATEGORY_BORDER_DASH[results.byCategory[ctx.dataIndex].category],
           },
         ],
       },
@@ -68,10 +76,15 @@ export function CategoryDonut() {
 
   return (
     <div className="rounded-lg border border-line bg-raised p-4">
-      <h2 className="text-sm font-semibold">{strings.charts.breakdownTitle}</h2>
-      <p className="text-xs text-muted">{strings.charts.breakdownHint}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-semibold">{strings.charts.breakdownTitle}</h2>
+          <p className="text-xs text-muted">{strings.charts.breakdownHint}</p>
+        </div>
+        <ChartExportButton id="breakdown" title={strings.charts.breakdownTitle} />
+      </div>
       <div className="mt-3 h-64" aria-hidden="true">
-        <Doughnut data={data} options={options} />
+        <Doughnut ref={chartRef} data={data} options={options} />
       </div>
       {/* Alternativa textual accesible al canvas */}
       <table className="sr-only">

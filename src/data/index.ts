@@ -56,6 +56,15 @@ function isPreset(v: unknown): v is Preset {
   if (mix == null || !MODEL_IDS.every((id) => isFiniteNumber(mix[id]))) return false
   const mixSum = MODEL_IDS.reduce((s, id) => s + (mix[id] as number), 0)
   if (Math.abs(mixSum - 1) > 1e-9) return false
+  // El campo `learnings` es obligatorio en todos los presets (Fase 2, D1)
+  if (!isNonEmptyString(p.learnings)) return false
+  // El bloque `modifiers` es opcional; si existe, sus campos deben ser válidos
+  if (p.modifiers !== undefined) {
+    const m = p.modifiers as Record<string, unknown>
+    if (typeof m !== 'object' || m === null) return false
+    if (m.batchEnabled !== undefined && typeof m.batchEnabled !== 'boolean') return false
+    if (m.batchFraction !== undefined && !isFiniteNumber(m.batchFraction)) return false
+  }
   return (
     isFiniteNumber(p.hoursPerDay) &&
     isFiniteNumber(p.daysPerWeek) &&
@@ -116,6 +125,18 @@ export const salaryData: SalaryData = validate(salariesJson, isSalaryData, 'sala
 
 export const DEFAULT_PRESET_ID = 'P2'
 export const DEFAULT_FX_EUR_PER_USD = 0.92
+
+/** Defaults neutros de los modificadores de configuración avanzada (Fase 2) */
+export const DEFAULT_BATCH_ENABLED = false
+/** % elegible que muestra el slider al activar Batch API */
+export const DEFAULT_BATCH_FRACTION = 0.5
+/** Descuento de la Batch API (−50%) */
+export const BATCH_DISCOUNT = 0.5
+export const DEFAULT_REGIONAL = false
+/** Recargo regional/Bedrock cuando está activo (+10%) */
+export const REGIONAL_SURCHARGE = 1.1
+export const DEFAULT_EMPLOYER_MULTIPLIER = salaryData.employerCostMultiplier
+export const DEFAULT_EFFECTIVE_HOURS = salaryData.effectiveHoursPerYear
 
 /** Moneda de presentación; el motor siempre calcula en USD */
 export type Currency = 'eur' | 'usd'

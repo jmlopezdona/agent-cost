@@ -119,6 +119,64 @@ export const strings = {
     multiplierNote: (multiplier: string, hours: string) =>
       `Coste empresa = bruto × ${multiplier} · ${hours} h efectivas/año`,
   },
+  learnings: {
+    label: 'Qué observar',
+  },
+  advanced: {
+    sectionTitle: 'Configuración avanzada',
+    sectionHint: 'Precios, Batch API, recargo regional, tipo de cambio y coste empresa',
+    toggleExpand: 'Mostrar u ocultar la configuración avanzada',
+    pricingTitle: 'Precios por modelo (USD/MTok)',
+    pricingHint: 'Edita las tarifas oficiales; los cambios solo viven en esta sesión y en el enlace.',
+    restoreOfficial: 'Restaurar oficiales',
+    priceFields: {
+      input: 'Input',
+      output: 'Output',
+      cache_read: 'Cache read',
+      cache_write: 'Cache write',
+    },
+    priceCellAria: (model: string, field: string) => `Precio de ${field} de ${model} (USD/MTok)`,
+    colModel: 'Modelo',
+    batchTitle: 'Batch API (−50%)',
+    batchToggle: 'Activar Batch API',
+    batchHelp:
+      'La Batch API procesa peticiones de forma asíncrona con un 50% de descuento. Indica qué fracción del trabajo no requiere latencia y puede ir por batch.',
+    batchFractionLabel: '% del trabajo elegible',
+    batchUnit: '%',
+    regionalTitle: 'Recargo regional/Bedrock (+10%)',
+    regionalToggle: 'Activar recargo regional/Bedrock',
+    regionalHelp:
+      'Algunas regiones y el acceso vía Amazon Bedrock aplican un recargo aproximado del 10% sobre todas las categorías.',
+    fxLabel: 'Tipo de cambio',
+    fxUnit: '€ por USD',
+    employerMultiplierLabel: 'Multiplicador de coste empresa',
+    employerMultiplierHelp:
+      'Factor que convierte el bruto anual en coste empresa total (seguridad social, equipamiento, etc.). Por defecto 1,30.',
+    effectiveHoursLabel: 'Horas efectivas anuales (FTE)',
+    effectiveHoursUnit: 'h/año',
+    effectiveHoursHelp:
+      'Horas realmente productivas de un empleado a tiempo completo al año, descontando vacaciones, festivos y tiempo no facturable. Por defecto 1.720.',
+  },
+  badges: {
+    batch: (percent: string) => `batch ${percent} aplicado`,
+    bedrock: 'Bedrock +10%',
+    pricesEdited: 'precios editados',
+    label: 'Modificadores activos',
+  },
+  presentation: {
+    toggle: 'Modo presentación',
+    toggleAria: 'Activar o desactivar el modo presentación',
+    exit: 'Salir del modo presentación',
+  },
+  exporting: {
+    sectionTitle: 'Exportar',
+    json: 'Exportar JSON',
+    csv: 'Exportar CSV',
+    pngChart: 'Exportar imagen',
+    pngChartAria: (chart: string) => `Exportar ${chart} como imagen PNG`,
+    pngAll: 'Exportar todo (PNG)',
+    fileBase: 'agentcost-escenario',
+  },
   footer: {
     pricingVersion: (version: string, date: string) =>
       `Precios API de Anthropic versión ${version} (efectivos desde ${date})`,
