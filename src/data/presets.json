@@ -157,8 +157,8 @@
         "gpt-5.4-mini": 0.2,
         "gpt-5.4-nano": 0
       },
-      "hoursPerDay": 24,
-      "daysPerWeek": 7,
+      "hoursPerDay": 12,
+      "daysPerWeek": 5,
       "dutyCycle": 0.6,
       "agents": 1
     },
@@ -275,8 +275,8 @@
         "gemini-3.5-flash": 0.65,
         "gemini-3.1-flash-lite": 0.2
       },
-      "hoursPerDay": 24,
-      "daysPerWeek": 7,
+      "hoursPerDay": 12,
+      "daysPerWeek": 5,
       "dutyCycle": 0.6,
       "agents": 1
     },
