@@ -1,61 +1,72 @@
 import {
-  MODEL_IDS,
-  TOKEN_CATEGORIES,
   type CategoryCost,
   type EngineOptions,
-  type ModelId,
   type ModelMix,
   type ModelPricing,
   type PricingTable,
+  type ProviderData,
+  type ProviderModifiers,
   type Results,
   type Scenario,
-  type TokenCategory,
   type TokenRates,
 } from './types'
 
 const WEEKS_PER_MONTH = 52 / 12
 
-function priceModifier(opts: EngineOptions): number {
-  const batchFraction = opts.batchFraction ?? 0
-  const batchDiscount = opts.batchDiscount ?? 0.5
-  const surcharge = opts.regionalSurcharge ?? 1
+/** Escala de una tasa de tokens frente a $/MTok: 'k' → /1000, 'M' → /1 */
+function scaleOf(unit: 'k' | 'M'): number {
+  return unit === 'k' ? 1000 : 1
+}
+
+/**
+ * Modificador de precio del proveedor (D5): aplica solo los modificadores que el proveedor
+ * declara. Batch reduce el coste; el recargo regional lo aumenta. Si el proveedor no ofrece un
+ * modificador, se ignora aunque se pase en `opts`.
+ */
+function priceModifier(opts: EngineOptions, modifiers: ProviderModifiers): number {
+  const batchFraction = modifiers.batch ? (opts.batchFraction ?? 0) : 0
+  const batchDiscount = modifiers.batch ? (opts.batchDiscount ?? modifiers.batch.discount) : 0
+  const surcharge = modifiers.regional ? (opts.regionalSurcharge ?? 1) : 1
   return (1 - batchFraction * batchDiscount) * surcharge
 }
 
-/** USD/h activa que aporta cada categoría de token para un modelo (RF-01) */
+/** USD/h activa que aporta cada categoría `rate` de un modelo (RF-01 generalizado) */
 export function categoryCosts(
   tokens: TokenRates,
-  pricing: ModelPricing,
+  model: ModelPricing,
+  provider: ProviderData,
   opts: EngineOptions = {},
-): Record<TokenCategory, number> {
-  const m = priceModifier(opts)
-  return {
-    input: (tokens.inputK / 1000) * pricing.input * m,
-    output: (tokens.outputK / 1000) * pricing.output * m,
-    cacheRead: tokens.cacheReadM * pricing.cache_read * m,
-    cacheWrite: (tokens.cacheWriteK / 1000) * pricing.cache_write * m,
+): Record<string, number> {
+  const m = priceModifier(opts, provider.modifiers)
+  const out: Record<string, number> = {}
+  for (const cat of provider.costModel) {
+    if (cat.kind !== 'rate') continue
+    const rate = tokens[cat.rateKey] ?? 0
+    out[cat.key] = (rate / scaleOf(cat.unit)) * (model.prices[cat.key] ?? 0) * m
   }
+  return out
 }
 
-/** Tarifa USD/h activa de un modelo (RF-01) */
+/** Tarifa USD/h activa de un modelo: suma de sus categorías `rate` (RF-01) */
 export function hourlyRate(
   tokens: TokenRates,
-  pricing: ModelPricing,
+  model: ModelPricing,
+  provider: ProviderData,
   opts: EngineOptions = {},
 ): number {
-  const c = categoryCosts(tokens, pricing, opts)
-  return c.input + c.output + c.cacheRead + c.cacheWrite
+  const c = categoryCosts(tokens, model, provider, opts)
+  return Object.values(c).reduce((sum, v) => sum + v, 0)
 }
 
-/** Tarifa USD/h activa del blend: Σ mix × tarifa(modelo) */
+/** Tarifa USD/h activa del blend: Σ mix × tarifa(modelo) sobre los modelos del proveedor */
 export function blendedRate(
   tokens: TokenRates,
   mix: ModelMix,
-  table: PricingTable,
+  provider: ProviderData,
   opts: EngineOptions = {},
 ): number {
-  return MODEL_IDS.reduce(
-    (sum, id) => sum + mix[id] * hourlyRate(tokens, table.models[id], opts),
+  return Object.keys(provider.models).reduce(
+    (sum, key) => sum + (mix[key] ?? 0) * hourlyRate(tokens, provider.models[key], provider, opts),
     0,
   )
 }
@@ -65,43 +76,66 @@ export function scheduledHoursPerMonth(hoursPerDay: number, daysPerWeek: number)
   return hoursPerDay * daysPerWeek * WEEKS_PER_MONTH
 }
 
+/**
+ * Coste mensual de almacenamiento de caché por agente (D3): para las categorías de tipo
+ * `storage`, Σ mix × tokens_retenidos × precio × horas_programadas. Fuera del blend $/h.
+ */
+function storageMonthlyPerAgent(
+  tokens: TokenRates,
+  mix: ModelMix,
+  provider: ProviderData,
+  scheduledHoursMonth: number,
+  opts: EngineOptions,
+): number {
+  if (!opts.storageEnabled) return 0
+  let total = 0
+  for (const cat of provider.costModel) {
+    if (cat.kind !== 'storage') continue
+    const retained = (tokens[cat.rateKey] ?? 0) / scaleOf(cat.unit)
+    for (const key of Object.keys(provider.models)) {
+      total += (mix[key] ?? 0) * retained * (provider.models[key].prices[cat.key] ?? 0)
+    }
+  }
+  return total * scheduledHoursMonth
+}
+
 export function computeResults(
   scenario: Scenario,
   table: PricingTable,
   opts: EngineOptions = {},
 ): Results {
   const { tokens, mix } = scenario
+  const provider = table.providers[scenario.providerId]
+  const modelKeys = Object.keys(provider.models)
+  const rateCats = provider.costModel.filter((c) => c.kind === 'rate')
 
-  const perModelRate = {} as Record<ModelId, number>
-  const byModel = {} as Record<ModelId, number>
-  const categoryTotals: Record<TokenCategory, number> = {
-    input: 0,
-    output: 0,
-    cacheRead: 0,
-    cacheWrite: 0,
+  const perModelRate: Record<string, number> = {}
+  const byModel: Record<string, number> = {}
+  const categoryTotals: Record<string, number> = {}
+  for (const cat of rateCats) categoryTotals[cat.key] = 0
+
+  for (const key of modelKeys) {
+    const costs = categoryCosts(tokens, provider.models[key], provider, opts)
+    const rate = Object.values(costs).reduce((sum, v) => sum + v, 0)
+    perModelRate[key] = rate
+    byModel[key] = (mix[key] ?? 0) * rate
+    for (const cat of rateCats) categoryTotals[cat.key] += (mix[key] ?? 0) * (costs[cat.key] ?? 0)
   }
 
-  for (const id of MODEL_IDS) {
-    const costs = categoryCosts(tokens, table.models[id], opts)
-    const rate = costs.input + costs.output + costs.cacheRead + costs.cacheWrite
-    perModelRate[id] = rate
-    byModel[id] = mix[id] * rate
-    for (const cat of TOKEN_CATEGORIES) {
-      categoryTotals[cat] += mix[id] * costs[cat]
-    }
-  }
+  const blend = modelKeys.reduce((sum, key) => sum + byModel[key], 0)
 
-  const blend = MODEL_IDS.reduce((sum, id) => sum + byModel[id], 0)
-
-  const byCategory: CategoryCost[] = TOKEN_CATEGORIES.map((category) => ({
-    category,
-    usdPerHour: categoryTotals[category],
-    share: blend > 0 ? categoryTotals[category] / blend : 0,
+  const byCategory: CategoryCost[] = rateCats.map((cat) => ({
+    category: cat.key,
+    usdPerHour: categoryTotals[cat.key],
+    share: blend > 0 ? categoryTotals[cat.key] / blend : 0,
   }))
 
   const scheduledHoursMonth = scheduledHoursPerMonth(scenario.hoursPerDay, scenario.daysPerWeek)
   const activeHoursMonth = scheduledHoursMonth * scenario.dutyCycle
-  const ceilingMonthlyUSD = blend * scheduledHoursMonth * scenario.agents
+  const storagePerAgent = storageMonthlyPerAgent(tokens, mix, provider, scheduledHoursMonth, opts)
+  const storageMonthlyUSD = storagePerAgent * scenario.agents
+  // El almacenamiento entra en el techo antes del duty cycle, fuera del blend $/h (D3)
+  const ceilingMonthlyUSD = (blend * scheduledHoursMonth + storagePerAgent) * scenario.agents
   const weightedMonthlyUSD = ceilingMonthlyUSD * scenario.dutyCycle
   const weightedAnnualUSD = weightedMonthlyUSD * 12
 
@@ -113,6 +147,7 @@ export function computeResults(
     ceilingMonthlyUSD,
     weightedMonthlyUSD,
     weightedAnnualUSD,
+    storageMonthlyUSD,
     byCategory,
     byModel,
   }

@@ -2,8 +2,19 @@
   "presets": [
     {
       "id": "P1",
-      "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
-      "mix": { "fable": 0, "opus": 0, "sonnet": 0.8, "haiku": 0.2 },
+      "provider": "anthropic",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 210,
+        "cacheReadM": 30,
+        "cacheWriteK": 530
+      },
+      "mix": {
+        "fable": 0,
+        "opus": 0,
+        "sonnet": 0.8,
+        "haiku": 0.2
+      },
       "hoursPerDay": 8,
       "daysPerWeek": 5,
       "dutyCycle": 0.3,
@@ -11,8 +22,19 @@
     },
     {
       "id": "P2",
-      "tokens": { "inputK": 42, "outputK": 210, "cacheReadM": 30, "cacheWriteK": 530 },
-      "mix": { "fable": 0, "opus": 0.15, "sonnet": 0.65, "haiku": 0.2 },
+      "provider": "anthropic",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 210,
+        "cacheReadM": 30,
+        "cacheWriteK": 530
+      },
+      "mix": {
+        "fable": 0,
+        "opus": 0.15,
+        "sonnet": 0.65,
+        "haiku": 0.2
+      },
       "hoursPerDay": 24,
       "daysPerWeek": 7,
       "dutyCycle": 0.6,
@@ -20,8 +42,19 @@
     },
     {
       "id": "P3",
-      "tokens": { "inputK": 50, "outputK": 280, "cacheReadM": 25, "cacheWriteK": 600 },
-      "mix": { "fable": 0.2, "opus": 0.4, "sonnet": 0.35, "haiku": 0.05 },
+      "provider": "anthropic",
+      "tokens": {
+        "inputK": 50,
+        "outputK": 280,
+        "cacheReadM": 25,
+        "cacheWriteK": 600
+      },
+      "mix": {
+        "fable": 0.2,
+        "opus": 0.4,
+        "sonnet": 0.35,
+        "haiku": 0.05
+      },
       "hoursPerDay": 8,
       "daysPerWeek": 5,
       "dutyCycle": 0.5,
@@ -29,8 +62,19 @@
     },
     {
       "id": "P4",
-      "tokens": { "inputK": 42, "outputK": 190, "cacheReadM": 28, "cacheWriteK": 500 },
-      "mix": { "fable": 0, "opus": 0.05, "sonnet": 0.55, "haiku": 0.4 },
+      "provider": "anthropic",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 190,
+        "cacheReadM": 28,
+        "cacheWriteK": 500
+      },
+      "mix": {
+        "fable": 0,
+        "opus": 0.05,
+        "sonnet": 0.55,
+        "haiku": 0.4
+      },
       "hoursPerDay": 24,
       "daysPerWeek": 7,
       "dutyCycle": 0.7,
@@ -38,18 +82,279 @@
     },
     {
       "id": "P5",
-      "tokens": { "inputK": 25, "outputK": 120, "cacheReadM": 12, "cacheWriteK": 300 },
-      "mix": { "fable": 0.05, "opus": 0, "sonnet": 0.25, "haiku": 0.7 },
+      "provider": "anthropic",
+      "tokens": {
+        "inputK": 25,
+        "outputK": 120,
+        "cacheReadM": 12,
+        "cacheWriteK": 300
+      },
+      "mix": {
+        "fable": 0.05,
+        "opus": 0,
+        "sonnet": 0.25,
+        "haiku": 0.7
+      },
       "hoursPerDay": 12,
       "daysPerWeek": 7,
       "dutyCycle": 0.85,
       "agents": 5,
-      "modifiers": { "batchEnabled": true, "batchFraction": 0.8 }
+      "modifiers": {
+        "batchEnabled": true,
+        "batchFraction": 0.8
+      }
     },
     {
       "id": "P6",
-      "tokens": { "inputK": 45, "outputK": 220, "cacheReadM": 50, "cacheWriteK": 600 },
-      "mix": { "fable": 0, "opus": 0.1, "sonnet": 0.7, "haiku": 0.2 },
+      "provider": "anthropic",
+      "tokens": {
+        "inputK": 45,
+        "outputK": 220,
+        "cacheReadM": 50,
+        "cacheWriteK": 600
+      },
+      "mix": {
+        "fable": 0,
+        "opus": 0.1,
+        "sonnet": 0.7,
+        "haiku": 0.2
+      },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.8,
+      "agents": 1
+    },
+    {
+      "id": "O1",
+      "provider": "openai",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 210,
+        "cacheReadM": 30
+      },
+      "mix": {
+        "gpt-5.5": 0,
+        "gpt-5.4": 0,
+        "gpt-5.4-mini": 0.8,
+        "gpt-5.4-nano": 0.2
+      },
+      "hoursPerDay": 8,
+      "daysPerWeek": 5,
+      "dutyCycle": 0.3,
+      "agents": 1
+    },
+    {
+      "id": "O2",
+      "provider": "openai",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 210,
+        "cacheReadM": 30
+      },
+      "mix": {
+        "gpt-5.5": 0,
+        "gpt-5.4": 0.15,
+        "gpt-5.4-mini": 0.65,
+        "gpt-5.4-nano": 0.2
+      },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.6,
+      "agents": 1
+    },
+    {
+      "id": "O3",
+      "provider": "openai",
+      "tokens": {
+        "inputK": 50,
+        "outputK": 280,
+        "cacheReadM": 25
+      },
+      "mix": {
+        "gpt-5.5": 0.2,
+        "gpt-5.4": 0.4,
+        "gpt-5.4-mini": 0.35,
+        "gpt-5.4-nano": 0.05
+      },
+      "hoursPerDay": 8,
+      "daysPerWeek": 5,
+      "dutyCycle": 0.5,
+      "agents": 1
+    },
+    {
+      "id": "O4",
+      "provider": "openai",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 190,
+        "cacheReadM": 28
+      },
+      "mix": {
+        "gpt-5.5": 0,
+        "gpt-5.4": 0.05,
+        "gpt-5.4-mini": 0.55,
+        "gpt-5.4-nano": 0.4
+      },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.7,
+      "agents": 1
+    },
+    {
+      "id": "O5",
+      "provider": "openai",
+      "tokens": {
+        "inputK": 25,
+        "outputK": 120,
+        "cacheReadM": 12
+      },
+      "mix": {
+        "gpt-5.5": 0.05,
+        "gpt-5.4": 0,
+        "gpt-5.4-mini": 0.25,
+        "gpt-5.4-nano": 0.7
+      },
+      "hoursPerDay": 12,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.85,
+      "agents": 5,
+      "modifiers": {
+        "batchEnabled": true,
+        "batchFraction": 0.8
+      }
+    },
+    {
+      "id": "O6",
+      "provider": "openai",
+      "tokens": {
+        "inputK": 45,
+        "outputK": 220,
+        "cacheReadM": 50
+      },
+      "mix": {
+        "gpt-5.5": 0,
+        "gpt-5.4": 0.1,
+        "gpt-5.4-mini": 0.7,
+        "gpt-5.4-nano": 0.2
+      },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.8,
+      "agents": 1
+    },
+    {
+      "id": "G1",
+      "provider": "google",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 210,
+        "cacheReadM": 30,
+        "cacheStorageM": 2
+      },
+      "mix": {
+        "gemini-3.1-pro-preview": 0,
+        "gemini-3.5-flash": 0.8,
+        "gemini-3.1-flash-lite": 0.2
+      },
+      "hoursPerDay": 8,
+      "daysPerWeek": 5,
+      "dutyCycle": 0.3,
+      "agents": 1
+    },
+    {
+      "id": "G2",
+      "provider": "google",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 210,
+        "cacheReadM": 30,
+        "cacheStorageM": 2
+      },
+      "mix": {
+        "gemini-3.1-pro-preview": 0.15,
+        "gemini-3.5-flash": 0.65,
+        "gemini-3.1-flash-lite": 0.2
+      },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.6,
+      "agents": 1
+    },
+    {
+      "id": "G3",
+      "provider": "google",
+      "tokens": {
+        "inputK": 50,
+        "outputK": 280,
+        "cacheReadM": 25,
+        "cacheStorageM": 2
+      },
+      "mix": {
+        "gemini-3.1-pro-preview": 0.6,
+        "gemini-3.5-flash": 0.35,
+        "gemini-3.1-flash-lite": 0.05
+      },
+      "hoursPerDay": 8,
+      "daysPerWeek": 5,
+      "dutyCycle": 0.5,
+      "agents": 1
+    },
+    {
+      "id": "G4",
+      "provider": "google",
+      "tokens": {
+        "inputK": 42,
+        "outputK": 190,
+        "cacheReadM": 28,
+        "cacheStorageM": 2
+      },
+      "mix": {
+        "gemini-3.1-pro-preview": 0.05,
+        "gemini-3.5-flash": 0.55,
+        "gemini-3.1-flash-lite": 0.4
+      },
+      "hoursPerDay": 24,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.7,
+      "agents": 1
+    },
+    {
+      "id": "G5",
+      "provider": "google",
+      "tokens": {
+        "inputK": 25,
+        "outputK": 120,
+        "cacheReadM": 12,
+        "cacheStorageM": 2
+      },
+      "mix": {
+        "gemini-3.1-pro-preview": 0.05,
+        "gemini-3.5-flash": 0.25,
+        "gemini-3.1-flash-lite": 0.7
+      },
+      "hoursPerDay": 12,
+      "daysPerWeek": 7,
+      "dutyCycle": 0.85,
+      "agents": 5,
+      "modifiers": {
+        "batchEnabled": true,
+        "batchFraction": 0.8
+      }
+    },
+    {
+      "id": "G6",
+      "provider": "google",
+      "tokens": {
+        "inputK": 45,
+        "outputK": 220,
+        "cacheReadM": 50,
+        "cacheStorageM": 2
+      },
+      "mix": {
+        "gemini-3.1-pro-preview": 0.1,
+        "gemini-3.5-flash": 0.7,
+        "gemini-3.1-flash-lite": 0.2
+      },
       "hoursPerDay": 24,
       "daysPerWeek": 7,
       "dutyCycle": 0.8,

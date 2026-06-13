@@ -1,19 +1,30 @@
 import {
-  MODEL_IDS,
-  PRICE_FIELDS,
-  type ModelId,
+  isProviderId,
+  modelId,
   type Preset,
-  type PriceField,
   type PriceOverrides,
+  type ProviderData,
+  type ProviderId,
   type Scenario,
 } from '../engine/types'
-import { isCurrency, type Currency } from '../data'
+import {
+  DEFAULT_PROVIDER,
+  defaultRegional,
+  isCurrency,
+  modelKeys,
+  pricingTable,
+  rateCategories,
+  storageCategory,
+  type Currency,
+} from '../data'
 import { clamp, RANGES, type Range } from '../lib/ranges'
 
 /**
- * Serialización compacta del escenario en query string (RF-09, D6).
- * Solo se escriben los parámetros que difieren del preset base; `p` y `pv`
- * van siempre. La escritura usa history.replaceState (sin entradas de historial).
+ * Serialización compacta del escenario en query string (RF-09, D6/D8).
+ * Solo se escriben los parámetros que difieren del preset base; `p` y `pv` van siempre.
+ * El proveedor activo viaja como `pr` (omitido si es el default). Las claves de mezcla
+ * (`m.<modelKey>`) y de perfil de tokens (`t.<rateKey>`) se generan por proveedor.
+ * La escritura usa history.replaceState (sin entradas de historial).
  */
 
 /** Estado de los modificadores de configuración avanzada (Fase 2, D2) */
@@ -22,6 +33,8 @@ export interface ModifierState {
   /** Fracción 0–1 de trabajo elegible para Batch API */
   batchFraction: number
   regional: boolean
+  /** Término de almacenamiento de caché (Gemini) activo (D3) */
+  storageEnabled: boolean
   employerMultiplier: number
   effectiveHours: number
   priceOverrides: PriceOverrides
@@ -48,40 +61,70 @@ export interface UrlState extends ModifierState {
   staleVersion: string | null
 }
 
-/** `px` = overrides como `modelo.campo:valor` separados por comas (D4) */
-function serializeOverrides(overrides: PriceOverrides): string {
+/** Aliases legacy (enlaces previos a multi-proveedor, proveedor anthropic) → claves nuevas (D8) */
+const LEGACY_TOKEN: Record<string, string> = {
+  inputK: 'i',
+  outputK: 'o',
+  cacheReadM: 'cr',
+  cacheWriteK: 'cw',
+}
+const LEGACY_MIX: Record<string, string> = { fable: 'mf', opus: 'mo', sonnet: 'ms' }
+
+function rangeFor(key: string): Range {
+  return (RANGES as Record<string, Range>)[key] ?? { min: 0, max: Number.MAX_SAFE_INTEGER }
+}
+
+/** Categorías de precio editables/serializables de un proveedor (rate + storage) */
+function categoryKeys(provider: ProviderData): string[] {
+  return provider.costModel.map((c) => c.key)
+}
+
+/** rateKeys únicos del perfil de tokens de un proveedor (incl. el de storage si existe) */
+function tokenRateKeys(providerId: ProviderId): string[] {
+  const keys = rateCategories(providerId).map((c) => c.rateKey)
+  const storage = storageCategory(providerId)
+  if (storage) keys.push(storage.rateKey)
+  return [...new Set(keys)]
+}
+
+/** `px` = overrides como `modeloLocal.categoria:valor` separados por comas, del proveedor activo (D4/D8) */
+function serializeOverrides(overrides: PriceOverrides, providerId: ProviderId): string {
+  const provider = pricingTable.providers[providerId]
   const parts: string[] = []
-  for (const id of MODEL_IDS) {
-    const fields = overrides[id]
+  for (const key of modelKeys(providerId)) {
+    const fields = overrides[modelId(providerId, key)]
     if (!fields) continue
-    for (const field of PRICE_FIELDS) {
-      const value = fields[field]
-      if (value !== undefined) parts.push(`${id}.${field}:${compact(value)}`)
+    for (const cat of categoryKeys(provider)) {
+      const value = fields[cat]
+      if (value !== undefined) parts.push(`${key}.${cat}:${compact(value)}`)
     }
   }
   return parts.join(',')
 }
 
-function isModelId(v: string): v is ModelId {
-  return (MODEL_IDS as readonly string[]).includes(v)
-}
-
-function isPriceField(v: string): v is PriceField {
-  return (PRICE_FIELDS as readonly string[]).includes(v)
-}
-
-/** Deserializa `px` validando modelo/campo/valor; descarta entradas inválidas (D4) */
-function deserializeOverrides(raw: string): PriceOverrides {
+/**
+ * Deserializa `px` validando modelo/categoría/valor dentro del proveedor activo; los model keys
+ * pueden contener puntos (p. ej. `gpt-5.5`), así que se parte por el ÚLTIMO punto antes de la
+ * categoría. Se namespacea al proveedor activo (`provider:modelo`). Descarta entradas inválidas.
+ */
+function deserializeOverrides(raw: string, providerId: ProviderId): PriceOverrides {
   const overrides: PriceOverrides = {}
   if (!raw) return overrides
+  const provider = pricingTable.providers[providerId]
+  const validModels = new Set(modelKeys(providerId))
+  const validCats = new Set(categoryKeys(provider))
   for (const entry of raw.split(',')) {
     const [path, rawValue] = entry.split(':')
     if (path === undefined || rawValue === undefined) continue
-    const [model, field] = path.split('.')
-    if (!isModelId(model) || !isPriceField(field)) continue
+    const dot = path.lastIndexOf('.')
+    if (dot <= 0) continue
+    const model = path.slice(0, dot)
+    const field = path.slice(dot + 1)
+    if (!validModels.has(model) || !validCats.has(field)) continue
     const value = Number(rawValue)
     if (!Number.isFinite(value) || value < 0) continue
-    overrides[model] = { ...overrides[model], [field]: value }
+    const id = modelId(providerId, model)
+    overrides[id] = { ...overrides[id], [field]: value }
   }
   return overrides
 }
@@ -91,70 +134,32 @@ function compact(n: number): string {
   return String(Number(n.toFixed(6)))
 }
 
-/** Haiku = 100 − suma, redondeado para que el resto no arrastre coma flotante */
-export function mixRemainder(fable: number, opus: number, sonnet: number): number {
-  return Math.max(0, Number((1 - (fable + opus + sonnet)).toFixed(6)))
+/** Resto = 100 − Σ(no-resto), redondeado para que no arrastre coma flotante */
+export function remainderValue(others: number[]): number {
+  return Math.max(0, Number((1 - others.reduce((s, v) => s + v, 0)).toFixed(6)))
 }
 
+/** Recalcula la fracción del `remainderModel` del proveedor a partir de la mezcla actual */
+export function applyRemainder(mix: Record<string, number>, provider: ProviderData): void {
+  const others = Object.keys(provider.models).filter((k) => k !== provider.remainderModel)
+  const sum = others.reduce((s, k) => s + (mix[k] ?? 0), 0)
+  if (sum > 1) {
+    const factor = 1 / sum
+    for (const k of others) mix[k] = (mix[k] ?? 0) * factor
+  }
+  mix[provider.remainderModel] = remainderValue(others.map((k) => mix[k] ?? 0))
+}
+
+/** Parámetros escalares provider-agnósticos (régimen) */
 type NumericParam = {
   key: string
   range: Range
   get: (s: Scenario) => number
   set: (s: Scenario, v: number) => void
-  /** Factor de presentación en URL (p. ej. fracción → %) */
   scale: number
 }
 
-const PARAMS: NumericParam[] = [
-  {
-    key: 'i',
-    range: RANGES.inputK,
-    get: (s) => s.tokens.inputK,
-    set: (s, v) => (s.tokens.inputK = v),
-    scale: 1,
-  },
-  {
-    key: 'o',
-    range: RANGES.outputK,
-    get: (s) => s.tokens.outputK,
-    set: (s, v) => (s.tokens.outputK = v),
-    scale: 1,
-  },
-  {
-    key: 'cr',
-    range: RANGES.cacheReadM,
-    get: (s) => s.tokens.cacheReadM,
-    set: (s, v) => (s.tokens.cacheReadM = v),
-    scale: 1,
-  },
-  {
-    key: 'cw',
-    range: RANGES.cacheWriteK,
-    get: (s) => s.tokens.cacheWriteK,
-    set: (s, v) => (s.tokens.cacheWriteK = v),
-    scale: 1,
-  },
-  {
-    key: 'mf',
-    range: RANGES.mix,
-    get: (s) => s.mix.fable,
-    set: (s, v) => (s.mix.fable = v),
-    scale: 100,
-  },
-  {
-    key: 'mo',
-    range: RANGES.mix,
-    get: (s) => s.mix.opus,
-    set: (s, v) => (s.mix.opus = v),
-    scale: 100,
-  },
-  {
-    key: 'ms',
-    range: RANGES.mix,
-    get: (s) => s.mix.sonnet,
-    set: (s, v) => (s.mix.sonnet = v),
-    scale: 100,
-  },
+const SCHEDULE_PARAMS: NumericParam[] = [
   {
     key: 'h',
     range: RANGES.hoursPerDay,
@@ -181,6 +186,7 @@ const PARAMS: NumericParam[] = [
 
 export function scenarioFromPreset(preset: Preset): Scenario {
   return {
+    providerId: preset.provider,
     tokens: { ...preset.tokens },
     mix: { ...preset.mix },
     hoursPerDay: preset.hoursPerDay,
@@ -205,25 +211,40 @@ export function serializeScenario(
   const params = new URLSearchParams()
   params.set('p', presetId)
   params.set('pv', pricingVersion)
-  for (const param of PARAMS) {
-    const value = param.get(scenario)
-    if (value !== param.get(basePreset)) {
-      params.set(param.key, compact(value * param.scale))
-    }
+  if (scenario.providerId !== DEFAULT_PROVIDER) params.set('pr', scenario.providerId)
+
+  // Perfil de tokens: una clave `t.<rateKey>` por cada tasa del proveedor; solo diffs
+  for (const rk of tokenRateKeys(scenario.providerId)) {
+    const value = scenario.tokens[rk] ?? 0
+    if (value !== (basePreset.tokens[rk] ?? 0)) params.set(`t.${rk}`, compact(value))
   }
+  // Mezcla: una clave `m.<modelKey>` por modelo no-resto; solo diffs
+  const provider = pricingTable.providers[scenario.providerId]
+  for (const key of modelKeys(scenario.providerId)) {
+    if (key === provider.remainderModel) continue
+    const value = scenario.mix[key] ?? 0
+    if (value !== (basePreset.mix[key] ?? 0)) params.set(`m.${key}`, compact(value * 100))
+  }
+  // Régimen
+  for (const param of SCHEDULE_PARAMS) {
+    const value = param.get(scenario)
+    if (value !== param.get(basePreset)) params.set(param.key, compact(value * param.scale))
+  }
+
   if (fx !== defaultFx) params.set('fx', compact(fx))
   if (currency !== defaultCurrency) params.set('cur', currency)
   // Modificadores de configuración avanzada: solo si difieren del defecto (D4)
   if (mods.batchEnabled) params.set('b', compact(mods.batchFraction * 100))
-  // `bd` solo si difiere del defecto (Bedrock activo por defecto): 1 = on, 0 = off
-  if (mods.regional !== modDefaults.regional) params.set('bd', mods.regional ? '1' : '0')
+  // El default del recargo regional depende del proveedor (D5)
+  if (mods.regional !== defaultRegional(scenario.providerId))
+    params.set('bd', mods.regional ? '1' : '0')
+  if (mods.storageEnabled) params.set('st', '1')
   if (mods.employerMultiplier !== modDefaults.employerMultiplier)
     params.set('em', compact(mods.employerMultiplier))
   if (mods.effectiveHours !== modDefaults.effectiveHours)
     params.set('eh', compact(mods.effectiveHours))
-  const px = serializeOverrides(mods.priceOverrides)
+  const px = serializeOverrides(mods.priceOverrides, scenario.providerId)
   if (px) params.set('px', px)
-  // Modo presentación: flag de vista fuera del diff de escenario (D6)
   if (mods.presentation) params.set('present', '1')
   return params.toString()
 }
@@ -239,20 +260,55 @@ export function deserializeScenario(
 ): UrlState {
   const params = new URLSearchParams(search)
 
+  const rawPr = params.get('pr')
+  const providerId: ProviderId = isProviderId(rawPr) ? rawPr : DEFAULT_PROVIDER
+  const provider = pricingTable.providers[providerId]
+
   const requestedPreset = params.get('p')
   const basePreset =
-    presets.find((p) => p.id === requestedPreset) ??
-    presets.find((p) => p.id === defaultPresetId) ??
+    presets.find((p) => p.id === requestedPreset && p.provider === providerId) ??
+    presets.find((p) => p.id === defaultPresetId && p.provider === providerId) ??
+    presets.find((p) => p.provider === providerId) ??
     presets[0]
 
   const scenario = scenarioFromPreset(basePreset)
   let isCustomized = false
 
-  for (const param of PARAMS) {
+  // Perfil de tokens (clave nueva `t.<rateKey>` o alias legacy en anthropic)
+  for (const rk of tokenRateKeys(providerId)) {
+    const legacy = providerId === DEFAULT_PROVIDER ? LEGACY_TOKEN[rk] : undefined
+    const raw = params.get(`t.${rk}`) ?? (legacy ? params.get(legacy) : null)
+    if (raw === null) continue
+    const parsed = Number(raw)
+    if (!Number.isFinite(parsed)) continue
+    const value = clamp(parsed, rangeFor(rk))
+    if (value !== (scenario.tokens[rk] ?? 0)) {
+      scenario.tokens[rk] = value
+      isCustomized = true
+    }
+  }
+
+  // Mezcla (clave nueva `m.<modelKey>` o alias legacy en anthropic)
+  for (const key of modelKeys(providerId)) {
+    if (key === provider.remainderModel) continue
+    const legacy = providerId === DEFAULT_PROVIDER ? LEGACY_MIX[key] : undefined
+    const raw = params.get(`m.${key}`) ?? (legacy ? params.get(legacy) : null)
+    if (raw === null) continue
+    const parsed = Number(raw) / 100
+    if (!Number.isFinite(parsed)) continue
+    const value = clamp(parsed, RANGES.mix)
+    if (value !== (scenario.mix[key] ?? 0)) {
+      scenario.mix[key] = value
+      isCustomized = true
+    }
+  }
+  applyRemainder(scenario.mix, provider)
+
+  // Régimen
+  for (const param of SCHEDULE_PARAMS) {
     const raw = params.get(param.key)
     if (raw === null) continue
     const parsed = Number(raw) / param.scale
-    // Parámetro inválido → se descarta con fallback al valor del preset base
     if (!Number.isFinite(parsed)) continue
     const value = clamp(parsed, param.range)
     if (value !== param.get(basePreset)) {
@@ -261,28 +317,17 @@ export function deserializeScenario(
     }
   }
 
-  // Haiku es el resto; reclamp por si la suma de la URL superase 1
-  const sumThree = scenario.mix.fable + scenario.mix.opus + scenario.mix.sonnet
-  if (sumThree > 1) {
-    const factor = 1 / sumThree
-    scenario.mix.fable *= factor
-    scenario.mix.opus *= factor
-    scenario.mix.sonnet *= factor
-  }
-  scenario.mix.haiku = mixRemainder(scenario.mix.fable, scenario.mix.opus, scenario.mix.sonnet)
-
   const rawFx = params.get('fx')
   const parsedFx = rawFx === null ? NaN : Number(rawFx)
   const fx = Number.isFinite(parsedFx) ? clamp(parsedFx, RANGES.fx) : defaultFx
 
-  // Moneda inválida o ausente → defecto
   const rawCurrency = params.get('cur')
   const currency = isCurrency(rawCurrency) ? rawCurrency : defaultCurrency
 
   const urlVersion = params.get('pv')
   const staleVersion = urlVersion !== null && urlVersion !== pricingVersion ? urlVersion : null
 
-  // Modificadores de configuración avanzada (D4); inválido/ausente → defecto neutro
+  // Modificadores (D4); inválido/ausente → defecto neutro
   const rawBatch = params.get('b')
   const parsedBatch = rawBatch === null ? NaN : Number(rawBatch) / 100
   const batchEnabled = rawBatch !== null && Number.isFinite(parsedBatch)
@@ -291,7 +336,9 @@ export function deserializeScenario(
     : modDefaults.batchFraction
 
   const rawBd = params.get('bd')
-  const regional = rawBd === null ? modDefaults.regional : rawBd === '1'
+  const regional = rawBd === null ? defaultRegional(providerId) : rawBd === '1'
+
+  const storageEnabled = params.get('st') === '1'
 
   const rawEm = params.get('em')
   const parsedEm = rawEm === null ? NaN : Number(rawEm)
@@ -305,7 +352,7 @@ export function deserializeScenario(
     ? clamp(parsedEh, RANGES.effectiveHours)
     : modDefaults.effectiveHours
 
-  const priceOverrides = deserializeOverrides(params.get('px') ?? '')
+  const priceOverrides = deserializeOverrides(params.get('px') ?? '', providerId)
   const presentation = params.get('present') === '1'
 
   return {
@@ -318,6 +365,7 @@ export function deserializeScenario(
     batchEnabled,
     batchFraction,
     regional,
+    storageEnabled,
     employerMultiplier,
     effectiveHours,
     priceOverrides,
@@ -338,14 +386,23 @@ export function writeUrl(query: string): void {
  */
 const SESSION_KEY = 'agentcost-scenario'
 
-/** Claves reconocidas como "estado de escenario" en una query entrante (D3) */
+/** Prefijos de claves dinámicas reconocidas como estado de escenario (D3) */
+const DYNAMIC_PREFIXES = ['t.', 'm.']
+
+/** Claves fijas reconocidas como "estado de escenario" en una query entrante (D3) */
 const RECOGNIZED_KEYS = new Set<string>([
   'p',
-  ...PARAMS.map((param) => param.key),
+  'pr',
+  // régimen
+  ...SCHEDULE_PARAMS.map((param) => param.key),
+  // alias legacy de tokens y mezcla (anthropic)
+  ...Object.values(LEGACY_TOKEN),
+  ...Object.values(LEGACY_MIX),
   'fx',
   'cur',
   'b',
   'bd',
+  'st',
   'em',
   'eh',
   'px',
@@ -357,6 +414,7 @@ export function hasScenarioParams(search: string): boolean {
   if (!search) return false
   for (const key of new URLSearchParams(search).keys()) {
     if (RECOGNIZED_KEYS.has(key)) return true
+    if (DYNAMIC_PREFIXES.some((prefix) => key.startsWith(prefix))) return true
   }
   return false
 }

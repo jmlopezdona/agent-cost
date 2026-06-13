@@ -1,35 +1,111 @@
 {
-  "version": "2026-06",
-  "effective_date": "2026-06-01",
+  "version": "2026-06b",
+  "effective_date": "2026-06-13",
   "unit": "USD/MTok",
-  "models": {
-    "fable": {
-      "name": "Claude Fable 5",
-      "input": 10.0,
-      "output": 50.0,
-      "cache_read": 1.0,
-      "cache_write": 12.5
+  "providers": {
+    "anthropic": {
+      "name": "Anthropic · Claude",
+      "costModel": [
+        { "key": "input", "kind": "rate", "rateKey": "inputK", "unit": "k" },
+        { "key": "output", "kind": "rate", "rateKey": "outputK", "unit": "k" },
+        { "key": "cache_read", "kind": "rate", "rateKey": "cacheReadM", "unit": "M" },
+        { "key": "cache_write", "kind": "rate", "rateKey": "cacheWriteK", "unit": "k" }
+      ],
+      "modifiers": {
+        "batch": { "discount": 0.5 },
+        "regional": { "surcharge": 1.1 }
+      },
+      "remainderModel": "haiku",
+      "models": {
+        "fable": {
+          "name": "Claude Fable 5",
+          "prices": { "input": 10.0, "output": 50.0, "cache_read": 1.0, "cache_write": 12.5 }
+        },
+        "opus": {
+          "name": "Claude Opus 4.8",
+          "prices": { "input": 5.0, "output": 25.0, "cache_read": 0.5, "cache_write": 6.25 }
+        },
+        "sonnet": {
+          "name": "Claude Sonnet 4.6",
+          "prices": { "input": 3.0, "output": 15.0, "cache_read": 0.3, "cache_write": 3.75 }
+        },
+        "haiku": {
+          "name": "Claude Haiku 4.5",
+          "prices": { "input": 1.0, "output": 5.0, "cache_read": 0.1, "cache_write": 1.25 }
+        }
+      }
     },
-    "opus": {
-      "name": "Claude Opus 4.8",
-      "input": 5.0,
-      "output": 25.0,
-      "cache_read": 0.5,
-      "cache_write": 6.25
+    "openai": {
+      "name": "OpenAI · ChatGPT",
+      "costModel": [
+        { "key": "input", "kind": "rate", "rateKey": "inputK", "unit": "k" },
+        { "key": "cached_input", "kind": "rate", "rateKey": "cacheReadM", "unit": "M" },
+        { "key": "output", "kind": "rate", "rateKey": "outputK", "unit": "k" }
+      ],
+      "modifiers": {
+        "batch": { "discount": 0.5 },
+        "regional": { "surcharge": 1.1 }
+      },
+      "remainderModel": "gpt-5.4-nano",
+      "models": {
+        "gpt-5.5": {
+          "name": "GPT-5.5",
+          "prices": { "input": 5.0, "cached_input": 0.5, "output": 30.0 },
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "effective_date": "2026-06-13"
+        },
+        "gpt-5.4": {
+          "name": "GPT-5.4",
+          "prices": { "input": 2.5, "cached_input": 0.25, "output": 15.0 },
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "effective_date": "2026-06-13"
+        },
+        "gpt-5.4-mini": {
+          "name": "GPT-5.4 mini",
+          "prices": { "input": 0.75, "cached_input": 0.075, "output": 4.5 },
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "effective_date": "2026-06-13"
+        },
+        "gpt-5.4-nano": {
+          "name": "GPT-5.4 nano",
+          "prices": { "input": 0.2, "cached_input": 0.02, "output": 1.25 },
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "effective_date": "2026-06-13"
+        }
+      }
     },
-    "sonnet": {
-      "name": "Claude Sonnet 4.6",
-      "input": 3.0,
-      "output": 15.0,
-      "cache_read": 0.3,
-      "cache_write": 3.75
-    },
-    "haiku": {
-      "name": "Claude Haiku 4.5",
-      "input": 1.0,
-      "output": 5.0,
-      "cache_read": 0.1,
-      "cache_write": 1.25
+    "google": {
+      "name": "Google · Gemini",
+      "costModel": [
+        { "key": "input", "kind": "rate", "rateKey": "inputK", "unit": "k" },
+        { "key": "output", "kind": "rate", "rateKey": "outputK", "unit": "k" },
+        { "key": "cache_read", "kind": "rate", "rateKey": "cacheReadM", "unit": "M" },
+        { "key": "cache_storage", "kind": "storage", "rateKey": "cacheStorageM", "unit": "M" }
+      ],
+      "modifiers": {
+        "batch": { "discount": 0.5 }
+      },
+      "remainderModel": "gemini-3.1-flash-lite",
+      "models": {
+        "gemini-3.1-pro-preview": {
+          "name": "Gemini 3.1 Pro Preview",
+          "prices": { "input": 2.0, "output": 12.0, "cache_read": 0.2, "cache_storage": 4.5 },
+          "source": "https://ai.google.dev/gemini-api/docs/pricing",
+          "effective_date": "2026-06-09"
+        },
+        "gemini-3.5-flash": {
+          "name": "Gemini 3.5 Flash",
+          "prices": { "input": 1.5, "output": 9.0, "cache_read": 0.15, "cache_storage": 1.0 },
+          "source": "https://ai.google.dev/gemini-api/docs/pricing",
+          "effective_date": "2026-06-09"
+        },
+        "gemini-3.1-flash-lite": {
+          "name": "Gemini 3.1 Flash-Lite",
+          "prices": { "input": 0.25, "output": 1.5, "cache_read": 0.025, "cache_storage": 1.0 },
+          "source": "https://ai.google.dev/gemini-api/docs/pricing",
+          "effective_date": "2026-06-09"
+        }
+      }
     }
   }
 }

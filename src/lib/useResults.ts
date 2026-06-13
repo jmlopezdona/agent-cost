@@ -16,13 +16,15 @@ export function useEngineOptions(): EngineOptions {
   const batchEnabled = useScenarioStore((s) => s.batchEnabled)
   const batchFraction = useScenarioStore((s) => s.batchFraction)
   const regional = useScenarioStore((s) => s.regional)
+  const storageEnabled = useScenarioStore((s) => s.storageEnabled)
   return useMemo(
     () => ({
       batchFraction: batchEnabled ? batchFraction : 0,
       batchDiscount: BATCH_DISCOUNT,
       regionalSurcharge: regional ? REGIONAL_SURCHARGE : 1,
+      storageEnabled,
     }),
-    [batchEnabled, batchFraction, regional],
+    [batchEnabled, batchFraction, regional, storageEnabled],
   )
 }
 

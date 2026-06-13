@@ -20,6 +20,7 @@ import {
 } from '../data'
 
 const P2 = presets.find((p) => p.id === 'P2')!
+const G2 = presets.find((p) => p.id === 'G2')!
 
 const MOD_DEFAULTS: ModifierDefaults = {
   batchFraction: DEFAULT_BATCH_FRACTION,
@@ -32,6 +33,7 @@ const NEUTRAL_MODS: ModifierState = {
   batchEnabled: false,
   batchFraction: DEFAULT_BATCH_FRACTION,
   regional: DEFAULT_REGIONAL,
+  storageEnabled: false,
   employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
   effectiveHours: DEFAULT_EFFECTIVE_HOURS,
   priceOverrides: {},
@@ -73,11 +75,12 @@ function roundTrip(
 }
 
 describe('serialización en URL', () => {
-  it('preset sin modificar serializa solo p y pv', () => {
+  it('preset sin modificar serializa solo p y pv (sin pr en anthropic)', () => {
     const { query } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD)
     const params = new URLSearchParams(query)
     expect(params.get('p')).toBe('P2')
     expect(params.get('pv')).toBe(pricingTable.version)
+    expect(params.has('pr')).toBe(false)
     expect([...params.keys()].sort()).toEqual(['p', 'pv'])
   })
 
@@ -113,13 +116,13 @@ describe('serialización en URL', () => {
     expect(restored.isCustomized).toBe(false)
   })
 
-  it('parámetro no numérico se descarta con fallback al preset', () => {
+  it('parámetro no numérico se descarta con fallback al preset (alias legacy)', () => {
     const restored = deserialize('p=P2&pv=x&cr=abc&dc=70')
     expect(restored.scenario.tokens.cacheReadM).toBe(P2.tokens.cacheReadM)
     expect(restored.scenario.dutyCycle).toBeCloseTo(0.7, 10)
   })
 
-  it('parámetro fuera de rango se clampa', () => {
+  it('parámetro fuera de rango se clampa (alias legacy)', () => {
     const restored = deserialize('p=P2&i=9999&n=500')
     expect(restored.scenario.tokens.inputK).toBe(500)
     expect(restored.scenario.agents).toBe(100)
@@ -143,13 +146,23 @@ describe('serialización en URL', () => {
   })
 
   it('moneda por defecto (EUR) no aparece en la URL', () => {
-    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'eur')
+    const { query, restored } = roundTrip(
+      scenarioFromPreset(P2),
+      'P2',
+      DEFAULT_FX_EUR_PER_USD,
+      'eur',
+    )
     expect(new URLSearchParams(query).has('cur')).toBe(false)
     expect(restored.currency).toBe('eur')
   })
 
   it('moneda USD se serializa como cur y se restaura', () => {
-    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'usd')
+    const { query, restored } = roundTrip(
+      scenarioFromPreset(P2),
+      'P2',
+      DEFAULT_FX_EUR_PER_USD,
+      'usd',
+    )
     expect(new URLSearchParams(query).get('cur')).toBe('usd')
     expect(restored.currency).toBe('usd')
   })
@@ -160,14 +173,19 @@ describe('serialización en URL', () => {
   })
 
   it('batch y la desactivación del recargo (no-defecto) se serializan y restauran', () => {
-    // El recargo está activo por defecto; apagarlo (bd=0) sí difiere del defecto
     const mods: ModifierState = {
       ...NEUTRAL_MODS,
       batchEnabled: true,
       batchFraction: 0.4,
       regional: false,
     }
-    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'eur', mods)
+    const { query, restored } = roundTrip(
+      scenarioFromPreset(P2),
+      'P2',
+      DEFAULT_FX_EUR_PER_USD,
+      'eur',
+      mods,
+    )
     const params = new URLSearchParams(query)
     expect(params.get('b')).toBe('40')
     expect(params.get('bd')).toBe('0')
@@ -177,7 +195,6 @@ describe('serialización en URL', () => {
   })
 
   it('con los modificadores por defecto no aparecen b ni bd en la URL', () => {
-    // Recargo activo por defecto → no se serializa; batch off → no se serializa
     const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD)
     const params = new URLSearchParams(query)
     expect(params.has('b')).toBe(false)
@@ -192,7 +209,13 @@ describe('serialización en URL', () => {
     expect(new URLSearchParams(neutral.query).has('eh')).toBe(false)
 
     const edited: ModifierState = { ...NEUTRAL_MODS, employerMultiplier: 1.4, effectiveHours: 1600 }
-    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'eur', edited)
+    const { query, restored } = roundTrip(
+      scenarioFromPreset(P2),
+      'P2',
+      DEFAULT_FX_EUR_PER_USD,
+      'eur',
+      edited,
+    )
     const params = new URLSearchParams(query)
     expect(params.get('em')).toBe('1.4')
     expect(params.get('eh')).toBe('1600')
@@ -200,21 +223,30 @@ describe('serialización en URL', () => {
     expect(restored.effectiveHours).toBe(1600)
   })
 
-  it('los overrides de precios se serializan como deltas y se restauran', () => {
+  it('los overrides de precios se serializan como deltas namespaced y se restauran', () => {
     const mods: ModifierState = {
       ...NEUTRAL_MODS,
-      priceOverrides: { opus: { output: 30 }, haiku: { input: 1.2 } },
+      priceOverrides: { 'anthropic:opus': { output: 30 }, 'anthropic:haiku': { input: 1.2 } },
     }
-    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD, 'eur', mods)
+    const { query, restored } = roundTrip(
+      scenarioFromPreset(P2),
+      'P2',
+      DEFAULT_FX_EUR_PER_USD,
+      'eur',
+      mods,
+    )
     const px = new URLSearchParams(query).get('px')!
     expect(px).toContain('opus.output:30')
     expect(px).toContain('haiku.input:1.2')
-    expect(restored.priceOverrides).toEqual({ opus: { output: 30 }, haiku: { input: 1.2 } })
+    expect(restored.priceOverrides).toEqual({
+      'anthropic:opus': { output: 30 },
+      'anthropic:haiku': { input: 1.2 },
+    })
   })
 
-  it('override con modelo o campo desconocido se descarta', () => {
+  it('override con modelo o categoría desconocida se descarta', () => {
     const restored = deserialize('p=P2&px=foo.output:30,opus.bar:5,opus.output:abc,sonnet.input:9')
-    expect(restored.priceOverrides).toEqual({ sonnet: { input: 9 } })
+    expect(restored.priceOverrides).toEqual({ 'anthropic:sonnet': { input: 9 } })
   })
 
   it('present=1 activa el modo presentación y se omite por defecto', () => {
@@ -233,7 +265,55 @@ describe('serialización en URL', () => {
     const restored = deserialize('p=P2&b=abc&em=xyz&eh=-5')
     expect(restored.batchEnabled).toBe(false)
     expect(restored.employerMultiplier).toBe(DEFAULT_EMPLOYER_MULTIPLIER)
-    // eh=-5 es numérico pero se clampa al mínimo del rango
     expect(restored.effectiveHours).toBe(1)
+  })
+})
+
+describe('multi-proveedor y retrocompatibilidad (D8)', () => {
+  it('round-trip de un escenario Google con pr, mezcla y perfil propios', () => {
+    const scenario = scenarioFromPreset(G2)
+    scenario.tokens.outputK = 260
+    scenario.mix = {
+      'gemini-3.1-pro-preview': 0.25,
+      'gemini-3.5-flash': 0.5,
+      'gemini-3.1-flash-lite': 0.25,
+    }
+    // Google no ofrece regional → su default es false; no debe serializar bd
+    const mods: ModifierState = { ...NEUTRAL_MODS, regional: false }
+    const { query, restored } = roundTrip(scenario, 'G2', DEFAULT_FX_EUR_PER_USD, 'eur', mods)
+    const params = new URLSearchParams(query)
+    expect(params.get('pr')).toBe('google')
+    expect(params.get('m.gemini-3.1-pro-preview')).toBe('25')
+    expect(params.has('bd')).toBe(false)
+    expect(restored.scenario.providerId).toBe('google')
+    expect(restored.scenario).toEqual(scenario)
+    expect(restored.regional).toBe(false)
+  })
+
+  it('storage de Google se serializa con st=1 y se restaura', () => {
+    const mods: ModifierState = { ...NEUTRAL_MODS, regional: false, storageEnabled: true }
+    const { query, restored } = roundTrip(
+      scenarioFromPreset(G2),
+      'G2',
+      DEFAULT_FX_EUR_PER_USD,
+      'eur',
+      mods,
+    )
+    expect(new URLSearchParams(query).get('st')).toBe('1')
+    expect(restored.storageEnabled).toBe(true)
+  })
+
+  it('enlace legacy sin pr ⇒ anthropic con mf/mo/ms y Haiku como resto', () => {
+    const restored = deserialize('p=P2&mf=10&mo=20&ms=50')
+    expect(restored.scenario.providerId).toBe('anthropic')
+    expect(restored.scenario.mix.fable).toBeCloseTo(0.1, 10)
+    expect(restored.scenario.mix.opus).toBeCloseTo(0.2, 10)
+    expect(restored.scenario.mix.sonnet).toBeCloseTo(0.5, 10)
+    expect(restored.scenario.mix.haiku).toBeCloseTo(0.2, 10)
+  })
+
+  it('overrides legacy de precios (fable.input) se namespacean a anthropic', () => {
+    const restored = deserialize('p=P2&px=fable.input:10')
+    expect(restored.priceOverrides).toEqual({ 'anthropic:fable': { input: 10 } })
   })
 })

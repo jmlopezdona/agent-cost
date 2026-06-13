@@ -2,9 +2,16 @@
 export const es = {
   app: {
     title: 'Agent Cost',
-    subtitle: 'Calculadora de costes de agentes de IA sobre la API de Anthropic',
+    subtitle: 'Calculadora de costes de agentes de IA (Anthropic, OpenAI, Google)',
+  },
+  providers: {
+    selectorLabel: 'Familia de modelos',
+    anthropic: 'Anthropic · Claude',
+    openai: 'OpenAI · ChatGPT',
+    google: 'Google · Gemini',
   },
   header: {
+    providerLabel: 'Familia de modelos',
     presetsLabel: 'Escenarios predefinidos',
     customized: (presetName: string) => `Personalizado (basado en ${presetName})`,
     copyLink: 'Compartir',
@@ -45,15 +52,27 @@ export const es = {
       unit: 'k tok/h',
       help: 'Escrituras de caché de prompt (TTL 5 min, tarifa 1,25× input). Ejemplo: 530k/h equivale a cachear unas 3-4 veces por hora un contexto de ~150k tokens.',
     },
+    cachedInput: {
+      label: 'Cached input',
+      unit: 'M tok/h',
+      help: 'Tokens de entrada servidos desde la caché de OpenAI con tarifa reducida. Equivale al cache read: contexto repetido que el modelo relee a precio descontado.',
+    },
+    cacheStorage: {
+      label: 'Tokens retenidos en caché',
+      unit: 'M tok',
+      help: 'Volumen de tokens mantenidos en la caché explícita de Gemini. Se cobra por almacenamiento y hora programada, no por llamada. Solo afecta al coste mensual cuando activas el término de almacenamiento.',
+    },
     helpButton: (label: string) => `Ayuda sobre ${label}`,
     categoryDetail: (cost: string, share: string) => `${cost} · ${share} del blend`,
   },
   mix: {
     sectionTitle: 'Mezcla de modelos',
-    sectionHint: 'Reparto del tiempo activo entre modelos; Haiku absorbe el resto hasta 100%',
+    sectionHint:
+      'Reparto del tiempo activo entre modelos; el modelo más barato absorbe el resto hasta 100%',
     haikuRest: 'resto',
     blendLabel: 'Tarifa del blend',
     rateLabel: (rate: string) => `${rate} activa`,
+    tabsLabel: 'Familia de modelos',
   },
   schedule: {
     sectionTitle: 'Régimen y utilización',
@@ -81,6 +100,8 @@ export const es = {
     weighted: 'Ponderado mensual',
     weightedHint: 'techo × duty cycle',
     annual: 'Ponderado anual',
+    storage: 'Almacenamiento de caché',
+    storageHint: 'coste mensual aparte del blend',
   },
   charts: {
     breakdownTitle: 'Desglose del coste por categoría de token',
@@ -90,6 +111,8 @@ export const es = {
       output: 'Output',
       cacheWrite: 'Cache write',
       input: 'Input fresco',
+      cachedInput: 'Cached input',
+      cacheStorage: 'Almacenamiento',
     },
     ceilingVsWeightedTitle: 'Techo vs. ponderado mensual',
     ceilingBar: 'Techo (100% duty)',
@@ -130,17 +153,21 @@ export const es = {
   },
   advanced: {
     sectionTitle: 'Configuración avanzada',
-    sectionHint: 'Precios, Batch API, recargo regional, tipo de cambio y coste empresa',
+    sectionHint:
+      'Precios, Batch API, recargo regional, almacenamiento, tipo de cambio y coste empresa',
     toggleExpand: 'Mostrar u ocultar la configuración avanzada',
     pricingTitle: 'Precios por modelo (USD/MTok)',
     pricingHint:
       'Edita las tarifas oficiales; los cambios solo viven en esta sesión y en el enlace.',
+    pricingTabsLabel: 'Familia de precios',
     restoreOfficial: 'Restaurar oficiales',
     priceFields: {
       input: 'Input',
       output: 'Output',
       cache_read: 'Cache read',
       cache_write: 'Cache write',
+      cached_input: 'Cached input',
+      cache_storage: 'Almacen. /h',
     },
     priceCellAria: (model: string, field: string) => `Precio de ${field} de ${model} (USD/MTok)`,
     colModel: 'Modelo',
@@ -153,7 +180,13 @@ export const es = {
     regionalTitle: 'Recargo regional/Bedrock (+10%)',
     regionalToggle: 'Activar recargo regional/Bedrock',
     regionalHelp:
-      'Algunas regiones y el acceso vía Amazon Bedrock aplican un recargo aproximado del 10% sobre todas las categorías.',
+      'Algunas regiones aplican un recargo aproximado del 10% sobre todas las categorías: el acceso vía Amazon Bedrock en Anthropic, los endpoints de residencia regional en OpenAI.',
+    storageTitle: 'Almacenamiento de caché (Gemini)',
+    storageToggle: 'Activar coste de almacenamiento de caché',
+    storageHelp:
+      'Gemini cobra la caché explícita por almacenamiento y hora programada, además de la lectura. Actívalo e indica los tokens retenidos para incluir ese coste mensual.',
+    storageDisclaimer:
+      'El caché explícito de Gemini es una estimación: el coste de almacenamiento se modela aparte del blend por hora y asume que retienes ese volumen durante todas las horas programadas.',
     fxLabel: 'Tipo de cambio',
     fxUnit: '€ por USD',
     employerMultiplierLabel: 'Multiplicador de coste empresa',
@@ -167,6 +200,7 @@ export const es = {
   badges: {
     batch: (percent: string) => `batch ${percent} aplicado`,
     bedrock: 'Bedrock +10%',
+    storage: 'almacenamiento caché',
     pricesEdited: 'precios editados',
     label: 'Modificadores activos',
   },
@@ -247,6 +281,90 @@ export const es = {
         'Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7. Duty alto al no esperar aprobaciones; contexto grande por repos extensos — el cache read domina el coste.',
       learnings:
         'El cache read concentra >70% del coste — la palanca es la ingeniería de contexto, no el modelo. El duty alto al no esperar aprobaciones acerca el coste mensual al techo.',
+    },
+    o1: {
+      name: 'Pair programming supervisado',
+      description:
+        'Un desarrollador trabaja con un agente sobre ChatGPT en sesión interactiva. GPT-5.4 mini lleva el grueso del trabajo y GPT-5.4 nano lo trivial; el humano revisa y aprueba, con duty bajo.',
+      learnings:
+        'El duty bajo (el agente espera al humano) hace que el coste real sea una fracción del techo: la palanca es cuánto del tiempo programado factura, no la tarifa.',
+    },
+    o2: {
+      name: 'Agente de delivery balanceado',
+      description:
+        'Agente integrado en el flujo de un equipo: GPT-5.4 planifica y revisa el PR, GPT-5.4 mini implementa y GPT-5.4 nano ejecuta tests y lint. Corre en continuo atendiendo una cola con esperas de CI.',
+      learnings:
+        'El cached input concentra buena parte del coste por hora; la palanca es la ingeniería de contexto y reutilizar prompt cacheado, no cambiar de modelo.',
+    },
+    o3: {
+      name: 'Diseño intensivo / greenfield',
+      description:
+        'Arranque de producto: GPT-5.5 (frontera) y GPT-5.4 llevan el diseño, los ADRs y la revisión profunda; GPT-5.4 mini prototipa. Output alto por documentos y razonamiento extenso, con supervisión frecuente.',
+      learnings:
+        'Único escenario con el modelo frontera (GPT-5.5): esa franja dispara la tarifa por hora frente a los escenarios mini-first. La palanca es cuánto razonamiento baja a mini sin perder calidad.',
+    },
+    o4: {
+      name: 'Evolutivos sobre código maduro',
+      description:
+        'Mantenimiento sobre código maduro: GPT-5.4 mini resuelve la mayoría de tareas y GPT-5.4 solo entra como escalación; GPT-5.4 nano absorbe lo trivial. Alta autonomía 24×7.',
+      learnings:
+        'Con mini-first y nano absorbiendo lo trivial la tarifa por hora baja; el coste mensual lo marcan el duty alto y el régimen 24×7, no el precio del modelo.',
+    },
+    o5: {
+      name: 'Enjambre QA nocturno',
+      description:
+        'Flota de agentes de testing que corre fuera de horario, mayoría GPT-5.4 nano en contextos cortos con una franja de GPT-5.5 para el análisis de seguridad. Candidato ideal a Batch API (−50%).',
+      learnings:
+        'La Batch API (−50%) sobre el 80% elegible es la mayor palanca y el coste escala con el número de agentes; aun así, una franja del 5% de GPT-5.5 concentra coste por hora: vigila cuánto enrutas a la frontera.',
+    },
+    o6: {
+      name: 'Agente autónomo de mantenimiento',
+      description:
+        'Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7 sobre ChatGPT. Duty alto al no esperar aprobaciones; contexto grande con cached input dominante.',
+      learnings:
+        'El cached input concentra el coste — la palanca es la ingeniería de contexto. El duty alto al no esperar aprobaciones acerca el coste mensual al techo.',
+    },
+    g1: {
+      name: 'Pair programming supervisado',
+      description:
+        'Un desarrollador trabaja con un agente sobre Gemini en sesión interactiva. Gemini 3.5 Flash lleva el grueso y Flash-Lite lo trivial; el humano revisa y aprueba, con duty bajo.',
+      learnings:
+        'El duty bajo (el agente espera al humano) hace que el coste real sea una fracción del techo: la palanca es cuánto del tiempo programado factura, no la tarifa.',
+    },
+    g2: {
+      name: 'Agente de delivery balanceado',
+      description:
+        'Agente integrado en el flujo: Gemini 3.1 Pro planifica y revisa, Gemini 3.5 Flash implementa y Flash-Lite ejecuta tests. Corre en continuo atendiendo una cola con esperas de CI.',
+      learnings:
+        'El cache read concentra buena parte del coste por hora; si activas el almacenamiento explícito, recuerda que se cobra por hora retenida aparte del blend.',
+    },
+    g3: {
+      name: 'Diseño intensivo / greenfield',
+      description:
+        'Arranque de producto: Gemini 3.1 Pro lleva el peso del diseño, los ADRs y la revisión profunda; Gemini 3.5 Flash prototipa. Output alto por documentos y razonamiento extenso, con supervisión frecuente.',
+      learnings:
+        'El peso de Gemini 3.1 Pro (frontera, Preview) dispara la tarifa por hora frente a los escenarios Flash-first. La palanca es cuánto razonamiento baja a Flash sin perder calidad de diseño.',
+    },
+    g4: {
+      name: 'Evolutivos sobre código maduro',
+      description:
+        'Mantenimiento sobre código maduro: Gemini 3.5 Flash resuelve la mayoría de tareas y Gemini 3.1 Pro solo escala; Flash-Lite absorbe lo trivial. Alta autonomía 24×7.',
+      learnings:
+        'Con Flash-first y Flash-Lite absorbiendo lo trivial la tarifa por hora baja; el coste mensual lo marcan el duty alto y el régimen 24×7, no el precio del modelo.',
+    },
+    g5: {
+      name: 'Enjambre QA nocturno',
+      description:
+        'Flota de agentes de testing que corre fuera de horario, mayoría Flash-Lite en contextos cortos con una franja de Gemini 3.1 Pro para el análisis de seguridad. Candidato ideal a Batch API (−50%).',
+      learnings:
+        'La Batch API (−50%) sobre el 80% elegible es la mayor palanca y el coste escala con el número de agentes; una franja del 5% de Gemini 3.1 Pro concentra coste por hora: vigila cuánto enrutas a la frontera.',
+    },
+    g6: {
+      name: 'Agente autónomo de mantenimiento',
+      description:
+        'Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7 sobre Gemini. Duty alto al no esperar aprobaciones; contexto grande con cache read dominante.',
+      learnings:
+        'El cache read concentra el coste — la palanca es la ingeniería de contexto. El duty alto al no esperar aprobaciones acerca el coste mensual al techo.',
     },
   },
   // Prosa de perfiles salariales resuelta por id (D4); los brutos/rangos viven en salaries.json

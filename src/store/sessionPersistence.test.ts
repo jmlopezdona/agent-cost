@@ -60,9 +60,10 @@ describe('precedencia de carga (D3)', () => {
 describe('adopción y limpieza del enlace entrante (D3)', () => {
   it('abrir con query la guarda en sessionStorage y limpia la URL', async () => {
     const { store, sessionStore, replaceState } = await loadStore('?p=P2&cr=60', null)
-    // Adoptado en sessionStorage en formato canónico (incluye el diff cr=60)
+    // Adoptado en sessionStorage en formato canónico: el alias legacy cr=60 se reescribe
+    // como la clave nueva t.cacheReadM=60 (retrocompat de lectura, D8)
     const saved = sessionStore.getItem(SESSION_KEY)!
-    expect(saved).toContain('cr=60')
+    expect(saved).toContain('t.cacheReadM=60')
     // serializeCurrent reproduce exactamente lo persistido
     expect(saved).toBe(store.getState().serializeCurrent())
     // URL limpiada a la ruta pelada (sin query)

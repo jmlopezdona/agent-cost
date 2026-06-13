@@ -4,9 +4,16 @@ import type { Strings } from './es'
 export const en: Strings = {
   app: {
     title: 'Agent Cost',
-    subtitle: 'AI agent cost calculator on the Anthropic API',
+    subtitle: 'AI agent cost calculator (Anthropic, OpenAI, Google)',
+  },
+  providers: {
+    selectorLabel: 'Model family',
+    anthropic: 'Anthropic · Claude',
+    openai: 'OpenAI · ChatGPT',
+    google: 'Google · Gemini',
   },
   header: {
+    providerLabel: 'Model family',
     presetsLabel: 'Preset scenarios',
     customized: (presetName: string) => `Customized (based on ${presetName})`,
     copyLink: 'Share',
@@ -47,15 +54,27 @@ export const en: Strings = {
       unit: 'k tok/h',
       help: 'Prompt cache writes (5 min TTL, 1.25× input rate). Example: 530k/h is like caching a ~150k-token context 3-4 times per hour.',
     },
+    cachedInput: {
+      label: 'Cached input',
+      unit: 'M tok/h',
+      help: 'Input tokens served from OpenAI’s cache at a reduced rate. Equivalent to cache read: repeated context the model rereads at a discounted price.',
+    },
+    cacheStorage: {
+      label: 'Cached tokens retained',
+      unit: 'M tok',
+      help: 'Volume of tokens held in Gemini’s explicit cache. Billed by storage and scheduled hour, not per call. Only affects the monthly cost when you enable the storage term.',
+    },
     helpButton: (label: string) => `Help about ${label}`,
     categoryDetail: (cost: string, share: string) => `${cost} · ${share} of blend`,
   },
   mix: {
     sectionTitle: 'Model mix',
-    sectionHint: 'Split of active time across models; Haiku takes the remainder up to 100%',
+    sectionHint:
+      'Split of active time across models; the cheapest model takes the remainder up to 100%',
     haikuRest: 'remainder',
     blendLabel: 'Blend rate',
     rateLabel: (rate: string) => `${rate} active`,
+    tabsLabel: 'Model family',
   },
   schedule: {
     sectionTitle: 'Schedule and utilization',
@@ -83,6 +102,8 @@ export const en: Strings = {
     weighted: 'Monthly weighted',
     weightedHint: 'ceiling × duty cycle',
     annual: 'Annual weighted',
+    storage: 'Cache storage',
+    storageHint: 'monthly cost separate from the blend',
   },
   charts: {
     breakdownTitle: 'Cost breakdown by token category',
@@ -92,6 +113,8 @@ export const en: Strings = {
       output: 'Output',
       cacheWrite: 'Cache write',
       input: 'Fresh input',
+      cachedInput: 'Cached input',
+      cacheStorage: 'Storage',
     },
     ceilingVsWeightedTitle: 'Monthly ceiling vs. weighted',
     ceilingBar: 'Ceiling (100% duty)',
@@ -132,16 +155,20 @@ export const en: Strings = {
   },
   advanced: {
     sectionTitle: 'Advanced configuration',
-    sectionHint: 'Prices, Batch API, regional surcharge, exchange rate and employer cost',
+    sectionHint:
+      'Prices, Batch API, regional surcharge, cache storage, exchange rate and employer cost',
     toggleExpand: 'Show or hide advanced configuration',
     pricingTitle: 'Prices per model (USD/MTok)',
     pricingHint: 'Edit the official rates; changes live only in this session and in the link.',
+    pricingTabsLabel: 'Pricing family',
     restoreOfficial: 'Restore official',
     priceFields: {
       input: 'Input',
       output: 'Output',
       cache_read: 'Cache read',
       cache_write: 'Cache write',
+      cached_input: 'Cached input',
+      cache_storage: 'Storage /h',
     },
     priceCellAria: (model: string, field: string) => `${field} price of ${model} (USD/MTok)`,
     colModel: 'Model',
@@ -154,7 +181,13 @@ export const en: Strings = {
     regionalTitle: 'Regional/Bedrock surcharge (+10%)',
     regionalToggle: 'Enable regional/Bedrock surcharge',
     regionalHelp:
-      'Some regions and access via Amazon Bedrock apply an approximate 10% surcharge across all categories.',
+      'Some regions apply an approximate 10% surcharge across all categories: access via Amazon Bedrock on Anthropic, regional residency endpoints on OpenAI.',
+    storageTitle: 'Cache storage (Gemini)',
+    storageToggle: 'Enable cache storage cost',
+    storageHelp:
+      'Gemini bills explicit cache by storage and scheduled hour, on top of reads. Enable it and set the retained tokens to include that monthly cost.',
+    storageDisclaimer:
+      'Gemini’s explicit cache is an estimate: storage cost is modeled separately from the hourly blend and assumes you retain that volume for all scheduled hours.',
     fxLabel: 'Exchange rate',
     fxUnit: '€ per USD',
     employerMultiplierLabel: 'Employer-cost multiplier',
@@ -168,6 +201,7 @@ export const en: Strings = {
   badges: {
     batch: (percent: string) => `batch ${percent} applied`,
     bedrock: 'Bedrock +10%',
+    storage: 'cache storage',
     pricesEdited: 'prices edited',
     label: 'Active modifiers',
   },
@@ -247,6 +281,90 @@ export const en: Strings = {
         'An agent with no human in the loop that triages issues, updates dependencies and opens PRs 24×7. High duty since it waits for no approvals; large context from extensive repos — cache read dominates the cost.',
       learnings:
         'Cache read concentrates >70% of the cost — the lever is context engineering, not the model. The high duty, waiting for no approvals, brings the monthly cost close to the ceiling.',
+    },
+    o1: {
+      name: 'Supervised pair programming',
+      description:
+        'A developer works with a ChatGPT-based agent in an interactive session. GPT-5.4 mini carries the bulk and GPT-5.4 nano the trivial work; the human reviews and approves, with low duty.',
+      learnings:
+        'The low duty (the agent waits for the human) makes the real cost a fraction of the ceiling: the lever is how much of the scheduled time bills, not the rate.',
+    },
+    o2: {
+      name: 'Balanced delivery agent',
+      description:
+        'Agent embedded in a team workflow: GPT-5.4 plans and reviews the PR, GPT-5.4 mini implements and GPT-5.4 nano runs tests and lint. Runs continuously serving a queue with CI waits.',
+      learnings:
+        'Cached input concentrates much of the hourly cost; the lever is context engineering and reusing cached prompt, not switching models.',
+    },
+    o3: {
+      name: 'Design-intensive / greenfield',
+      description:
+        'Product kickoff: GPT-5.5 (frontier) and GPT-5.4 carry design, ADRs and deep review; GPT-5.4 mini prototypes. High output from documents and extensive reasoning, with frequent supervision.',
+      learnings:
+        'The only scenario with the frontier model (GPT-5.5): that slice drives up the hourly rate versus mini-first scenarios. The lever is how much reasoning moves down to mini without losing quality.',
+    },
+    o4: {
+      name: 'Maintenance on mature code',
+      description:
+        'Maintenance on mature code: GPT-5.4 mini resolves most tasks and GPT-5.4 only steps in as escalation; GPT-5.4 nano absorbs the trivial work. High 24×7 autonomy.',
+      learnings:
+        'With mini-first and nano absorbing the trivial work the hourly rate drops; the monthly cost is set by the high duty and the 24×7 schedule, not the model price.',
+    },
+    o5: {
+      name: 'Nightly QA swarm',
+      description:
+        'A fleet of testing agents running off-hours, mostly GPT-5.4 nano in short contexts with a slice of GPT-5.5 for security analysis. An ideal Batch API (−50%) candidate.',
+      learnings:
+        'The Batch API (−50%) over the 80% eligible is the biggest lever and cost scales with the number of agents; even so, a 5% slice of GPT-5.5 concentrates hourly cost: watch how much you route to the frontier.',
+    },
+    o6: {
+      name: 'Autonomous maintenance agent',
+      description:
+        'An agent with no human in the loop that triages issues, updates dependencies and opens PRs 24×7 on ChatGPT. High duty waiting for no approvals; large context with cached input dominant.',
+      learnings:
+        'Cached input concentrates the cost — the lever is context engineering. The high duty, waiting for no approvals, brings the monthly cost close to the ceiling.',
+    },
+    g1: {
+      name: 'Supervised pair programming',
+      description:
+        'A developer works with a Gemini-based agent in an interactive session. Gemini 3.5 Flash carries the bulk and Flash-Lite the trivial work; the human reviews and approves, with low duty.',
+      learnings:
+        'The low duty (the agent waits for the human) makes the real cost a fraction of the ceiling: the lever is how much of the scheduled time bills, not the rate.',
+    },
+    g2: {
+      name: 'Balanced delivery agent',
+      description:
+        'Agent embedded in the workflow: Gemini 3.1 Pro plans and reviews, Gemini 3.5 Flash implements and Flash-Lite runs tests. Runs continuously serving a queue with CI waits.',
+      learnings:
+        'Cache read concentrates much of the hourly cost; if you enable explicit storage, remember it bills per retained hour separately from the blend.',
+    },
+    g3: {
+      name: 'Design-intensive / greenfield',
+      description:
+        'Product kickoff: Gemini 3.1 Pro carries design, ADRs and deep review; Gemini 3.5 Flash prototypes. High output from documents and extensive reasoning, with frequent supervision.',
+      learnings:
+        'The weight of Gemini 3.1 Pro (frontier, Preview) drives up the hourly rate versus Flash-first scenarios. The lever is how much reasoning moves down to Flash without losing design quality.',
+    },
+    g4: {
+      name: 'Maintenance on mature code',
+      description:
+        'Maintenance on mature code: Gemini 3.5 Flash resolves most tasks and Gemini 3.1 Pro only escalates; Flash-Lite absorbs the trivial work. High 24×7 autonomy.',
+      learnings:
+        'With Flash-first and Flash-Lite absorbing the trivial work the hourly rate drops; the monthly cost is set by the high duty and the 24×7 schedule, not the model price.',
+    },
+    g5: {
+      name: 'Nightly QA swarm',
+      description:
+        'A fleet of testing agents running off-hours, mostly Flash-Lite in short contexts with a slice of Gemini 3.1 Pro for security analysis. An ideal Batch API (−50%) candidate.',
+      learnings:
+        'The Batch API (−50%) over the 80% eligible is the biggest lever and cost scales with the number of agents; a 5% slice of Gemini 3.1 Pro concentrates hourly cost: watch how much you route to the frontier.',
+    },
+    g6: {
+      name: 'Autonomous maintenance agent',
+      description:
+        'An agent with no human in the loop that triages issues, updates dependencies and opens PRs 24×7 on Gemini. High duty waiting for no approvals; large context with cache read dominant.',
+      learnings:
+        'Cache read concentrates the cost — the lever is context engineering. The high duty, waiting for no approvals, brings the monthly cost close to the ceiling.',
     },
   },
   salaryRoles: {

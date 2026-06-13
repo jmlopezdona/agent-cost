@@ -68,10 +68,7 @@ export function ScheduleSection() {
         max={RANGES.dutyCycle.max * 100}
         onChange={(v) => setSchedule('dutyCycle', v / 100)}
         labelExtra={
-          <HelpTip
-            label={t.schedule.helpButton(t.schedule.dutyCycle)}
-            text={t.schedule.dutyHelp}
-          />
+          <HelpTip label={t.schedule.helpButton(t.schedule.dutyCycle)} text={t.schedule.dutyHelp} />
         }
         detail={t.schedule.dutyGuide}
       />

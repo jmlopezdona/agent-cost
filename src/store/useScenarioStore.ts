@@ -1,5 +1,12 @@
 import { create } from 'zustand'
-import type { ModelId, PriceField, PriceOverrides, Scenario, TokenRates } from '../engine/types'
+import type {
+  ModelId,
+  ModelKey,
+  ProviderId,
+  PriceOverrides,
+  Scenario,
+  TokenRates,
+} from '../engine/types'
 import {
   DEFAULT_BATCH_FRACTION,
   DEFAULT_CURRENCY,
@@ -8,17 +15,20 @@ import {
   DEFAULT_FX_EUR_PER_USD,
   DEFAULT_PRESET_ID,
   DEFAULT_REGIONAL,
+  DEFAULT_STORAGE_ENABLED,
+  defaultPresetFor,
+  defaultRegional,
   presets,
   pricingTable,
   salaryData,
   type Currency,
 } from '../data'
-import { clamp, RANGES } from '../lib/ranges'
+import { clamp, RANGES, type Range } from '../lib/ranges'
 import {
+  applyRemainder,
   clearSession,
   deserializeScenario,
   hasScenarioParams,
-  mixRemainder,
   readSession,
   scenarioFromPreset,
   serializeScenario,
@@ -27,7 +37,6 @@ import {
   type ModifierDefaults,
 } from './urlSync'
 
-type MixSliderId = 'fable' | 'opus' | 'sonnet'
 type ScheduleField = 'hoursPerDay' | 'daysPerWeek' | 'dutyCycle' | 'agents'
 
 interface ScenarioStore {
@@ -49,15 +58,18 @@ interface ScenarioStore {
   batchEnabled: boolean
   batchFraction: number
   regional: boolean
+  /** Término de almacenamiento de caché (Gemini) activo (D3) */
+  storageEnabled: boolean
   employerMultiplier: number
   effectiveHours: number
   priceOverrides: PriceOverrides
   /** Modo presentación (flag de vista, D6) */
   presentation: boolean
 
+  setProvider: (providerId: ProviderId) => void
   loadPreset: (id: string) => void
   setToken: (field: keyof TokenRates, value: number) => void
-  setMix: (model: MixSliderId, value: number) => void
+  setMix: (model: ModelKey, value: number) => void
   setSchedule: (field: ScheduleField, value: number) => void
   applyRegime: (hoursPerDay: number, daysPerWeek: number) => void
   setFx: (value: number) => void
@@ -68,9 +80,10 @@ interface ScenarioStore {
   setBatchEnabled: (value: boolean) => void
   setBatchFraction: (value: number) => void
   setRegional: (value: boolean) => void
+  setStorageEnabled: (value: boolean) => void
   setEmployerMultiplier: (value: number) => void
   setEffectiveHours: (value: number) => void
-  setPriceOverride: (model: ModelId, field: PriceField, value: number) => void
+  setPriceOverride: (model: ModelId, category: string, value: number) => void
   resetPriceOverrides: () => void
   togglePresentation: () => void
   /** Query serializada del estado actual (compartir + persistencia, D4) */
@@ -79,12 +92,7 @@ interface ScenarioStore {
   reset: () => void
 }
 
-const TOKEN_RANGE = {
-  inputK: RANGES.inputK,
-  outputK: RANGES.outputK,
-  cacheReadM: RANGES.cacheReadM,
-  cacheWriteK: RANGES.cacheWriteK,
-} as const
+const TOKEN_RANGE = RANGES as Record<string, Range>
 
 const SCHEDULE_RANGE = {
   hoursPerDay: RANGES.hoursPerDay,
@@ -107,8 +115,6 @@ function presetById(id: string) {
 }
 
 // Precedencia al cargar (D3): URL con estado → sessionStorage → preset por defecto.
-// Un enlace entrante gana; el aviso de versión (`staleVersion`) se calcula aquí, de su
-// query, antes de limpiar la URL más abajo. Si no hay enlace, se restaura la sesión.
 const incomingSearch = typeof window === 'undefined' ? '' : window.location.search
 const fromUrl = hasScenarioParams(incomingSearch)
 const initialQuery = fromUrl ? incomingSearch : (readSession() ?? '')
@@ -133,6 +139,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
       batchEnabled,
       batchFraction,
       regional,
+      storageEnabled,
       employerMultiplier,
       effectiveHours,
       priceOverrides,
@@ -151,6 +158,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         batchEnabled,
         batchFraction,
         regional,
+        storageEnabled,
         employerMultiplier,
         effectiveHours,
         priceOverrides,
@@ -168,6 +176,22 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     syncSession()
   }
 
+  // Aplica un preset: su bloque de modificadores; al cambiar de familia resetea regional/storage
+  const applyPreset = (id: string) => {
+    const preset = presetById(id)
+    const providerChanged = preset.provider !== get().scenario.providerId
+    update({
+      scenario: scenarioFromPreset(preset),
+      presetId: id,
+      isCustomized: false,
+      batchEnabled: preset.modifiers?.batchEnabled ?? false,
+      batchFraction: preset.modifiers?.batchFraction ?? DEFAULT_BATCH_FRACTION,
+      ...(providerChanged
+        ? { regional: defaultRegional(preset.provider), storageEnabled: DEFAULT_STORAGE_ENABLED }
+        : {}),
+    })
+  }
+
   return {
     scenario: initial.scenario,
     presetId: initial.presetId,
@@ -180,28 +204,20 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     batchEnabled: initial.batchEnabled,
     batchFraction: initial.batchFraction,
     regional: initial.regional,
+    storageEnabled: initial.storageEnabled,
     employerMultiplier: initial.employerMultiplier,
     effectiveHours: initial.effectiveHours,
     priceOverrides: initial.priceOverrides,
     presentation: initial.presentation,
 
-    loadPreset: (id) => {
-      // El preset aplica su bloque de modificadores; los demás quedan neutros (D1)
-      const preset = presetById(id)
-      const batchEnabled = preset.modifiers?.batchEnabled ?? false
-      const batchFraction = preset.modifiers?.batchFraction ?? DEFAULT_BATCH_FRACTION
-      update({
-        scenario: scenarioFromPreset(preset),
-        presetId: id,
-        isCustomized: false,
-        batchEnabled,
-        batchFraction,
-      })
-    },
+    // Cambio de proveedor activo: carga el preset por defecto de la familia (D7)
+    setProvider: (providerId) => applyPreset(defaultPresetFor(providerId).id),
+
+    loadPreset: (id) => applyPreset(id),
 
     setToken: (field, value) => {
       const { scenario } = get()
-      const clamped = clamp(value, TOKEN_RANGE[field])
+      const clamped = clamp(value, TOKEN_RANGE[field] ?? { min: 0, max: Number.MAX_SAFE_INTEGER })
       update({
         scenario: { ...scenario, tokens: { ...scenario.tokens, [field]: clamped } },
         isCustomized: true,
@@ -210,13 +226,14 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
 
     setMix: (model, value) => {
       const { scenario } = get()
+      const provider = pricingTable.providers[scenario.providerId]
       const mix = { ...scenario.mix }
-      const othersSum = (['fable', 'opus', 'sonnet'] as const)
-        .filter((id) => id !== model)
-        .reduce((s, id) => s + mix[id], 0)
-      // Clamping bidireccional: el slider movido se frena en 100 − resto (D7)
+      // Clamping bidireccional: el slider movido se frena en 100 − (resto de no-resto) (D7)
+      const othersSum = Object.keys(provider.models)
+        .filter((k) => k !== provider.remainderModel && k !== model)
+        .reduce((s, k) => s + (mix[k] ?? 0), 0)
       mix[model] = clamp(Math.min(value, Number((1 - othersSum).toFixed(6))), RANGES.mix)
-      mix.haiku = mixRemainder(mix.fable, mix.opus, mix.sonnet)
+      applyRemainder(mix, provider)
       update({ scenario: { ...scenario, mix }, isCustomized: true })
     },
 
@@ -239,36 +256,33 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     },
 
     setFx: (value) => {
-      // El tipo de cambio no forma parte de los presets: no marca "Personalizado"
       update({ fx: clamp(value, RANGES.fx) })
     },
 
     setCurrency: (c) => {
-      // La moneda es estado de presentación: no marca "Personalizado"
       update({ currency: c })
     },
 
     setProfileGross: (profileId, value) => {
-      // Edición de sesión, sin persistencia ni URL
       set({ profileGross: { ...get().profileGross, [profileId]: Math.max(0, value) } })
     },
 
     dismissStaleVersion: () => set({ staleVersion: null }),
 
-    // Modificadores: como fx/currency, no marcan "Personalizado" (D2)
     setBatchEnabled: (value) => update({ batchEnabled: value }),
     setBatchFraction: (value) => update({ batchFraction: clamp(value, RANGES.batchFraction) }),
     setRegional: (value) => update({ regional: value }),
+    setStorageEnabled: (value) => update({ storageEnabled: value }),
     setEmployerMultiplier: (value) =>
       update({ employerMultiplier: clamp(value, RANGES.employerMultiplier) }),
     setEffectiveHours: (value) => update({ effectiveHours: clamp(value, RANGES.effectiveHours) }),
 
-    setPriceOverride: (model, field, value) => {
+    setPriceOverride: (model, category, value) => {
       const { priceOverrides } = get()
       update({
         priceOverrides: {
           ...priceOverrides,
-          [model]: { ...priceOverrides[model], [field]: Math.max(0, value) },
+          [model]: { ...priceOverrides[model], [category]: Math.max(0, value) },
         },
       })
     },
@@ -281,7 +295,6 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
 
     reset: () => {
       // Vacía la sesión y vuelve al preset por defecto con modificadores neutros (D5).
-      // currency y fx se conservan: son preferencia de presentación, no escenario.
       clearSession()
       const preset = presetById(DEFAULT_PRESET_ID)
       set({
@@ -291,7 +304,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         staleVersion: null,
         batchEnabled: false,
         batchFraction: DEFAULT_BATCH_FRACTION,
-        regional: DEFAULT_REGIONAL,
+        regional: defaultRegional(preset.provider),
+        storageEnabled: DEFAULT_STORAGE_ENABLED,
         employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
         effectiveHours: DEFAULT_EFFECTIVE_HOURS,
         priceOverrides: {},
@@ -302,7 +316,6 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
 })
 
 // Adopción de un enlace entrante (D3): se guarda en sessionStorage y la URL se limpia.
-// El estado ya se cargó arriba desde `incomingSearch`, incluido el aviso de versión.
 if (fromUrl) {
   writeSession(useScenarioStore.getState().serializeCurrent())
   writeUrl('')

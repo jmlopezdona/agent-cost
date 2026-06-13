@@ -9,6 +9,8 @@ export const RANGES = {
   outputK: { min: 0, max: 1000 },
   cacheReadM: { min: 0, max: 100 },
   cacheWriteK: { min: 0, max: 2000 },
+  /** M tokens retenidos en caché explícita por hora (término storage, Gemini) */
+  cacheStorageM: { min: 0, max: 100 },
   hoursPerDay: { min: 1, max: 24 },
   daysPerWeek: { min: 1, max: 7 },
   /** Fracción */

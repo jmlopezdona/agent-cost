@@ -4,9 +4,16 @@ import type { Strings } from './es'
 export const fr: Strings = {
   app: {
     title: 'Agent Cost',
-    subtitle: "Calculateur de coût d'agents d'IA sur l'API d'Anthropic",
+    subtitle: "Calculateur de coût d'agents d'IA (Anthropic, OpenAI, Google)",
+  },
+  providers: {
+    selectorLabel: 'Famille de modèles',
+    anthropic: 'Anthropic · Claude',
+    openai: 'OpenAI · ChatGPT',
+    google: 'Google · Gemini',
   },
   header: {
+    providerLabel: 'Famille de modèles',
     presetsLabel: 'Scénarios prédéfinis',
     customized: (presetName: string) => `Personnalisé (basé sur ${presetName})`,
     copyLink: 'Partager',
@@ -47,15 +54,27 @@ export const fr: Strings = {
       unit: 'k tok/h',
       help: 'Écritures de cache de prompt (TTL 5 min, tarif 1,25× input). Exemple : 530k/h équivaut à mettre en cache environ 3 à 4 fois par heure un contexte de ~150k tokens.',
     },
+    cachedInput: {
+      label: 'Cached input',
+      unit: 'M tok/h',
+      help: "Tokens d'entrée servis depuis le cache d'OpenAI à tarif réduit. Équivaut au cache read : contexte répété que le modèle relit à prix remisé.",
+    },
+    cacheStorage: {
+      label: 'Tokens retenus en cache',
+      unit: 'M tok',
+      help: "Volume de tokens conservés dans le cache explicite de Gemini. Facturé au stockage et à l'heure programmée, pas à l'appel. N'affecte le coût mensuel que si vous activez le terme de stockage.",
+    },
     helpButton: (label: string) => `Aide sur ${label}`,
     categoryDetail: (cost: string, share: string) => `${cost} · ${share} du blend`,
   },
   mix: {
     sectionTitle: 'Mélange de modèles',
-    sectionHint: "Répartition du temps actif entre les modèles ; Haiku absorbe le reste jusqu'à 100 %",
+    sectionHint:
+      "Répartition du temps actif entre les modèles ; le modèle le moins cher absorbe le reste jusqu'à 100 %",
     haikuRest: 'reste',
     blendLabel: 'Tarif du blend',
     rateLabel: (rate: string) => `${rate} actif`,
+    tabsLabel: 'Famille de modèles',
   },
   schedule: {
     sectionTitle: 'Régime et utilisation',
@@ -83,6 +102,8 @@ export const fr: Strings = {
     weighted: 'Pondéré mensuel',
     weightedHint: 'plafond × duty cycle',
     annual: 'Pondéré annuel',
+    storage: 'Stockage de cache',
+    storageHint: 'coût mensuel distinct du blend',
   },
   charts: {
     breakdownTitle: 'Répartition du coût par catégorie de token',
@@ -92,6 +113,8 @@ export const fr: Strings = {
       output: 'Output',
       cacheWrite: 'Cache write',
       input: 'Input frais',
+      cachedInput: 'Cached input',
+      cacheStorage: 'Stockage',
     },
     ceilingVsWeightedTitle: 'Plafond vs. pondéré mensuel',
     ceilingBar: 'Plafond (duty 100 %)',
@@ -132,30 +155,40 @@ export const fr: Strings = {
   },
   advanced: {
     sectionTitle: 'Configuration avancée',
-    sectionHint: 'Prix, Batch API, surcoût régional, taux de change et coût employeur',
+    sectionHint:
+      'Prix, Batch API, surcoût régional, stockage de cache, taux de change et coût employeur',
     toggleExpand: 'Afficher ou masquer la configuration avancée',
     pricingTitle: 'Prix par modèle (USD/MTok)',
     pricingHint:
       'Modifiez les tarifs officiels ; les changements ne vivent que dans cette session et dans le lien.',
+    pricingTabsLabel: 'Famille de prix',
     restoreOfficial: 'Restaurer les officiels',
     priceFields: {
       input: 'Input',
       output: 'Output',
       cache_read: 'Cache read',
       cache_write: 'Cache write',
+      cached_input: 'Cached input',
+      cache_storage: 'Stockage /h',
     },
     priceCellAria: (model: string, field: string) => `Prix ${field} de ${model} (USD/MTok)`,
     colModel: 'Modèle',
     batchTitle: 'Batch API (−50%)',
     batchToggle: 'Activer la Batch API',
     batchHelp:
-      "La Batch API traite les requêtes de manière asynchrone avec une remise de 50 %. Indiquez quelle fraction du travail ne nécessite pas de latence et peut passer par batch.",
+      'La Batch API traite les requêtes de manière asynchrone avec une remise de 50 %. Indiquez quelle fraction du travail ne nécessite pas de latence et peut passer par batch.',
     batchFractionLabel: '% du travail éligible',
     batchUnit: '%',
     regionalTitle: 'Surcoût régional/Bedrock (+10%)',
     regionalToggle: 'Activer le surcoût régional/Bedrock',
     regionalHelp:
-      "Certaines régions et l'accès via Amazon Bedrock appliquent un surcoût d'environ 10 % sur toutes les catégories.",
+      "Certaines régions appliquent un surcoût d'environ 10 % sur toutes les catégories : l'accès via Amazon Bedrock chez Anthropic, les endpoints de résidence régionale chez OpenAI.",
+    storageTitle: 'Stockage de cache (Gemini)',
+    storageToggle: 'Activer le coût de stockage de cache',
+    storageHelp:
+      "Gemini facture le cache explicite au stockage et à l'heure programmée, en plus de la lecture. Activez-le et indiquez les tokens retenus pour inclure ce coût mensuel.",
+    storageDisclaimer:
+      'Le cache explicite de Gemini est une estimation : le coût de stockage est modélisé séparément du blend horaire et suppose que vous retenez ce volume pendant toutes les heures programmées.',
     fxLabel: 'Taux de change',
     fxUnit: '€ par USD',
     employerMultiplierLabel: 'Multiplicateur de coût employeur',
@@ -169,6 +202,7 @@ export const fr: Strings = {
   badges: {
     batch: (percent: string) => `batch ${percent} appliqué`,
     bedrock: 'Bedrock +10%',
+    storage: 'stockage de cache',
     pricesEdited: 'prix modifiés',
     label: 'Modificateurs actifs',
   },
@@ -224,7 +258,7 @@ export const fr: Strings = {
     p3: {
       name: 'Conception intensive / greenfield',
       description:
-        "Démarrage de produit ou architecture complexe : le modèle frontière (Fable) et Opus portent le poids de la conception, des ADR et de la revue approfondie ; Sonnet prototype. Output élevé dû aux documents et au raisonnement étendu. Journée de travail avec supervision fréquente.",
+        'Démarrage de produit ou architecture complexe : le modèle frontière (Fable) et Opus portent le poids de la conception, des ADR et de la revue approfondie ; Sonnet prototype. Output élevé dû aux documents et au raisonnement étendu. Journée de travail avec supervision fréquente.',
       learnings:
         "Seul scénario avec le modèle frontière : cette part, ajoutée au poids d'Opus, fait grimper le tarif horaire face aux scénarios Sonnet-first à tokens comparables. Le levier est la part du raisonnement que l'on peut descendre vers Sonnet sans perdre en qualité de conception.",
     },
@@ -249,6 +283,90 @@ export const fr: Strings = {
       learnings:
         "Le cache read concentre >70 % du coût — le levier est l'ingénierie de contexte, pas le modèle. Le duty élevé, sans attente d'approbations, rapproche le coût mensuel du plafond.",
     },
+    o1: {
+      name: 'Pair programming supervisé',
+      description:
+        "Un développeur travaille avec un agent ChatGPT en session interactive. GPT-5.4 mini porte l'essentiel et GPT-5.4 nano le trivial ; l'humain révise et approuve, avec un duty faible.",
+      learnings:
+        "Le duty faible (l'agent attend l'humain) fait que le coût réel n'est qu'une fraction du plafond : le levier est la part du temps programmé qui facture, pas le tarif.",
+    },
+    o2: {
+      name: 'Agent de delivery équilibré',
+      description:
+        "Agent intégré au flux d'une équipe : GPT-5.4 planifie et révise la PR, GPT-5.4 mini implémente et GPT-5.4 nano exécute tests et lint. Tourne en continu sur une file avec attentes de CI.",
+      learnings:
+        "Le cached input concentre une bonne part du coût horaire ; le levier est l'ingénierie de contexte et la réutilisation du prompt en cache, pas le changement de modèle.",
+    },
+    o3: {
+      name: 'Conception intensive / greenfield',
+      description:
+        'Démarrage de produit : GPT-5.5 (frontière) et GPT-5.4 portent la conception, les ADR et la revue approfondie ; GPT-5.4 mini prototype. Output élevé, raisonnement étendu, supervision fréquente.',
+      learnings:
+        'Seul scénario avec le modèle frontière (GPT-5.5) : cette part fait grimper le tarif horaire face aux scénarios mini-first. Le levier est la part de raisonnement descendue vers mini sans perte de qualité.',
+    },
+    o4: {
+      name: 'Évolutions sur code mature',
+      description:
+        "Maintenance sur code mature : GPT-5.4 mini résout la majorité des tâches et GPT-5.4 n'intervient qu'en escalade ; GPT-5.4 nano absorbe le trivial. Forte autonomie 24×7.",
+      learnings:
+        'Avec mini-first et nano absorbant le trivial, le tarif horaire baisse ; le coût mensuel est dicté par le duty élevé et le régime 24×7, pas par le prix du modèle.',
+    },
+    o5: {
+      name: 'Essaim QA nocturne',
+      description:
+        "Une flotte d'agents de test hors heures, majoritairement GPT-5.4 nano sur contextes courts avec une part de GPT-5.5 pour l'analyse de sécurité. Candidat idéal à la Batch API (−50%).",
+      learnings:
+        "La Batch API (−50%) sur les 80 % éligibles est le plus grand levier et le coût évolue avec le nombre d'agents ; une part de 5 % de GPT-5.5 concentre le coût horaire : surveillez ce que vous routez vers la frontière.",
+    },
+    o6: {
+      name: 'Agent autonome de maintenance',
+      description:
+        "Agent sans humain dans la boucle qui trie les issues, met à jour les dépendances et ouvre des PR 24×7 sur ChatGPT. Duty élevé sans attente d'approbations ; contexte volumineux, cached input dominant.",
+      learnings:
+        "Le cached input concentre le coût — le levier est l'ingénierie de contexte. Le duty élevé, sans attente d'approbations, rapproche le coût mensuel du plafond.",
+    },
+    g1: {
+      name: 'Pair programming supervisé',
+      description:
+        "Un développeur travaille avec un agent Gemini en session interactive. Gemini 3.5 Flash porte l'essentiel et Flash-Lite le trivial ; l'humain révise et approuve, avec un duty faible.",
+      learnings:
+        "Le duty faible (l'agent attend l'humain) fait que le coût réel n'est qu'une fraction du plafond : le levier est la part du temps programmé qui facture, pas le tarif.",
+    },
+    g2: {
+      name: 'Agent de delivery équilibré',
+      description:
+        'Agent intégré au flux : Gemini 3.1 Pro planifie et révise, Gemini 3.5 Flash implémente et Flash-Lite exécute les tests. Tourne en continu sur une file avec attentes de CI.',
+      learnings:
+        "Le cache read concentre une bonne part du coût horaire ; si vous activez le stockage explicite, il facture à l'heure retenue, séparément du blend.",
+    },
+    g3: {
+      name: 'Conception intensive / greenfield',
+      description:
+        'Démarrage de produit : Gemini 3.1 Pro porte la conception, les ADR et la revue approfondie ; Gemini 3.5 Flash prototype. Output élevé, raisonnement étendu, supervision fréquente.',
+      learnings:
+        'Le poids de Gemini 3.1 Pro (frontière, Preview) fait grimper le tarif horaire face aux scénarios Flash-first. Le levier est la part de raisonnement descendue vers Flash sans perte de qualité.',
+    },
+    g4: {
+      name: 'Évolutions sur code mature',
+      description:
+        "Maintenance sur code mature : Gemini 3.5 Flash résout la majorité des tâches et Gemini 3.1 Pro n'intervient qu'en escalade ; Flash-Lite absorbe le trivial. Forte autonomie 24×7.",
+      learnings:
+        'Avec Flash-first et Flash-Lite absorbant le trivial, le tarif horaire baisse ; le coût mensuel est dicté par le duty élevé et le régime 24×7, pas par le prix du modèle.',
+    },
+    g5: {
+      name: 'Essaim QA nocturne',
+      description:
+        "Une flotte d'agents de test hors heures, majoritairement Flash-Lite sur contextes courts avec une part de Gemini 3.1 Pro pour l'analyse de sécurité. Candidat idéal à la Batch API (−50%).",
+      learnings:
+        "La Batch API (−50%) sur les 80 % éligibles est le plus grand levier et le coût évolue avec le nombre d'agents ; une part de 5 % de Gemini 3.1 Pro concentre le coût horaire : surveillez ce que vous routez vers la frontière.",
+    },
+    g6: {
+      name: 'Agent autonome de maintenance',
+      description:
+        "Agent sans humain dans la boucle qui trie les issues, met à jour les dépendances et ouvre des PR 24×7 sur Gemini. Duty élevé sans attente d'approbations ; contexte volumineux, cache read dominant.",
+      learnings:
+        "Le cache read concentre le coût — le levier est l'ingénierie de contexte. Le duty élevé, sans attente d'approbations, rapproche le coût mensuel du plafond.",
+    },
   },
   salaryRoles: {
     junior: { name: 'Junior', experience: '0–2 ans' },
@@ -257,5 +375,5 @@ export const fr: Strings = {
     techlead: { name: 'Tech Lead / Architecte', experience: '8+ ans' },
   },
   salarySource:
-    "Glassdoor Espagne, InfoJobs Rapport TIC, LinkedIn Salary Insights, INE Enquête sur la structure des salaires",
+    'Glassdoor Espagne, InfoJobs Rapport TIC, LinkedIn Salary Insights, INE Enquête sur la structure des salaires',
 }

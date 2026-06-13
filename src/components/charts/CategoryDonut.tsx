@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Doughnut } from 'react-chartjs-2'
 import type { Chart as ChartJS } from 'chart.js'
-import { CATEGORY_BORDER_DASH, categoryLabels, chartTheme } from './chartSetup'
+import { categoryBorderDash, categoryColor, categoryLabel, chartTheme } from './chartSetup'
 import { registerChart } from '../../lib/chartRegistry'
 import { ChartExportButton } from '../export/ChartExportButton'
 import { useFormat, useStrings } from '../../i18n/hooks'
@@ -15,7 +15,6 @@ import { useTheme } from '../../lib/theme'
 export function CategoryDonut() {
   const t = useStrings()
   const { formatMoneyPerHour, formatPercent } = useFormat()
-  const labels = categoryLabels(t)
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -32,16 +31,16 @@ export function CategoryDonut() {
     const theme = chartTheme()
     return {
       data: {
-        labels: results.byCategory.map((c) => labels[c.category]),
+        labels: results.byCategory.map((c) => categoryLabel(t, c.category)),
         datasets: [
           {
             data: results.byCategory.map((c) => c.usdPerHour),
-            backgroundColor: results.byCategory.map((c) => theme.categoryColors[c.category]),
+            backgroundColor: results.byCategory.map((c) => categoryColor(c.category)),
             // Señal secundaria al color: borde con patrón distinto por categoría (CA-07.2)
             borderColor: theme.ink,
             borderWidth: 2,
             borderDash: (ctx: { dataIndex: number }) =>
-              CATEGORY_BORDER_DASH[results.byCategory[ctx.dataIndex].category],
+              categoryBorderDash(results.byCategory[ctx.dataIndex].category),
           },
         ],
       },
@@ -55,9 +54,9 @@ export function CategoryDonut() {
               // Leyenda con valor + % (CA del spec results-display)
               generateLabels: () =>
                 results.byCategory.map((c, i) => ({
-                  text: `${labels[c.category]}: ${rate(c.usdPerHour)} (${formatPercent(c.share)})`,
-                  fillStyle: chartTheme().categoryColors[c.category],
-                  strokeStyle: chartTheme().categoryColors[c.category],
+                  text: `${categoryLabel(t, c.category)}: ${rate(c.usdPerHour)} (${formatPercent(c.share)})`,
+                  fillStyle: categoryColor(c.category),
+                  strokeStyle: categoryColor(c.category),
                   fontColor: chartTheme().ink,
                   index: i,
                 })),
@@ -109,7 +108,6 @@ export function CategoryDonut() {
 export function CategoryDonutAlt() {
   const t = useStrings()
   const { formatMoneyPerHour, formatPercent } = useFormat()
-  const labels = categoryLabels(t)
   const results = useResults()
   const currency = useScenarioStore((s) => s.currency)
   const fx = useScenarioStore((s) => s.fx)
@@ -130,7 +128,7 @@ export function CategoryDonutAlt() {
       <tbody>
         {results.byCategory.map((c) => (
           <tr key={c.category}>
-            <th scope="row">{labels[c.category]}</th>
+            <th scope="row">{categoryLabel(t, c.category)}</th>
             <td>{rate(c.usdPerHour)}</td>
             <td>{formatPercent(c.share)}</td>
           </tr>

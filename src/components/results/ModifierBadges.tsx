@@ -1,21 +1,25 @@
 import { useFormat, useStrings } from '../../i18n/hooks'
-import { MODEL_IDS } from '../../engine/types'
+import { offersRegional, storageCategory } from '../../data'
 import { useScenarioStore } from '../../store/useScenarioStore'
 
 /** Badges de los modificadores activos junto a los resultados (CA-08.1) */
 export function ModifierBadges() {
   const t = useStrings()
   const { formatPercent } = useFormat()
+  const providerId = useScenarioStore((s) => s.scenario.providerId)
   const batchEnabled = useScenarioStore((s) => s.batchEnabled)
   const batchFraction = useScenarioStore((s) => s.batchFraction)
   const regional = useScenarioStore((s) => s.regional)
+  const storageEnabled = useScenarioStore((s) => s.storageEnabled)
   const priceOverrides = useScenarioStore((s) => s.priceOverrides)
 
-  const hasOverrides = MODEL_IDS.some((id) => priceOverrides[id] !== undefined)
+  const hasOverrides = Object.keys(priceOverrides).length > 0
 
   const badges: string[] = []
   if (batchEnabled) badges.push(t.badges.batch(formatPercent(batchFraction)))
-  if (regional) badges.push(t.badges.bedrock)
+  // El recargo regional solo aplica si el proveedor activo lo ofrece
+  if (regional && offersRegional(providerId)) badges.push(t.badges.bedrock)
+  if (storageEnabled && storageCategory(providerId)) badges.push(t.badges.storage)
   if (hasOverrides) badges.push(t.badges.pricesEdited)
 
   if (badges.length === 0) return null

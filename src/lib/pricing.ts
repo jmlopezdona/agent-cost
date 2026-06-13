@@ -1,16 +1,40 @@
-import { MODEL_IDS, type ModelId, type ModelPricing, type PriceOverrides, type PricingTable } from '../engine/types'
+import {
+  modelId,
+  type PriceOverrides,
+  type PricingTable,
+  type ProviderData,
+  type ProviderId,
+} from '../engine/types'
 
 /**
  * Tabla de precios efectiva = `pricing.json` + overrides de sesión (D3).
- * `pricing.json` permanece intacto; los overrides son una capa compartible.
+ * `pricing.json` permanece intacto; los overrides (clave: modelo namespaced + categoría) son
+ * una capa compartible que se aplica sobre los precios del modelo correspondiente.
  */
 export function mergePricing(table: PricingTable, overrides: PriceOverrides): PricingTable {
-  const hasOverrides = MODEL_IDS.some((id) => overrides[id] !== undefined)
-  if (!hasOverrides) return table
+  if (Object.keys(overrides).length === 0) return table
 
-  const models = {} as Record<ModelId, ModelPricing>
-  for (const id of MODEL_IDS) {
-    models[id] = { ...table.models[id], ...overrides[id] }
+  let changed = false
+  const providers = { ...table.providers }
+  for (const [provId, provData] of Object.entries(table.providers) as [
+    ProviderId,
+    ProviderData,
+  ][]) {
+    let provChanged = false
+    const models = { ...provData.models }
+    for (const key of Object.keys(provData.models)) {
+      const ov = overrides[modelId(provId, key)]
+      if (!ov) continue
+      models[key] = {
+        ...provData.models[key],
+        prices: { ...provData.models[key].prices, ...ov },
+      }
+      provChanged = true
+    }
+    if (provChanged) {
+      providers[provId] = { ...provData, models }
+      changed = true
+    }
   }
-  return { ...table, models }
+  return changed ? { ...table, providers } : table
 }

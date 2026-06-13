@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStrings } from '../../i18n/hooks'
 import { presetProse } from '../../i18n'
 import { presets } from '../../data'
+import { PROVIDER_IDS } from '../../engine/types'
 import { useScenarioStore } from '../../store/useScenarioStore'
 import { useTheme } from '../../lib/theme'
 import { LanguageSelector } from './LanguageSelector'
@@ -13,6 +14,8 @@ export function Header() {
   const presetId = useScenarioStore((s) => s.presetId)
   const isCustomized = useScenarioStore((s) => s.isCustomized)
   const loadPreset = useScenarioStore((s) => s.loadPreset)
+  const providerId = useScenarioStore((s) => s.scenario.providerId)
+  const setProvider = useScenarioStore((s) => s.setProvider)
   const currency = useScenarioStore((s) => s.currency)
   const setCurrency = useScenarioStore((s) => s.setCurrency)
   const presentation = useScenarioStore((s) => s.presentation)
@@ -138,31 +141,56 @@ export function Header() {
 
       {!presentation && (
         <>
+          {/* Selector de familia/proveedor: fija el proveedor activo y filtra los presets */}
+          <div role="group" aria-label={t.header.providerLabel} className="flex flex-wrap gap-1.5">
+            {PROVIDER_IDS.map((id) => {
+              const active = id === providerId
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => !active && setProvider(id)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? 'border border-accent bg-accent-soft text-accent'
+                      : 'border border-line bg-raised hover:border-accent'
+                  }`}
+                >
+                  {t.providers[id]}
+                </button>
+              )
+            })}
+          </div>
           <div
             role="group"
             aria-label={t.header.presetsLabel}
             className="grid gap-2 sm:grid-cols-3"
           >
-            {presets.map((preset) => {
-          const active = preset.id === presetId
-          const prose = presetProse(t, preset.id)
-          return (
-            <button
-              key={preset.id}
-              type="button"
-              aria-pressed={active && !isCustomized}
-              onClick={() => loadPreset(preset.id)}
-              className={`min-w-0 rounded-lg border p-3 text-left transition-colors ${
-                active && !isCustomized
-                  ? 'border-accent bg-accent-soft'
-                  : 'border-line bg-raised hover:border-accent'
-              }`}
-            >
-              <span className="block text-sm font-semibold">{prose.name}</span>
-              <span className="mt-0.5 block truncate text-xs text-muted">{prose.description}</span>
-            </button>
-          )
-            })}
+            {presets
+              .filter((preset) => preset.provider === providerId)
+              .map((preset) => {
+                const active = preset.id === presetId
+                const prose = presetProse(t, preset.id)
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    aria-pressed={active && !isCustomized}
+                    onClick={() => loadPreset(preset.id)}
+                    className={`min-w-0 rounded-lg border p-3 text-left transition-colors ${
+                      active && !isCustomized
+                        ? 'border-accent bg-accent-soft'
+                        : 'border-line bg-raised hover:border-accent'
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold">{prose.name}</span>
+                    <span className="mt-0.5 block truncate text-xs text-muted">
+                      {prose.description}
+                    </span>
+                  </button>
+                )
+              })}
           </div>
 
           <p className="text-sm">

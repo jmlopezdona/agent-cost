@@ -103,38 +103,38 @@ export function SalaryComparison() {
             {rows.map(({ profile, gross, cost, fte }) => {
               const role = roleProse(t, profile.id)
               return (
-              <tr key={profile.id} className="border-b border-line last:border-0">
-                <th scope="row" className="py-2 pr-2 text-left font-medium">
-                  {role.name}
-                  <span className="block text-xs font-normal text-muted">{role.experience}</span>
-                </th>
-                <td className="py-2 pr-2">
-                  <input
-                    type="number"
-                    value={gross}
-                    min={0}
-                    step={1000}
-                    onChange={(e) => {
-                      const v = Number(e.target.value)
-                      if (Number.isFinite(v)) setProfileGross(profile.id, v)
-                    }}
-                    aria-label={t.salary.grossInputLabel(role.name)}
-                    className="w-24 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
-                  />
-                </td>
-                <td className="py-2 pr-2 text-right">
-                  {formatMoney(eurToDisplay(cost.annualEUR), currency)}
-                </td>
-                <td className="py-2 pr-2 text-right">
-                  {formatMoney(eurToDisplay(cost.monthlyEUR), currency)}
-                </td>
-                <td className="py-2 pr-2 text-right">
-                  {formatMoneyPerHour(eurToDisplay(cost.perEffectiveHourEUR), currency)}
-                </td>
-                <td className="py-2 text-right font-semibold">
-                  {t.salary.fteValue(formatRatio(fte))}
-                </td>
-              </tr>
+                <tr key={profile.id} className="border-b border-line last:border-0">
+                  <th scope="row" className="py-2 pr-2 text-left font-medium">
+                    {role.name}
+                    <span className="block text-xs font-normal text-muted">{role.experience}</span>
+                  </th>
+                  <td className="py-2 pr-2">
+                    <input
+                      type="number"
+                      value={gross}
+                      min={0}
+                      step={1000}
+                      onChange={(e) => {
+                        const v = Number(e.target.value)
+                        if (Number.isFinite(v)) setProfileGross(profile.id, v)
+                      }}
+                      aria-label={t.salary.grossInputLabel(role.name)}
+                      className="w-24 rounded-md border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-accent focus:outline-none"
+                    />
+                  </td>
+                  <td className="py-2 pr-2 text-right">
+                    {formatMoney(eurToDisplay(cost.annualEUR), currency)}
+                  </td>
+                  <td className="py-2 pr-2 text-right">
+                    {formatMoney(eurToDisplay(cost.monthlyEUR), currency)}
+                  </td>
+                  <td className="py-2 pr-2 text-right">
+                    {formatMoneyPerHour(eurToDisplay(cost.perEffectiveHourEUR), currency)}
+                  </td>
+                  <td className="py-2 text-right font-semibold">
+                    {t.salary.fteValue(formatRatio(fte))}
+                  </td>
+                </tr>
               )
             })}
           </tbody>

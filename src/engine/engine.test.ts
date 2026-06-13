@@ -1,18 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { blendedRate, computeResults, hourlyRate, scheduledHoursPerMonth } from './engine'
 import { agentEurPerActiveHour, employerCost, fteEquivalence, hoursRatio, usdToEur } from './salary'
-import { MODEL_IDS, type Scenario } from './types'
+import type { Scenario } from './types'
 import { pricingTable, presets, salaryData } from '../data'
+import { scenarioFromPreset } from '../store/urlSync'
 
-const byId = (id: string) => {
+const anthropic = pricingTable.providers.anthropic
+const openai = pricingTable.providers.openai
+const google = pricingTable.providers.google
+
+const byId = (id: string): Scenario => {
   const preset = presets.find((p) => p.id === id)
   if (!preset) throw new Error(`Preset ${id} no encontrado`)
-  return preset
+  return scenarioFromPreset(preset)
 }
 
 const P1 = byId('P1')
 const P2 = byId('P2')
 const P4 = byId('P4')
+const anthropicKeys = Object.keys(anthropic.models)
 
 function expectWithin1Percent(actual: number, reference: number) {
   expect(Math.abs(actual - reference) / reference).toBeLessThan(0.01)
@@ -20,39 +26,47 @@ function expectWithin1Percent(actual: number, reference: number) {
 
 describe('hourlyRate', () => {
   it('calcula la tarifa de Sonnet con el perfil P2 sin redondeo interno', () => {
-    const rate = hourlyRate(P2.tokens, pricingTable.models.sonnet)
+    const rate = hourlyRate(P2.tokens, anthropic.models.sonnet, anthropic)
     // 42/1000×3 + 210/1000×15 + 30×0,30 + 530/1000×3,75
     expect(rate).toBeCloseTo(14.2635, 10)
   })
 
   it('una categoría a cero aporta 0 y el resto se calcula con normalidad', () => {
-    const rate = hourlyRate({ ...P2.tokens, cacheReadM: 0 }, pricingTable.models.sonnet)
+    const rate = hourlyRate({ ...P2.tokens, cacheReadM: 0 }, anthropic.models.sonnet, anthropic)
     expect(rate).toBeCloseTo(14.2635 - 30 * 0.3, 10)
   })
 
   it('todas las categorías a cero dan tarifa 0', () => {
     const rate = hourlyRate(
       { inputK: 0, outputK: 0, cacheReadM: 0, cacheWriteK: 0 },
-      pricingTable.models.opus,
+      anthropic.models.opus,
+      anthropic,
     )
     expect(rate).toBe(0)
+  })
+
+  it('esquema OpenAI (3 categorías) suma input + cached_input + output, sin escritura de caché', () => {
+    const tokens = { inputK: 40, cacheReadM: 10, outputK: 200 }
+    const rate = hourlyRate(tokens, openai.models['gpt-5.5'], openai)
+    // 40/1000×5 + 10×0,5 + 200/1000×30 = 0,2 + 5 + 6 = 11,2
+    expect(rate).toBeCloseTo((40 / 1000) * 5 + 10 * 0.5 + (200 / 1000) * 30, 10)
   })
 })
 
 describe('blendedRate', () => {
   it('mezcla 100% un modelo coincide con su tarifa', () => {
     const mix = { fable: 0, opus: 1, sonnet: 0, haiku: 0 }
-    expect(blendedRate(P2.tokens, mix, pricingTable)).toBe(
-      hourlyRate(P2.tokens, pricingTable.models.opus),
+    expect(blendedRate(P2.tokens, mix, anthropic)).toBe(
+      hourlyRate(P2.tokens, anthropic.models.opus, anthropic),
     )
   })
 
   it('mezcla repartida es la suma ponderada de tarifas', () => {
-    const expected = MODEL_IDS.reduce(
-      (sum, id) => sum + P2.mix[id] * hourlyRate(P2.tokens, pricingTable.models[id]),
+    const expected = anthropicKeys.reduce(
+      (sum, id) => sum + P2.mix[id] * hourlyRate(P2.tokens, anthropic.models[id], anthropic),
       0,
     )
-    expect(blendedRate(P2.tokens, P2.mix, pricingTable)).toBeCloseTo(expected, 10)
+    expect(blendedRate(P2.tokens, P2.mix, anthropic)).toBeCloseTo(expected, 10)
   })
 })
 
@@ -84,7 +98,11 @@ describe('caso de referencia dorado P2 (CA-01.3)', () => {
 
   it('cache read es la categoría dominante del desglose', () => {
     const sorted = [...results.byCategory].sort((a, b) => b.usdPerHour - a.usdPerHour)
-    expect(sorted[0].category).toBe('cacheRead')
+    expect(sorted[0].category).toBe('cache_read')
+  })
+
+  it('no hay coste de almacenamiento en Anthropic', () => {
+    expect(results.storageMonthlyUSD).toBe(0)
   })
 })
 
@@ -102,6 +120,64 @@ describe('casos dorados P1 y P4', () => {
     // 0,05 × 22,085 + 0,55 × 13,251 + 0,4 × 4,417 = 10,1591 $/h
     expect(results.blendedRate).toBeCloseTo(10.1591, 4)
     expect(results.weightedMonthlyUSD).toBeCloseTo(10.1591 * 728 * 0.7, 2)
+  })
+})
+
+describe('término de almacenamiento de caché (storage, Gemini)', () => {
+  // Escenario Google 100% Pro Preview; storage cache_storage = 4,50 USD/MTok·h
+  const googleKeys = Object.keys(google.models)
+  const mix: Record<string, number> = Object.fromEntries(googleKeys.map((k) => [k, 0]))
+  mix['gemini-3.1-pro-preview'] = 1
+  const base: Scenario = {
+    providerId: 'google',
+    tokens: { inputK: 40, outputK: 200, cacheReadM: 10, cacheStorageM: 2 },
+    mix,
+    hoursPerDay: 24,
+    daysPerWeek: 7,
+    dutyCycle: 0.6,
+    agents: 1,
+  }
+
+  it('storage desactivado es neutro: no añade coste mensual', () => {
+    const off = computeResults(base, pricingTable, { storageEnabled: false })
+    expect(off.storageMonthlyUSD).toBe(0)
+    const blendOnly = off.blendedRate * off.scheduledHoursMonth
+    expect(off.ceilingMonthlyUSD).toBeCloseTo(blendOnly, 8)
+  })
+
+  it('storage activo suma R × P × horas_programadas al techo, sin tocar el blend $/h', () => {
+    const off = computeResults(base, pricingTable, { storageEnabled: false })
+    const on = computeResults(base, pricingTable, { storageEnabled: true })
+    // R=2 MTok retenidos, P=4,50 USD/MTok·h, H=728 h/mes
+    const expectedStorage = 2 * 4.5 * scheduledHoursPerMonth(24, 7)
+    expect(on.storageMonthlyUSD).toBeCloseTo(expectedStorage, 6)
+    expect(on.blendedRate).toBe(off.blendedRate)
+    expect(on.ceilingMonthlyUSD).toBeCloseTo(off.ceilingMonthlyUSD + expectedStorage, 6)
+  })
+})
+
+describe('modificadores por proveedor', () => {
+  it('batch al 40% reduce el coste un 20% en OpenAI (declara batch)', () => {
+    const tokens = { inputK: 40, cacheReadM: 10, outputK: 200 }
+    const base = hourlyRate(tokens, openai.models['gpt-5.5'], openai)
+    const batched = hourlyRate(tokens, openai.models['gpt-5.5'], openai, { batchFraction: 0.4 })
+    expect(batched).toBeCloseTo(base * 0.8, 10)
+  })
+
+  it('Google no declara regional: ignora el recargo aunque se pase', () => {
+    const tokens = { inputK: 40, outputK: 200, cacheReadM: 10 }
+    const base = hourlyRate(tokens, google.models['gemini-3.5-flash'], google)
+    const surcharged = hourlyRate(tokens, google.models['gemini-3.5-flash'], google, {
+      regionalSurcharge: 1.1,
+    })
+    expect(surcharged).toBe(base)
+  })
+
+  it('composición batch 40% + recargo 1,10 en Anthropic multiplica por 0,88', () => {
+    const base = computeResults(P2, pricingTable)
+    const both = computeResults(P2, pricingTable, { batchFraction: 0.4, regionalSurcharge: 1.1 })
+    expect(both.blendedRate).toBeCloseTo(base.blendedRate * 0.88, 10)
+    expect(both.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 0.88, 10)
   })
 })
 
@@ -124,7 +200,7 @@ describe('escalado y desglose', () => {
 
   it('la suma del desglose por modelo es igual al blend', () => {
     const results = computeResults(P2, pricingTable)
-    const sum = MODEL_IDS.reduce((s, id) => s + results.byModel[id], 0)
+    const sum = anthropicKeys.reduce((s, id) => s + results.byModel[id], 0)
     expect(sum).toBeCloseTo(results.blendedRate, 10)
   })
 
@@ -138,7 +214,7 @@ describe('escalado y desglose', () => {
   })
 })
 
-describe('hooks neutros de Fase 2', () => {
+describe('hooks neutros del motor', () => {
   it('batchFraction 0 y recargo 1 no alteran el resultado', () => {
     const base = computeResults(P2, pricingTable)
     const withDefaults = computeResults(P2, pricingTable, {
@@ -166,13 +242,6 @@ describe('hooks neutros de Fase 2', () => {
     const base = computeResults(P2, pricingTable)
     const surcharged = computeResults(P2, pricingTable, { regionalSurcharge: 1.1 })
     expect(surcharged.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 1.1, 10)
-  })
-
-  it('composición de batch 40% y recargo 1,10 multiplica por 0,88', () => {
-    const base = computeResults(P2, pricingTable)
-    const both = computeResults(P2, pricingTable, { batchFraction: 0.4, regionalSurcharge: 1.1 })
-    expect(both.blendedRate).toBeCloseTo(base.blendedRate * 0.88, 10)
-    expect(both.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD * 0.88, 10)
   })
 
   it('caso dorado de P2 intacto con defaults neutros explícitos', () => {

@@ -7,8 +7,7 @@ const USD = 'Mostrar cifras en dólares'
 
 // La configuración vive en un acordeón exclusivo (Régimen abierto por defecto);
 // abrir la sección de Tokens es necesario para acceder al slider Cache read.
-const openTokens = (page: Page) =>
-  page.getByRole('button', { name: 'Tasa de tokens E/S' }).click()
+const openTokens = (page: Page) => page.getByRole('button', { name: 'Tasa de tokens E/S' }).click()
 
 test('carga P2 por defecto en EUR y el selector propaga el símbolo a las métricas', async ({
   page,
@@ -93,7 +92,8 @@ test('copiar enlace genera una URL con los diffs y abrirla restaura el escenario
   // El portapapeles lleva los diffs aunque la barra de direcciones esté limpia
   const sharedUrl = await page.evaluate(() => navigator.clipboard.readText())
   expect(new URL(page.url()).search).toBe('')
-  expect(sharedUrl).toContain('cr=60')
+  // Clave de perfil de tokens canónica por proveedor (D8); el régimen mantiene su clave corta
+  expect(sharedUrl).toContain('t.cacheReadM=60')
   expect(sharedUrl).toContain('dc=80')
 
   // Abrir el enlace en un contexto limpio restaura el escenario y deja la URL limpia
@@ -115,6 +115,37 @@ test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   // P4 con recargo +10%: blend 10,1591 × 1,10 = 11,2 $/h · ponderado ≈ 5695 $
   await expect(page.getByTestId('metric-blend')).toHaveText('11,2 $/h')
   await expect(page.getByTestId('metric-weighted')).toHaveText('5695 $')
+})
+
+test('cambiar de familia carga su preset, filtra modelos y comparte con pr', async ({
+  page,
+  browser,
+}) => {
+  await page.goto('./')
+  const anthropicBtn = page.getByRole('button', { name: 'Anthropic · Claude' })
+  const googleBtn = page.getByRole('button', { name: 'Google · Gemini' })
+  // Arranca en Anthropic (selector de familia presionado)
+  await expect(anthropicBtn).toHaveAttribute('aria-pressed', 'true')
+
+  // Cambiar a la familia Google fija el proveedor activo
+  await googleBtn.click()
+  await expect(googleBtn).toHaveAttribute('aria-pressed', 'true')
+  await expect(anthropicBtn).toHaveAttribute('aria-pressed', 'false')
+
+  // Compartir: la URL lleva pr=google
+  await page.getByRole('button', { name: 'Compartir' }).click()
+  const sharedUrl = await page.evaluate(() => navigator.clipboard.readText())
+  expect(sharedUrl).toContain('pr=google')
+
+  // Abrir el enlace restaura la familia Google
+  const freshContext = await browser.newContext()
+  const freshPage = await freshContext.newPage()
+  await freshPage.goto(sharedUrl)
+  await expect(freshPage.getByRole('button', { name: 'Google · Gemini' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await freshContext.close()
 })
 
 test('el disclaimer de la comparativa salarial es visible', async ({ page }) => {

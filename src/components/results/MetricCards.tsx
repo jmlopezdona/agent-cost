@@ -39,6 +39,18 @@ export function MetricCards({ large = false }: { large?: boolean }) {
       value: formatMoney(toDisplay(results.weightedAnnualUSD), currency),
       hero: false,
     },
+    // Coste de almacenamiento de caché: métrica mensual propia, solo cuando aplica (D3, Gemini)
+    ...(results.storageMonthlyUSD > 0
+      ? [
+          {
+            id: 'storage',
+            label: t.metrics.storage,
+            value: formatMoney(toDisplay(results.storageMonthlyUSD), currency),
+            hint: t.metrics.storageHint,
+            hero: false,
+          },
+        ]
+      : []),
   ]
 
   return (
