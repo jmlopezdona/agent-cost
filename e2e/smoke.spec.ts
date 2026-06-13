@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // Caso de referencia P2 (PRD §8) sin recargo regional (deshabilitado por defecto):
-// ponderado ≈ 6.040 $; blend ≈ 13,8 $/h
-const P2_WEIGHTED = '6.023 $'
+// régimen 12×5; ponderado ≈ 2.151 $; blend ≈ 13,8 $/h
+const P2_WEIGHTED = '2.151 $'
 const USD = 'Mostrar cifras en dólares'
 
 // La configuración vive en un acordeón exclusivo (Régimen abierto por defecto);
@@ -34,7 +34,7 @@ test('mover un control recalcula las métricas al instante', async ({ page }) =>
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
 
   await expect(weighted).not.toHaveText(P2_WEIGHTED)
-  await expect(weighted).toHaveText('9.823 $')
+  await expect(weighted).toHaveText('3.508 $')
   // Estado personalizado (CA del spec scenario-presets)
   await expect(
     page.getByText('Personalizado (basado en Agente de delivery balanceado)'),

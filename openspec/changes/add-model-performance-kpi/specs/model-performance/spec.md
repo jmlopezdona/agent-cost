@@ -54,8 +54,8 @@ El motor DEBE derivar `costPerPointUSD = weightedMonthlyUSD / weightedSwePro` (c
 
 #### Scenario: Coste por punto del caso de referencia
 
-- **WHEN** el escenario activo es P2 con precios por defecto (ponderado ≈ 6.040 $/mes) y `weightedSwePro` ≈ 61,5
-- **THEN** `costPerPointUSD` ≈ 98 $/mes por punto, con el cálculo interno sin redondeo
+- **WHEN** el escenario activo es P2 con precios por defecto (ponderado ≈ 2.151 $/mes) y `weightedSwePro` ≈ 61,5
+- **THEN** `costPerPointUSD` ≈ 35 $/mes por punto, con el cálculo interno sin redondeo
 
 #### Scenario: Sin scores en la mezcla
 

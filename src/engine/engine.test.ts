@@ -84,12 +84,15 @@ describe('caso de referencia dorado P2 (CA-01.3)', () => {
     expectWithin1Percent(results.blendedRate, 13.8)
   })
 
-  it('techo ≈ 10.060 $/mes con error < 1%', () => {
-    expectWithin1Percent(results.ceilingMonthlyUSD, 10060)
+  it('techo = blend × 260 h/mes (régimen 12×5)', () => {
+    expect(results.ceilingMonthlyUSD).toBeCloseTo(
+      results.blendedRate * scheduledHoursPerMonth(12, 5),
+      8,
+    )
   })
 
-  it('ponderado ≈ 6.040 $/mes con error < 1%', () => {
-    expectWithin1Percent(results.weightedMonthlyUSD, 6040)
+  it('ponderado = techo × duty 0,6', () => {
+    expect(results.weightedMonthlyUSD).toBeCloseTo(results.ceilingMonthlyUSD * 0.6, 8)
   })
 
   it('ponderado anual = mensual × 12', () => {
@@ -251,8 +254,8 @@ describe('hooks neutros del motor', () => {
       regionalSurcharge: 1,
     })
     expectWithin1Percent(neutral.blendedRate, 13.8)
-    expectWithin1Percent(neutral.ceilingMonthlyUSD, 10060)
-    expectWithin1Percent(neutral.weightedMonthlyUSD, 6040)
+    expectWithin1Percent(neutral.ceilingMonthlyUSD, 3585)
+    expectWithin1Percent(neutral.weightedMonthlyUSD, 2151)
   })
 })
 
@@ -262,12 +265,12 @@ describe('desempeño SWE-Pro ponderado y coste por punto (D2/D3)', () => {
     // 0,15×69,2 + 0,65×62 + 0,20×54 = 61,48 (Fable 0%)
     expect(results.weightedSwePro).toBeCloseTo(61.48, 6)
     expect(results.sweProCoverage).toBeCloseTo(1, 10)
-    // ponderado ≈ 6.040 $/mes / 61,48 ≈ 98 $/mes·pto
+    // ponderado ≈ 2.151 $/mes / 61,48 ≈ 35 $/mes·pto
     expect(results.costPerPointUSD).toBeCloseTo(results.weightedMonthlyUSD / 61.48, 6)
-    expectWithin1Percent(results.costPerPointUSD, 98)
-    // El score no toca ninguna métrica de coste (caso dorado intacto)
+    expectWithin1Percent(results.costPerPointUSD, 35)
+    // El score no toca ninguna métrica de coste (blend intacto)
     expectWithin1Percent(results.blendedRate, 13.8)
-    expectWithin1Percent(results.weightedMonthlyUSD, 6040)
+    expectWithin1Percent(results.weightedMonthlyUSD, 2151)
   })
 
   it('mezcla 100% en un modelo medido da su score exacto y coste/punto = ponderado / score', () => {
@@ -317,7 +320,7 @@ describe('desempeño SWE-Pro ponderado y coste por punto (D2/D3)', () => {
     expect(results.costPerPointUSD).toBe(0)
     expect(results.sweProCoverage).toBe(0)
     // El coste se sigue calculando con normalidad
-    expectWithin1Percent(results.weightedMonthlyUSD, 6040)
+    expectWithin1Percent(results.weightedMonthlyUSD, 2151)
   })
 })
 

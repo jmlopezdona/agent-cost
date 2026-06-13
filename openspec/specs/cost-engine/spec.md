@@ -45,8 +45,8 @@ El motor DEBE calcular `horas_mes_programadas = horas_dia × dias_semana × (52/
 
 #### Scenario: Caso de referencia dorado (CA-01.3)
 
-- **WHEN** se calcula el preset P2 completo (tokens 42/210/30/530, mezcla 0/15/65/20, régimen 24×7, duty 60%, 1 agente) con los precios por defecto
-- **THEN** el blend ≈ $13,8/h activa, el techo ≈ $10.060/mes y el ponderado ≈ $6.040/mes, cada uno con error relativo < 1% respecto a estos valores de referencia
+- **WHEN** se calcula el preset P2 completo (tokens 42/210/30/530, mezcla 0/15/65/20, régimen 12×5, duty 60%, 1 agente) con los precios por defecto
+- **THEN** el blend ≈ $13,8/h activa, el techo ≈ $3.585/mes y el ponderado ≈ $2.151/mes, cada uno con error relativo < 1% respecto a estos valores de referencia
 
 #### Scenario: Escalado por número de agentes
 

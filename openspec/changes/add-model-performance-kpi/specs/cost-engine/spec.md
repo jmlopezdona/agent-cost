@@ -7,7 +7,7 @@ El motor DEBE incluir en `Results` los campos derivados `weightedSwePro` (desemp
 #### Scenario: Resultados de desempeño del caso de referencia
 
 - **WHEN** se computa P2 con precios y scores por defecto (mezcla 0/15/65/20, scores Opus 69,2 / Sonnet 62 / Haiku 54)
-- **THEN** `weightedSwePro` ≈ 61,5, `sweProCoverage` = 1 y `costPerPointUSD` ≈ 98, mientras blend ≈ 13,8 $/h, techo ≈ 10.060 $/mes y ponderado ≈ 6.040 $/mes permanecen sin cambios
+- **THEN** `weightedSwePro` ≈ 61,5, `sweProCoverage` = 1 y `costPerPointUSD` ≈ 35, mientras blend ≈ 13,8 $/h, techo ≈ 3.585 $/mes y ponderado ≈ 2.151 $/mes permanecen sin cambios
 
 #### Scenario: Mezcla 100% en un modelo medido
 

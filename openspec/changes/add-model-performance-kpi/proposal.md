@@ -16,7 +16,7 @@ Este cambio añade el **desempeño en SWE-bench Pro** como dato de primera clase
 - **Dos tarjetas de métrica nuevas** (no héroe): "Desempeño SWE-Pro" (% ponderado con indicador de confianza) y "Coste/punto". El ponderado mensual sigue siendo el número héroe.
 - **% por modelo en la mezcla**: cada modelo del control de mezcla muestra su score SWE-Pro entre paréntesis junto al nombre (p. ej. "Claude Opus 4.8 (≈55%)"), incluido el modelo resto; al pie, el desempeño ponderado del mix junto al blend.
 - **Disclaimer de comparabilidad**: aviso visible de que se confía en el dato de cada proveedor y de que, al usar cada familia su propio scaffold (que infla 15–30 puntos sobre el estandarizado), la comparación de desempeño **entre familias es indicativa, no una equivalencia**; los scores estimados o de baja confianza se marcan (p. ej. con `≈`).
-- **Invariante intocable**: el `swePro` **no afecta a ningún cálculo de coste**; el caso dorado P2 de Anthropic (blend ≈ 13,8 $/h, techo ≈ 10.060 $/mes, ponderado ≈ 6.040 $/mes) se reproduce sin cambios. Solo se añade el valor esperado de `weightedSwePro` de P2 como nueva cobertura.
+- **Invariante intocable**: el `swePro` **no afecta a ningún cálculo de coste**; el caso dorado P2 de Anthropic (blend ≈ 13,8 $/h, techo ≈ 3.585 $/mes, ponderado ≈ 2.151 $/mes) se reproduce sin cambios. Solo se añade el valor esperado de `weightedSwePro` de P2 como nueva cobertura.
 
 ## Capabilities
 

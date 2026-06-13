@@ -13,12 +13,12 @@ La UI DEBE mostrar cuatro tarjetas de métricas: blend por hora activa, techo me
 #### Scenario: Métricas del caso de referencia en USD
 
 - **WHEN** el escenario activo es P2 con precios por defecto y la moneda seleccionada es USD
-- **THEN** las tarjetas muestran ≈ $13,8/h, ≈ $10.060/mes (techo), ≈ $6.040/mes (ponderado, destacado) y ≈ $72.500/año
+- **THEN** las tarjetas muestran ≈ $13,8/h, ≈ $3.585/mes (techo), ≈ $2.151/mes (ponderado, destacado) y ≈ $25.800/año
 
 #### Scenario: Métricas del caso de referencia en EUR
 
 - **WHEN** el escenario activo es P2 con precios por defecto, la moneda seleccionada es EUR y `fx` = 0,92
-- **THEN** las tarjetas muestran las mismas magnitudes convertidas a euros (p. ej. techo ≈ 9.255 € y ponderado ≈ 5.555 €), con el cálculo interno intacto en USD
+- **THEN** las tarjetas muestran las mismas magnitudes convertidas a euros (p. ej. techo ≈ 3.298 € y ponderado ≈ 1.979 €), con el cálculo interno intacto en USD
 
 ### Requirement: Formateo de todas las cifras
 
