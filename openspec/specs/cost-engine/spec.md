@@ -12,8 +12,8 @@ El motor DEBE calcular la tarifa por hora activa de cada modelo recorriendo el `
 
 #### Scenario: Tarifa por hora de un modelo con el perfil de tokens P2
 
-- **WHEN** se calcula la tarifa de Sonnet 4.6 con input 42 k/h, output 210 k/h, cache read 30 M/h y cache write 530 k/h, con los precios por defecto
-- **THEN** el resultado es 42/1000×3,00 + 210/1000×15,00 + 30×0,30 + 530/1000×3,75 = 14,2635 USD/h, sin redondeo interno
+- **WHEN** se calcula la tarifa de Sonnet 4.6 con input 20 k/h, output 210 k/h, cache read 30 M/h y cache write 530 k/h, con los precios por defecto
+- **THEN** el resultado es 20/1000×3,00 + 210/1000×15,00 + 30×0,30 + 530/1000×3,75 = 14,1975 USD/h, sin redondeo interno
 
 #### Scenario: Categoría de tokens a cero
 
@@ -45,7 +45,7 @@ El motor DEBE calcular `horas_mes_programadas = horas_dia × dias_semana × (52/
 
 #### Scenario: Caso de referencia dorado (CA-01.3)
 
-- **WHEN** se calcula el preset P2 completo (tokens 42/210/30/530, mezcla 0/15/65/20, régimen 12×5, duty 60%, 1 agente) con los precios por defecto
+- **WHEN** se calcula el preset P2 completo (tokens 20/210/30/530, mezcla 0/15/65/20, régimen 12×5, duty 60%, 1 agente) con los precios por defecto
 - **THEN** el blend ≈ $13,8/h activa, el techo ≈ $3.585/mes y el ponderado ≈ $2.151/mes, cada uno con error relativo < 1% respecto a estos valores de referencia
 
 #### Scenario: Escalado por número de agentes

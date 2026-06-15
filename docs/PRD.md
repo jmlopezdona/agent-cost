@@ -110,7 +110,7 @@ Cuatro controles deslizantes con entrada numérica directa asociada (input + sli
 
 | Parámetro | Unidad | Rango | Default (P2) | Notas |
 |---|---|---|---|---|
-| Input fresco | k tokens/h | 0 – 500 | 42 | Tokens no cacheados |
+| Input fresco | k tokens/h | 0 – 500 | 20 | Tokens no cacheados |
 | Output | k tokens/h | 0 – 1.000 | 210 | Incluye thinking/razonamiento |
 | Cache read | M tokens/h | 0 – 100 | 30 | Partida típicamente dominante |
 | Cache write | k tokens/h | 0 – 2.000 | 530 | Escrituras de caché (5 min, 1,25×) |
@@ -215,14 +215,16 @@ Panel colapsable con:
 
 Caso de referencia para validación (CA-01.3): el preset P2 (régimen 12×5, duty 60%) con los precios por defecto debe producir blend ≈ $13,8/h activa, techo ≈ $3.585/mes y ponderado ≈ $2.151/mes (1 agente). El blend depende solo de la mezcla y los precios; techo y ponderado se derivan del horario (260 h/mes) y el duty.
 
+> Calibración de `In (k/h)`: las tasas de input fresco se anclaron a telemetría real de sesiones de agentes con prompt caching (mediana ~18–20 k/h de input no cacheado por hora activa; con caching agresivo casi todo el contexto reentra por cache read y el input fresco por hora es pequeño). Con `In = 20 k/h` en P2 el caso de referencia se mantiene dentro de la tolerancia < 1% (blend 13,72 · techo 3.568 · ponderado 2.141 $/mes), por lo que los valores de referencia de arriba siguen vigentes.
+
 | # | Preset | Descripción (mostrada al usuario) | In (k/h) | Out (k/h) | CR (M/h) | CW (k/h) | Fable/Opus/Sonnet/Haiku | Régimen | Duty | Agentes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 | Pair programming supervisado | Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens representativo de una sesión interactiva de desarrollo. | 42 | 210 | 30 | 530 | 0/0/80/20 | 8×5 | 30% | 1 |
-| P2 | Agente de delivery balanceado | Agente integrado en el flujo de un equipo: Opus planifica la feature y revisa el PR final, Sonnet implementa, Haiku ejecuta el ciclo de tests/lint. Acompaña al equipo en jornada laboral atendiendo una cola de tareas con esperas de build y CI. | 42 | 210 | 30 | 530 | 0/15/65/20 | 12×5 | 60% | 1 |
-| P3 | Diseño intensivo / greenfield | Arranque de producto o arquitectura compleja: el modelo frontera (Fable) y Opus llevan el peso del diseño, los ADRs y la revisión profunda; Sonnet prototipa. Output alto por documentos y razonamiento extenso. Jornada laboral con supervisión frecuente. | 50 | 280 | 25 | 600 | 20/40/35/5 | 8×5 | 50% | 1 |
-| P4 | Evolutivos sobre código maduro | Mantenimiento y evolutivos sobre código maduro: Sonnet resuelve la mayoría de tareas y Opus solo entra como escalación cuando el agente se atasca. Haiku absorbe el trabajo trivial. Alta autonomía. | 42 | 190 | 28 | 500 | 0/5/55/40 | 12×5 | 70% | 1 |
-| P5 | Enjambre QA nocturno | Flota de agentes de testing (personas sintéticas, regresión E2E, evals y análisis de vulnerabilidades) que corre fuera de horario. Mayoría Haiku-heavy en contextos cortos, con una franja del modelo frontera (Fable) para el análisis de seguridad profundo. Candidato ideal a Batch API (−50%) por no requerir latencia. | 25 | 120 | 12 | 300 | 5/0/25/70 | 12×7 | 85% | 5 |
-| P6 | Agente autónomo de mantenimiento | Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7. Duty moderado por esperas de build/CI; contexto grande por repos extensos — el cache read domina el coste. | 45 | 220 | 50 | 600 | 0/10/70/20 | 24×7 | 60% | 1 |
+| P1 | Pair programming supervisado | Un desarrollador trabaja con un agente tipo Claude Code en sesión interactiva. El humano revisa y aprueba; el agente pasa la mayor parte del tiempo esperando. Perfil de tokens representativo de una sesión interactiva de desarrollo. | 20 | 210 | 30 | 530 | 0/0/80/20 | 8×5 | 30% | 1 |
+| P2 | Agente de delivery balanceado | Agente integrado en el flujo de un equipo: Opus planifica la feature y revisa el PR final, Sonnet implementa, Haiku ejecuta el ciclo de tests/lint. Acompaña al equipo en jornada laboral atendiendo una cola de tareas con esperas de build y CI. | 20 | 210 | 30 | 530 | 0/15/65/20 | 12×5 | 60% | 1 |
+| P3 | Diseño intensivo / greenfield | Arranque de producto o arquitectura compleja: el modelo frontera (Fable) y Opus llevan el peso del diseño, los ADRs y la revisión profunda; Sonnet prototipa. Output alto por documentos y razonamiento extenso. Jornada laboral con supervisión frecuente. | 24 | 280 | 25 | 600 | 20/40/35/5 | 8×5 | 50% | 1 |
+| P4 | Evolutivos sobre código maduro | Mantenimiento y evolutivos sobre código maduro: Sonnet resuelve la mayoría de tareas y Opus solo entra como escalación cuando el agente se atasca. Haiku absorbe el trabajo trivial. Alta autonomía. | 20 | 190 | 28 | 500 | 0/5/55/40 | 12×5 | 70% | 1 |
+| P5 | Enjambre QA nocturno | Flota de agentes de testing (personas sintéticas, regresión E2E, evals y análisis de vulnerabilidades) que corre fuera de horario. Mayoría Haiku-heavy en contextos cortos, con una franja del modelo frontera (Fable) para el análisis de seguridad profundo. Candidato ideal a Batch API (−50%) por no requerir latencia. | 12 | 120 | 12 | 300 | 5/0/25/70 | 12×7 | 85% | 5 |
+| P6 | Agente autónomo de mantenimiento | Agente sin humano en el loop que triaja issues, actualiza dependencias y abre PRs 24×7. Duty moderado por esperas de build/CI; contexto grande por repos extensos — el cache read domina el coste. | 22 | 220 | 50 | 600 | 0/10/70/20 | 24×7 | 60% | 1 |
 
 Notas de implementación:
 

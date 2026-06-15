@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // Caso de referencia P2 (PRD §8) sin recargo regional (deshabilitado por defecto):
-// régimen 12×5; ponderado ≈ 2.151 $; blend ≈ 13,8 $/h
-const P2_WEIGHTED = '2.151 $'
+// régimen 12×5; ponderado ≈ 2.151 $ (display 2.141 $); blend ≈ 13,8 $/h (display 13,7 $/h)
+const P2_WEIGHTED = '2.141 $'
 const USD = 'Mostrar cifras en dólares'
 
 // La configuración vive en un acordeón exclusivo (Régimen abierto por defecto);
@@ -20,7 +20,7 @@ test('carga P2 por defecto en EUR y el selector propaga el símbolo a las métri
   // Cambiar a USD propaga el símbolo $ y muestra la referencia en USD nativo
   await page.getByRole('button', { name: USD }).click()
   await expect(page.getByTestId('metric-weighted')).toHaveText(P2_WEIGHTED)
-  await expect(page.getByTestId('metric-blend')).toHaveText('13,8 $/h')
+  await expect(page.getByTestId('metric-blend')).toHaveText('13,7 $/h')
 })
 
 test('mover un control recalcula las métricas al instante', async ({ page }) => {
@@ -34,7 +34,7 @@ test('mover un control recalcula las métricas al instante', async ({ page }) =>
   await page.getByRole('spinbutton', { name: 'Cache read' }).fill('60')
 
   await expect(weighted).not.toHaveText(P2_WEIGHTED)
-  await expect(weighted).toHaveText('3.508 $')
+  await expect(weighted).toHaveText('3.498 $')
   // Estado personalizado (CA del spec scenario-presets)
   await expect(
     page.getByText('Personalizado (basado en Agente de delivery balanceado)'),
@@ -112,9 +112,9 @@ test('seleccionar un preset carga todos los parámetros', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: USD }).click()
   await page.getByRole('button', { name: /Evolutivos sobre código maduro/ }).click()
-  // P4 sin recargo (12×5): blend ≈ 10,2 $/h · ponderado ≈ 1.849 $
-  await expect(page.getByTestId('metric-blend')).toHaveText('10,2 $/h')
-  await expect(page.getByTestId('metric-weighted')).toHaveText('1.849 $')
+  // P4 sin recargo (12×5): blend ≈ 10,1 $/h · ponderado ≈ 1.840 $
+  await expect(page.getByTestId('metric-blend')).toHaveText('10,1 $/h')
+  await expect(page.getByTestId('metric-weighted')).toHaveText('1.840 $')
 })
 
 test('cambiar de familia carga su preset, filtra modelos y comparte con pr', async ({

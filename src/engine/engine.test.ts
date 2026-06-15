@@ -27,13 +27,13 @@ function expectWithin1Percent(actual: number, reference: number) {
 describe('hourlyRate', () => {
   it('calcula la tarifa de Sonnet con el perfil P2 sin redondeo interno', () => {
     const rate = hourlyRate(P2.tokens, anthropic.models.sonnet, anthropic)
-    // 42/1000×3 + 210/1000×15 + 30×0,30 + 530/1000×3,75
-    expect(rate).toBeCloseTo(14.2635, 10)
+    // 20/1000×3 + 210/1000×15 + 30×0,30 + 530/1000×3,75
+    expect(rate).toBeCloseTo(14.1975, 10)
   })
 
   it('una categoría a cero aporta 0 y el resto se calcula con normalidad', () => {
     const rate = hourlyRate({ ...P2.tokens, cacheReadM: 0 }, anthropic.models.sonnet, anthropic)
-    expect(rate).toBeCloseTo(14.2635 - 30 * 0.3, 10)
+    expect(rate).toBeCloseTo(14.1975 - 30 * 0.3, 10)
   })
 
   it('todas las categorías a cero dan tarifa 0', () => {
@@ -112,17 +112,17 @@ describe('caso de referencia dorado P2 (CA-01.3)', () => {
 describe('casos dorados P1 y P4', () => {
   it('P1: blend Sonnet-heavy en régimen 8×5 supervisado', () => {
     const results = computeResults(P1, pricingTable)
-    // 0,8 × 14,2635 + 0,2 × 4,7545 = 12,3617 $/h
-    expect(results.blendedRate).toBeCloseTo(12.3617, 4)
-    expect(results.ceilingMonthlyUSD).toBeCloseTo(12.3617 * 40 * (52 / 12), 2)
+    // 0,8 × 14,1975 + 0,2 × 4,7325 = 12,3045 $/h
+    expect(results.blendedRate).toBeCloseTo(12.3045, 4)
+    expect(results.ceilingMonthlyUSD).toBeCloseTo(12.3045 * 40 * (52 / 12), 2)
     expect(results.weightedMonthlyUSD).toBeCloseTo(results.ceilingMonthlyUSD * 0.2, 8)
   })
 
   it('P4: blend Evolutivos sobre código maduro', () => {
     const results = computeResults(P4, pricingTable)
-    // 0,05 × 22,085 + 0,55 × 13,251 + 0,4 × 4,417 = 10,1591 $/h
-    expect(results.blendedRate).toBeCloseTo(10.1591, 4)
-    expect(results.weightedMonthlyUSD).toBeCloseTo(10.1591 * 260 * 0.7, 2)
+    // 0,05 × 21,975 + 0,55 × 13,185 + 0,4 × 4,395 = 10,1085 $/h
+    expect(results.blendedRate).toBeCloseTo(10.1085, 4)
+    expect(results.weightedMonthlyUSD).toBeCloseTo(10.1085 * 260 * 0.7, 2)
   })
 })
 

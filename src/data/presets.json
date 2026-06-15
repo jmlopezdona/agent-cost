@@ -4,7 +4,7 @@
       "id": "P1",
       "provider": "anthropic",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 210,
         "cacheReadM": 30,
         "cacheWriteK": 530
@@ -24,7 +24,7 @@
       "id": "P2",
       "provider": "anthropic",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 210,
         "cacheReadM": 30,
         "cacheWriteK": 530
@@ -44,7 +44,7 @@
       "id": "P3",
       "provider": "anthropic",
       "tokens": {
-        "inputK": 50,
+        "inputK": 24,
         "outputK": 280,
         "cacheReadM": 25,
         "cacheWriteK": 600
@@ -64,7 +64,7 @@
       "id": "P4",
       "provider": "anthropic",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 190,
         "cacheReadM": 28,
         "cacheWriteK": 500
@@ -84,7 +84,7 @@
       "id": "P5",
       "provider": "anthropic",
       "tokens": {
-        "inputK": 25,
+        "inputK": 12,
         "outputK": 120,
         "cacheReadM": 12,
         "cacheWriteK": 300
@@ -108,7 +108,7 @@
       "id": "P6",
       "provider": "anthropic",
       "tokens": {
-        "inputK": 45,
+        "inputK": 22,
         "outputK": 220,
         "cacheReadM": 50,
         "cacheWriteK": 600
@@ -128,7 +128,7 @@
       "id": "O1",
       "provider": "openai",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 210,
         "cacheReadM": 30
       },
@@ -147,7 +147,7 @@
       "id": "O2",
       "provider": "openai",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 210,
         "cacheReadM": 30
       },
@@ -166,7 +166,7 @@
       "id": "O3",
       "provider": "openai",
       "tokens": {
-        "inputK": 50,
+        "inputK": 24,
         "outputK": 280,
         "cacheReadM": 25
       },
@@ -185,7 +185,7 @@
       "id": "O4",
       "provider": "openai",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 190,
         "cacheReadM": 28
       },
@@ -204,7 +204,7 @@
       "id": "O5",
       "provider": "openai",
       "tokens": {
-        "inputK": 25,
+        "inputK": 12,
         "outputK": 120,
         "cacheReadM": 12
       },
@@ -227,7 +227,7 @@
       "id": "O6",
       "provider": "openai",
       "tokens": {
-        "inputK": 45,
+        "inputK": 22,
         "outputK": 220,
         "cacheReadM": 50
       },
@@ -246,7 +246,7 @@
       "id": "G1",
       "provider": "google",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 210,
         "cacheReadM": 30,
         "cacheStorageM": 2
@@ -265,7 +265,7 @@
       "id": "G2",
       "provider": "google",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 210,
         "cacheReadM": 30,
         "cacheStorageM": 2
@@ -284,7 +284,7 @@
       "id": "G3",
       "provider": "google",
       "tokens": {
-        "inputK": 50,
+        "inputK": 24,
         "outputK": 280,
         "cacheReadM": 25,
         "cacheStorageM": 2
@@ -303,7 +303,7 @@
       "id": "G4",
       "provider": "google",
       "tokens": {
-        "inputK": 42,
+        "inputK": 20,
         "outputK": 190,
         "cacheReadM": 28,
         "cacheStorageM": 2
@@ -322,7 +322,7 @@
       "id": "G5",
       "provider": "google",
       "tokens": {
-        "inputK": 25,
+        "inputK": 12,
         "outputK": 120,
         "cacheReadM": 12,
         "cacheStorageM": 2
@@ -345,7 +345,7 @@
       "id": "G6",
       "provider": "google",
       "tokens": {
-        "inputK": 45,
+        "inputK": 22,
         "outputK": 220,
         "cacheReadM": 50,
         "cacheStorageM": 2

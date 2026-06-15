@@ -36,12 +36,12 @@ describe('presets.json (Fase 2 + multi-proveedor)', () => {
 
   it('P5 y P6 traen los valores del PRD §8', () => {
     const p5 = presets.find((p) => p.id === 'P5')!
-    expect(p5.tokens).toEqual({ inputK: 25, outputK: 120, cacheReadM: 12, cacheWriteK: 300 })
+    expect(p5.tokens).toEqual({ inputK: 12, outputK: 120, cacheReadM: 12, cacheWriteK: 300 })
     expect(p5.mix).toEqual({ fable: 0.05, opus: 0, sonnet: 0.25, haiku: 0.7 })
     expect([p5.hoursPerDay, p5.daysPerWeek, p5.dutyCycle, p5.agents]).toEqual([12, 7, 0.85, 5])
 
     const p6 = presets.find((p) => p.id === 'P6')!
-    expect(p6.tokens).toEqual({ inputK: 45, outputK: 220, cacheReadM: 50, cacheWriteK: 600 })
+    expect(p6.tokens).toEqual({ inputK: 22, outputK: 220, cacheReadM: 50, cacheWriteK: 600 })
     expect(p6.mix).toEqual({ fable: 0, opus: 0.1, sonnet: 0.7, haiku: 0.2 })
     expect([p6.hoursPerDay, p6.daysPerWeek, p6.dutyCycle, p6.agents]).toEqual([24, 7, 0.6, 1])
   })
