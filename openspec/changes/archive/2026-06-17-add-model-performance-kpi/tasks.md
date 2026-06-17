@@ -23,5 +23,5 @@
 ## 4. i18n y cierre
 
 - [x] 4.1 Añadir a `src/i18n/{es,en,fr}.ts`: labels de las métricas (`swePro`, `costPerPoint`) y sus `hint`, helper de formato del paréntesis por modelo, texto de "aproximado" y disclaimer de comparabilidad
-- [ ] 4.2 Revisión humana de la tabla de scores (`research/swebench-pro-2026-06.md`) y de los valores cargados en `pricing.json` antes de cerrar — punto de mayor riesgo de dato; ajustar los `estimate` marcados `low`
+- [x] 4.2 Revisión humana de la tabla de scores (`research/swebench-pro-2026-06.md`) y de los valores cargados en `pricing.json` antes de cerrar — punto de mayor riesgo de dato; ajustar los `estimate` marcados `low`
 - [x] 4.3 Puerta final: `lint`, `typecheck`, `test`, `test:e2e`, `build` y `size` (< 250 kB gzip) en verde; golden case de coste de P2 intacto

@@ -173,3 +173,55 @@ El motor DEBE aplicar a cada modelo únicamente los modificadores que declara su
 
 - **WHEN** un proveedor no declara el modificador regional en `modifiers`
 - **THEN** el motor no aplica ese modificador a sus modelos, con independencia del estado del toggle
+
+### Requirement: Sobreprecio de contexto largo por modelo elegible
+
+El motor DEBE calcular la tarifa por hora de un modelo como mezcla ponderada de su tarifa de **contexto estándar** y su tarifa de **contexto largo**, según una fracción `longContextFraction` (0–1) del trabajo elegible. Para un modelo elegible: `tarifa = (1 − f) × tarifa_estándar + f × tarifa_largo`, aplicada por categoría sobre las tasas de token del escenario. Un modelo **no elegible** (sin bloque de precios de contexto largo declarado) DEBE facturarse siempre a su tarifa estándar, con independencia de `longContextFraction`. El sobreprecio se compone con los modificadores existentes (Batch, recargo regional) sin alterarlos. El caso dorado P2 (Anthropic, sin modelos elegibles) DEBE permanecer inalterado.
+
+#### Scenario: Fracción de contexto largo encarece solo al modelo elegible
+
+- **WHEN** el proveedor activo es OpenAI, la mezcla incluye GPT‑5.5 (input 5 → 8, output 30 → 36 en contexto largo) y el usuario fija la fracción de contexto largo en 50%
+- **THEN** la tarifa por hora de GPT‑5.5 se calcula como `0,5 × estándar + 0,5 × largo`, y los modelos sin tramo (p. ej. GPT‑5.4 nano) mantienen su tarifa estándar
+
+#### Scenario: Anthropic es inerte ante el contexto largo
+
+- **WHEN** el proveedor activo es Anthropic (ningún modelo declara tramo de contexto largo) y la fracción de contexto largo es 100%
+- **THEN** el blend, el techo y el ponderado son idénticos a los del mismo escenario con contexto largo al 0% (el caso dorado P2 no cambia)
+
+#### Scenario: Fracción cero es neutra
+
+- **WHEN** la fracción de contexto largo es 0
+- **THEN** todos los modelos se facturan a su tarifa estándar, con independencia de que sean elegibles o no
+
+### Requirement: Conmutación a tarifas de contexto largo de GitHub Copilot
+
+Cuando el sub‑modo **vía GitHub Copilot** está activo Y hay fracción de contexto largo, el motor DEBE usar, para los modelos elegibles, las tarifas de contexto largo de **Copilot** (delta declarado en `pricing.json`) en lugar de las de la API nativa. Si la fracción de contexto largo es 0, el sub‑modo Copilot DEBE ser neutro (las tarifas estándar de Copilot coinciden con las nativas).
+
+#### Scenario: Copilot aplica la tarifa de contexto largo más alta
+
+- **WHEN** GPT‑5.5 está en la mezcla, la fracción de contexto largo es 100% y el sub‑modo Copilot está activo (long Copilot 10/45 frente a nativo 8/36)
+- **THEN** la fracción de contexto largo de GPT‑5.5 se factura a 10/45 en lugar de 8/36
+
+#### Scenario: Copilot sin contexto largo es neutro
+
+- **WHEN** el sub‑modo Copilot está activo pero la fracción de contexto largo es 0
+- **THEN** el cálculo es idéntico al de Copilot desactivado
+
+### Requirement: Desempeño ponderado y coste por punto en los resultados
+
+El motor DEBE incluir en `Results` los campos derivados `weightedSwePro` (desempeño SWE-bench Pro ponderado por la mezcla, 0–100), `costPerPointUSD` (ponderado mensual USD / `weightedSwePro`, con guarda a 0) y `sweProCoverage` (fracción de la mezcla con score). Estos campos se calculan en `computeResults` a partir del `swePro` de los modelos del proveedor activo y NO alteran ninguna métrica de coste existente (`blendedRate`, `ceilingMonthlyUSD`, `weightedMonthlyUSD`, `weightedAnnualUSD`, `byCategory`, `byModel`, `storageMonthlyUSD`).
+
+#### Scenario: Resultados de desempeño del caso de referencia
+
+- **WHEN** se computa P2 con precios y scores por defecto (mezcla 0/15/65/20, scores Opus 69,2 / Sonnet 62 / Haiku 54)
+- **THEN** `weightedSwePro` ≈ 61,5, `sweProCoverage` = 1 y `costPerPointUSD` ≈ 35, mientras blend ≈ 13,8 $/h, techo ≈ 3.585 $/mes y ponderado ≈ 2.151 $/mes permanecen sin cambios
+
+#### Scenario: Mezcla 100% en un modelo medido
+
+- **WHEN** la mezcla es 100% en un modelo con `swePro.score = S`
+- **THEN** `weightedSwePro` = S y `costPerPointUSD` = ponderado_mensual / S
+
+#### Scenario: Ausencia total de scores no rompe el cálculo
+
+- **WHEN** ningún modelo del proveedor activo declara `swePro`
+- **THEN** `weightedSwePro` = 0, `costPerPointUSD` = 0, `sweProCoverage` = 0 y todas las métricas de coste se calculan con normalidad
