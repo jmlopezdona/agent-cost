@@ -55,6 +55,24 @@ function isSwePro(v: unknown): boolean {
   )
 }
 
+/**
+ * Valida el bloque opcional `longContext` (D1): `threshold` no vacío y, en `native` y `copilot`,
+ * un precio finito por cada categoría de tipo `rate` del proveedor (las categorías `storage` no
+ * tienen tramo de contexto largo). Ausencia ⇒ modelo no elegible (válido).
+ */
+function isLongContextPricing(v: unknown, costModel: CostCategory[]): boolean {
+  if (typeof v !== 'object' || v === null) return false
+  const lc = v as Record<string, unknown>
+  if (!isNonEmptyString(lc.threshold)) return false
+  const rateCats = costModel.filter((c) => c.kind === 'rate')
+  for (const tier of [lc.native, lc.copilot]) {
+    if (tier == null || typeof tier !== 'object') return false
+    const map = tier as Record<string, unknown>
+    if (!rateCats.every((cat) => isFiniteNumber(map[cat.key]))) return false
+  }
+  return true
+}
+
 /** Valida un modelo: nombre + un precio finito por cada categoría del `costModel` */
 function isModelPricing(v: unknown, costModel: CostCategory[]): v is ModelPricing {
   if (typeof v !== 'object' || v === null) return false
@@ -63,6 +81,8 @@ function isModelPricing(v: unknown, costModel: CostCategory[]): v is ModelPricin
   const prices = p.prices as Record<string, unknown> | undefined
   if (prices == null || typeof prices !== 'object') return false
   if (!costModel.every((cat) => isFiniteNumber(prices[cat.key]))) return false
+  // `longContext` es opcional; si existe, debe cubrir las categorías `rate` del proveedor (D1)
+  if (p.longContext !== undefined && !isLongContextPricing(p.longContext, costModel)) return false
   // `swePro` es opcional a nivel de tipo; si existe, debe cumplir su dominio (D6)
   if (p.swePro !== undefined && !isSwePro(p.swePro)) return false
   return true
@@ -220,6 +240,17 @@ export function offersBatch(providerId: ProviderId): boolean {
   return pricingTable.providers[providerId].modifiers.batch !== undefined
 }
 
+/**
+ * true si alguno de los modelos del proveedor declara tramo de contexto largo (D1). El control de
+ * contexto largo se muestra en las tres familias, pero solo impacta en el coste de las que tienen
+ * algún modelo elegible (OpenAI y Google; Anthropic sirve 1M a tarifa plana ⇒ false).
+ */
+export function offersLongContext(providerId: ProviderId): boolean {
+  return Object.values(pricingTable.providers[providerId].models).some(
+    (m) => m.longContext !== undefined,
+  )
+}
+
 /** Default del recargo regional: deshabilitado (opt-in en las tres familias) */
 export function defaultRegional(): boolean {
   return DEFAULT_REGIONAL
@@ -274,6 +305,10 @@ export const DEFAULT_REGIONAL = false
 export const REGIONAL_SURCHARGE = 1.1
 /** Término de almacenamiento de caché (Gemini) apagado por defecto (caché implícita, D3) */
 export const DEFAULT_STORAGE_ENABLED = false
+/** Contexto largo desactivado por defecto: fracción 0 (no-op) */
+export const DEFAULT_LONG_CONTEXT_FRACTION = 0
+/** Sub-modo "vía GitHub Copilot" del contexto largo desactivado por defecto */
+export const DEFAULT_COPILOT_PRICING = false
 export const DEFAULT_EMPLOYER_MULTIPLIER = salaryData.employerCostMultiplier
 export const DEFAULT_EFFECTIVE_HOURS = salaryData.effectiveHoursPerYear
 

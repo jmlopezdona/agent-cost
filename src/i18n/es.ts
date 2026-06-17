@@ -166,7 +166,7 @@ export const es = {
   advanced: {
     sectionTitle: 'Configuración avanzada',
     sectionHint:
-      'Precios, Batch API, recargo regional, almacenamiento, tipo de cambio y coste empresa',
+      'Batch API, contexto largo, recargo regional, almacenamiento, tipo de cambio, coste empresa y precios editables',
     toggleExpand: 'Mostrar u ocultar la configuración avanzada',
     pricingTitle: 'Precios por modelo (USD/MTok)',
     pricingHint:
@@ -199,6 +199,17 @@ export const es = {
       'Gemini cobra la caché explícita por almacenamiento y hora programada, además de la lectura. Actívalo e indica los tokens retenidos para incluir ese coste mensual.',
     storageDisclaimer:
       'El caché explícito de Gemini es una estimación: el coste de almacenamiento se modela aparte del blend por hora y asume que retienes ese volumen durante todas las horas programadas.',
+    longContextTitle: 'Contexto largo',
+    longContextToggle: 'Activar contexto largo',
+    longContextHelp:
+      'Por encima de un umbral de input (≈200K en Gemini Pro, ≈272K en GPT) la API nativa cobra un sobreprecio. Indica qué fracción del trabajo supera ese umbral. Anthropic sirve 1M a tarifa plana, así que no aplica.',
+    longContextFractionLabel: '% del trabajo en contexto largo',
+    longContextUnit: '%',
+    longContextNotApplicable:
+      'Esta familia no tiene sobreprecio por contexto largo: el ajuste no afecta a su coste.',
+    copilotToggle: 'Vía GitHub Copilot',
+    copilotHelp:
+      'En el canje de AI Credits de GitHub Copilot, el tramo de contexto largo de algunos modelos de OpenAI y Gemini cuesta más que en la API nativa. Actívalo para repercutir esas tarifas más altas en la fracción de contexto largo.',
     fxLabel: 'Tipo de cambio',
     fxUnit: '€ por USD',
     employerMultiplierLabel: 'Multiplicador de coste empresa',
@@ -213,6 +224,8 @@ export const es = {
     batch: (percent: string) => `batch ${percent} aplicado`,
     regional: 'Regional +10%',
     storage: 'almacenamiento caché',
+    longContext: (percent: string) => `contexto largo ${percent}`,
+    longContextCopilot: (percent: string) => `contexto largo ${percent} · Copilot`,
     pricesEdited: 'precios editados',
     label: 'Modificadores activos',
   },

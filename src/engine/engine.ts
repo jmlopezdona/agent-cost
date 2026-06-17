@@ -30,6 +30,22 @@ function priceModifier(opts: EngineOptions, modifiers: ProviderModifiers): numbe
   return (1 - batchFraction * batchDiscount) * surcharge
 }
 
+/**
+ * Precio efectivo por categoría de un modelo mezclando su tarifa estándar y la de contexto largo
+ * según la fracción elegible (D2). Un modelo sin bloque `longContext` NO es elegible: devuelve su
+ * precio estándar con independencia de `longContextFraction`. Para la fracción de contexto largo se
+ * usa la tarifa de Copilot (`copilotPricing`) o la nativa. `precio = (1−f)·estándar + f·largo`.
+ */
+function effectivePrice(model: ModelPricing, catKey: string, opts: EngineOptions): number {
+  const std = model.prices[catKey] ?? 0
+  if (!model.longContext) return std
+  const f = Math.min(1, Math.max(0, opts.longContextFraction ?? 0))
+  if (f === 0) return std
+  const longMap = opts.copilotPricing ? model.longContext.copilot : model.longContext.native
+  const long = longMap[catKey] ?? std
+  return (1 - f) * std + f * long
+}
+
 /** USD/h activa que aporta cada categoría `rate` de un modelo (RF-01 generalizado) */
 export function categoryCosts(
   tokens: TokenRates,
@@ -42,7 +58,7 @@ export function categoryCosts(
   for (const cat of provider.costModel) {
     if (cat.kind !== 'rate') continue
     const rate = tokens[cat.rateKey] ?? 0
-    out[cat.key] = (rate / scaleOf(cat.unit)) * (model.prices[cat.key] ?? 0) * m
+    out[cat.key] = (rate / scaleOf(cat.unit)) * effectivePrice(model, cat.key, opts) * m
   }
   return out
 }

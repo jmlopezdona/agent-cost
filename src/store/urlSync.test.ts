@@ -34,6 +34,8 @@ const NEUTRAL_MODS: ModifierState = {
   batchFraction: DEFAULT_BATCH_FRACTION,
   regional: DEFAULT_REGIONAL,
   storageEnabled: false,
+  longContextFraction: 0,
+  copilotPricing: false,
   employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
   effectiveHours: DEFAULT_EFFECTIVE_HOURS,
   priceOverrides: {},
@@ -201,6 +203,37 @@ describe('serialización en URL', () => {
     expect(params.has('bd')).toBe(false)
     expect(restored.batchEnabled).toBe(false)
     expect(restored.regional).toBe(false)
+  })
+
+  it('contexto largo y el sub-modo Copilot se serializan y restauran', () => {
+    const mods: ModifierState = { ...NEUTRAL_MODS, longContextFraction: 0.6, copilotPricing: true }
+    const { query, restored } = roundTrip(
+      scenarioFromPreset(P2),
+      'P2',
+      DEFAULT_FX_EUR_PER_USD,
+      DEFAULT_CURRENCY,
+      mods,
+    )
+    const params = new URLSearchParams(query)
+    expect(params.get('lc')).toBe('60')
+    expect(params.get('cp')).toBe('1')
+    expect(restored.longContextFraction).toBeCloseTo(0.6, 10)
+    expect(restored.copilotPricing).toBe(true)
+  })
+
+  it('con contexto largo por defecto (0) no aparecen lc ni cp', () => {
+    const { query, restored } = roundTrip(scenarioFromPreset(P2), 'P2', DEFAULT_FX_EUR_PER_USD)
+    const params = new URLSearchParams(query)
+    expect(params.has('lc')).toBe(false)
+    expect(params.has('cp')).toBe(false)
+    expect(restored.longContextFraction).toBe(0)
+    expect(restored.copilotPricing).toBe(false)
+  })
+
+  it('cp sin lc se ignora (Copilot solo cuenta con fracción > 0)', () => {
+    const restored = deserialize('p=P2&cp=1')
+    expect(restored.longContextFraction).toBe(0)
+    expect(restored.copilotPricing).toBe(false)
   })
 
   it('multiplicador y horas efectivas se serializan solo si difieren del defecto', () => {

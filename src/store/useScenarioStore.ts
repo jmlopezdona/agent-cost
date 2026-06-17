@@ -10,10 +10,12 @@ import type {
 } from '../engine/types'
 import {
   DEFAULT_BATCH_FRACTION,
+  DEFAULT_COPILOT_PRICING,
   DEFAULT_CURRENCY,
   DEFAULT_EFFECTIVE_HOURS,
   DEFAULT_EMPLOYER_MULTIPLIER,
   DEFAULT_FX_EUR_PER_USD,
+  DEFAULT_LONG_CONTEXT_FRACTION,
   DEFAULT_PRESET_ID,
   DEFAULT_REGIONAL,
   DEFAULT_STORAGE_ENABLED,
@@ -76,6 +78,10 @@ interface ScenarioStore {
   regional: boolean
   /** Término de almacenamiento de caché (Gemini) activo; propio de cada familia (D3) */
   storageEnabled: boolean
+  /** Fracción 0–1 del trabajo en contexto largo; GLOBAL (como Batch/regional), solo afecta a elegibles */
+  longContextFraction: number
+  /** Sub-modo "vía GitHub Copilot" del contexto largo; solo efectivo con fracción > 0 */
+  copilotPricing: boolean
   employerMultiplier: number
   effectiveHours: number
   priceOverrides: PriceOverrides
@@ -97,6 +103,8 @@ interface ScenarioStore {
   setBatchFraction: (value: number) => void
   setRegional: (value: boolean) => void
   setStorageEnabled: (value: boolean) => void
+  setLongContextFraction: (value: number) => void
+  setCopilotPricing: (value: boolean) => void
   setEmployerMultiplier: (value: number) => void
   setEffectiveHours: (value: number) => void
   setPriceOverride: (model: ModelId, category: string, value: number) => void
@@ -172,6 +180,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
       batchFraction,
       regional,
       storageEnabled,
+      longContextFraction,
+      copilotPricing,
       employerMultiplier,
       effectiveHours,
       priceOverrides,
@@ -191,6 +201,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         batchFraction,
         regional,
         storageEnabled,
+        longContextFraction,
+        copilotPricing,
         employerMultiplier,
         effectiveHours,
         priceOverrides,
@@ -237,6 +249,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     batchFraction: initial.batchFraction,
     regional: initial.regional,
     storageEnabled: initial.storageEnabled,
+    longContextFraction: initial.longContextFraction,
+    copilotPricing: initial.copilotPricing,
     employerMultiplier: initial.employerMultiplier,
     effectiveHours: initial.effectiveHours,
     priceOverrides: initial.priceOverrides,
@@ -362,6 +376,16 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
     setBatchFraction: (value) => update({ batchFraction: clamp(value, RANGES.batchFraction) }),
     setRegional: (value) => update({ regional: value }),
     setStorageEnabled: (value) => update({ storageEnabled: value }),
+    // Contexto largo: global, no se memoriza por familia ni se resetea en setProvider (como Batch).
+    // Al bajar la fracción a 0, el sub-modo Copilot se apaga (deja de tener sentido).
+    setLongContextFraction: (value) => {
+      const fraction = clamp(value, RANGES.longContextFraction)
+      update({
+        longContextFraction: fraction,
+        ...(fraction === 0 ? { copilotPricing: false } : {}),
+      })
+    },
+    setCopilotPricing: (value) => update({ copilotPricing: value }),
     setEmployerMultiplier: (value) =>
       update({ employerMultiplier: clamp(value, RANGES.employerMultiplier) }),
     setEffectiveHours: (value) => update({ effectiveHours: clamp(value, RANGES.effectiveHours) }),
@@ -396,6 +420,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => {
         batchFraction: DEFAULT_BATCH_FRACTION,
         regional: defaultRegional(),
         storageEnabled: DEFAULT_STORAGE_ENABLED,
+        longContextFraction: DEFAULT_LONG_CONTEXT_FRACTION,
+        copilotPricing: DEFAULT_COPILOT_PRICING,
         employerMultiplier: DEFAULT_EMPLOYER_MULTIPLIER,
         effectiveHours: DEFAULT_EFFECTIVE_HOURS,
         priceOverrides: {},

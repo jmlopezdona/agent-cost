@@ -168,7 +168,7 @@ export const en: Strings = {
   advanced: {
     sectionTitle: 'Advanced configuration',
     sectionHint:
-      'Prices, Batch API, regional surcharge, cache storage, exchange rate and employer cost',
+      'Batch API, long context, regional surcharge, cache storage, exchange rate, employer cost and editable prices',
     toggleExpand: 'Show or hide advanced configuration',
     pricingTitle: 'Prices per model (USD/MTok)',
     pricingHint: 'Edit the official rates; changes live only in this session and in the link.',
@@ -200,6 +200,17 @@ export const en: Strings = {
       'Gemini bills explicit cache by storage and scheduled hour, on top of reads. Enable it and set the retained tokens to include that monthly cost.',
     storageDisclaimer:
       'Gemini’s explicit cache is an estimate: storage cost is modeled separately from the hourly blend and assumes you retain that volume for all scheduled hours.',
+    longContextTitle: 'Long context',
+    longContextToggle: 'Enable long context',
+    longContextHelp:
+      'Above an input threshold (≈200K on Gemini Pro, ≈272K on GPT) the native API charges a surcharge. Set what fraction of work exceeds that threshold. Anthropic serves 1M at a flat rate, so it does not apply.',
+    longContextFractionLabel: '% of work in long context',
+    longContextUnit: '%',
+    longContextNotApplicable:
+      'This family has no long-context surcharge: this setting does not affect its cost.',
+    copilotToggle: 'Via GitHub Copilot',
+    copilotHelp:
+      'In GitHub Copilot’s AI Credits redemption, the long-context tier of some OpenAI and Gemini models costs more than the native API. Enable it to apply those higher rates to the long-context fraction.',
     fxLabel: 'Exchange rate',
     fxUnit: '€ per USD',
     employerMultiplierLabel: 'Employer-cost multiplier',
@@ -214,6 +225,8 @@ export const en: Strings = {
     batch: (percent: string) => `batch ${percent} applied`,
     regional: 'Regional +10%',
     storage: 'cache storage',
+    longContext: (percent: string) => `long context ${percent}`,
+    longContextCopilot: (percent: string) => `long context ${percent} · Copilot`,
     pricesEdited: 'prices edited',
     label: 'Active modifiers',
   },

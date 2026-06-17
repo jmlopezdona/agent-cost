@@ -169,7 +169,7 @@ export const fr: Strings = {
   advanced: {
     sectionTitle: 'Configuration avancée',
     sectionHint:
-      'Prix, Batch API, surcoût régional, stockage de cache, taux de change et coût employeur',
+      'Batch API, contexte long, surcoût régional, stockage de cache, taux de change, coût employeur et prix modifiables',
     toggleExpand: 'Afficher ou masquer la configuration avancée',
     pricingTitle: 'Prix par modèle (USD/MTok)',
     pricingHint:
@@ -202,6 +202,17 @@ export const fr: Strings = {
       "Gemini facture le cache explicite au stockage et à l'heure programmée, en plus de la lecture. Activez-le et indiquez les tokens retenus pour inclure ce coût mensuel.",
     storageDisclaimer:
       'Le cache explicite de Gemini est une estimation : le coût de stockage est modélisé séparément du blend horaire et suppose que vous retenez ce volume pendant toutes les heures programmées.',
+    longContextTitle: 'Contexte long',
+    longContextToggle: 'Activer le contexte long',
+    longContextHelp:
+      "Au-delà d'un seuil d'entrée (≈200K sur Gemini Pro, ≈272K sur GPT), l'API native applique une majoration. Indiquez quelle fraction du travail dépasse ce seuil. Anthropic sert 1M à tarif fixe, donc cela ne s'applique pas.",
+    longContextFractionLabel: '% du travail en contexte long',
+    longContextUnit: '%',
+    longContextNotApplicable:
+      "Cette famille n'a pas de majoration de contexte long : ce réglage n'affecte pas son coût.",
+    copilotToggle: 'Via GitHub Copilot',
+    copilotHelp:
+      "Dans l'échange d'AI Credits de GitHub Copilot, le palier de contexte long de certains modèles OpenAI et Gemini coûte plus cher que l'API native. Activez-le pour répercuter ces tarifs plus élevés sur la fraction de contexte long.",
     fxLabel: 'Taux de change',
     fxUnit: '€ par USD',
     employerMultiplierLabel: 'Multiplicateur de coût employeur',
@@ -216,6 +227,8 @@ export const fr: Strings = {
     batch: (percent: string) => `batch ${percent} appliqué`,
     regional: 'Regional +10%',
     storage: 'stockage de cache',
+    longContext: (percent: string) => `contexte long ${percent}`,
+    longContextCopilot: (percent: string) => `contexte long ${percent} · Copilot`,
     pricesEdited: 'prix modifiés',
     label: 'Modificateurs actifs',
   },

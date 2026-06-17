@@ -35,6 +35,10 @@ export interface ModifierState {
   regional: boolean
   /** Término de almacenamiento de caché (Gemini) activo (D3) */
   storageEnabled: boolean
+  /** Fracción 0–1 del trabajo en contexto largo (global; solo afecta a modelos elegibles) */
+  longContextFraction: number
+  /** Sub-modo "vía GitHub Copilot" del contexto largo: usa las tarifas de Copilot */
+  copilotPricing: boolean
   employerMultiplier: number
   effectiveHours: number
   priceOverrides: PriceOverrides
@@ -239,6 +243,11 @@ export function serializeScenario(
   if (mods.regional !== defaultRegional())
     params.set('bd', mods.regional ? '1' : '0')
   if (mods.storageEnabled) params.set('st', '1')
+  // Contexto largo: solo si hay fracción > 0; el sub-modo Copilot solo viaja si además está activo
+  if (mods.longContextFraction > 0) {
+    params.set('lc', compact(mods.longContextFraction * 100))
+    if (mods.copilotPricing) params.set('cp', '1')
+  }
   if (mods.employerMultiplier !== modDefaults.employerMultiplier)
     params.set('em', compact(mods.employerMultiplier))
   if (mods.effectiveHours !== modDefaults.effectiveHours)
@@ -340,6 +349,13 @@ export function deserializeScenario(
 
   const storageEnabled = params.get('st') === '1'
 
+  // Contexto largo (D6): fracción inválida/ausente ⇒ 0 (no-op); Copilot solo cuenta con fracción > 0
+  const rawLc = params.get('lc')
+  const parsedLc = rawLc === null ? NaN : Number(rawLc) / 100
+  const longContextFraction =
+    Number.isFinite(parsedLc) && parsedLc > 0 ? clamp(parsedLc, RANGES.longContextFraction) : 0
+  const copilotPricing = longContextFraction > 0 && params.get('cp') === '1'
+
   const rawEm = params.get('em')
   const parsedEm = rawEm === null ? NaN : Number(rawEm)
   const employerMultiplier = Number.isFinite(parsedEm)
@@ -366,6 +382,8 @@ export function deserializeScenario(
     batchFraction,
     regional,
     storageEnabled,
+    longContextFraction,
+    copilotPricing,
     employerMultiplier,
     effectiveHours,
     priceOverrides,
@@ -403,6 +421,8 @@ const RECOGNIZED_KEYS = new Set<string>([
   'b',
   'bd',
   'st',
+  'lc',
+  'cp',
   'em',
   'eh',
   'px',

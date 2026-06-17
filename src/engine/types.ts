@@ -59,10 +59,28 @@ export interface SwePro {
   effective_date?: string
 }
 
+/**
+ * Tramo de precios de **contexto largo** de un modelo elegible (D1): mapas de precios alternativos
+ * (mismas claves de categoría que `prices`) que sustituyen al estándar para la fracción del trabajo
+ * por encima del umbral. `native` = tarifa de la API directa; `copilot` = tarifa vía el canje de AI
+ * Credits de GitHub Copilot (≥ native). Un modelo sin este bloque NO es elegible y se factura siempre
+ * a su precio estándar.
+ */
+export interface LongContextPricing {
+  /** Umbral informativo de input que activa el tramo (p. ej. '200k', '272k') */
+  threshold: string
+  /** Tarifa de contexto largo de la API nativa, por categoría */
+  native: Record<string, number>
+  /** Tarifa de contexto largo vía GitHub Copilot, por categoría */
+  copilot: Record<string, number>
+}
+
 export interface ModelPricing {
   name: string
   /** USD/MTok por categoría; clave = CostCategory.key */
   prices: Record<string, number>
+  /** Tramo de contexto largo (D1); ausente ⇒ modelo no elegible (1M plano o sin tramo) */
+  longContext?: LongContextPricing
   /** Desempeño SWE-bench Pro (opcional a nivel de tipo; puerta de cierre exige cobertura 1) */
   swePro?: SwePro
   /** Fuente y fecha del precio (auditoría); opcional */
@@ -169,4 +187,11 @@ export interface EngineOptions {
   regionalSurcharge?: number
   /** Activa el término de almacenamiento de caché (categorías `storage`) */
   storageEnabled?: boolean
+  /**
+   * Fracción 0–1 del trabajo por encima del umbral de contexto largo (0 = sin contexto largo).
+   * Solo afecta a modelos que declaran `longContext`; el resto se factura siempre a precio estándar.
+   */
+  longContextFraction?: number
+  /** Para la fracción de contexto largo, usa las tarifas de GitHub Copilot en vez de las nativas */
+  copilotPricing?: boolean
 }

@@ -20,6 +20,8 @@ export const RANGES = {
   fx: { min: 0.1, max: 10 },
   /** Fracción de trabajo elegible para Batch API */
   batchFraction: { min: 0, max: 1 },
+  /** Fracción de trabajo por encima del umbral de contexto largo */
+  longContextFraction: { min: 0, max: 1 },
   /** Multiplicador de coste empresa (bruto → coste total) */
   employerMultiplier: { min: 1, max: 3 },
   /** Horas efectivas anuales de un FTE */

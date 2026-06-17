@@ -177,9 +177,10 @@ Panel colapsable con:
 - Tabla de precios editable por modelo y categoría (con "restaurar oficiales").
 - Toggle **Batch API (−50%)** con slider de "% del trabajo elegible para batch" (0–100%, aplica el descuento solo a esa fracción del coste).
 - Toggle **Recargo regional/Bedrock (+10%)** aplicado a todas las categorías.
+- Control de **Contexto largo** con slider de "% del trabajo por encima del umbral de contexto largo" (0–100%). Global y visible en las tres familias, pero solo encarece a los modelos elegibles (OpenAI y Gemini Pro; Anthropic sirve 1M a tarifa plana ⇒ inerte). La fracción elegible se factura a la tarifa de contexto largo de cada modelo. Sub‑modo anidado **vía GitHub Copilot** que sustituye las tarifas de contexto largo nativas por las de Copilot (más altas), solo efectivo con fracción > 0.
 - Tipo de cambio **USD→EUR** editable.
 - Multiplicador de **coste empresa** (default 1,30) y **horas efectivas anuales** del FTE (default 1.720).
-- **CA-08.1** Cuando un modificador está activo, aparece un badge junto a los resultados ("batch 40% aplicado", "Bedrock +10%").
+- **CA-08.1** Cuando un modificador está activo, aparece un badge junto a los resultados ("batch 40% aplicado", "Bedrock +10%", "contexto largo 60% · Copilot").
 
 ### RF-09 — Compartir y exportar
 

@@ -1,6 +1,6 @@
 {
-  "version": "2026-06c",
-  "effective_date": "2026-06-13",
+  "version": "2026-06d",
+  "effective_date": "2026-06-17",
   "unit": "USD/MTok",
   "providers": {
     "anthropic": {
@@ -81,6 +81,11 @@
         "gpt-5.5": {
           "name": "GPT-5.5",
           "prices": { "input": 5.0, "cached_input": 0.5, "output": 30.0 },
+          "longContext": {
+            "threshold": "272k",
+            "native": { "input": 8.0, "cached_input": 0.8, "output": 36.0 },
+            "copilot": { "input": 10.0, "cached_input": 1.0, "output": 45.0 }
+          },
           "source": "https://developers.openai.com/api/docs/pricing",
           "effective_date": "2026-06-13",
           "swePro": {
@@ -94,6 +99,11 @@
         "gpt-5.4": {
           "name": "GPT-5.4",
           "prices": { "input": 2.5, "cached_input": 0.25, "output": 15.0 },
+          "longContext": {
+            "threshold": "272k",
+            "native": { "input": 4.0, "cached_input": 0.4, "output": 18.0 },
+            "copilot": { "input": 5.0, "cached_input": 0.5, "output": 22.5 }
+          },
           "source": "https://developers.openai.com/api/docs/pricing",
           "effective_date": "2026-06-13",
           "swePro": {
@@ -150,6 +160,11 @@
         "gemini-3.1-pro-preview": {
           "name": "Gemini 3.1 Pro Preview",
           "prices": { "input": 2.0, "output": 12.0, "cache_read": 0.2, "cache_storage": 4.5 },
+          "longContext": {
+            "threshold": "200k",
+            "native": { "input": 4.0, "output": 18.0, "cache_read": 0.4 },
+            "copilot": { "input": 4.0, "output": 18.0, "cache_read": 0.4 }
+          },
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
           "effective_date": "2026-06-09",
           "swePro": {

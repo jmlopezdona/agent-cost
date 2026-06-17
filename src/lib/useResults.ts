@@ -17,14 +17,18 @@ export function useEngineOptions(): EngineOptions {
   const batchFraction = useScenarioStore((s) => s.batchFraction)
   const regional = useScenarioStore((s) => s.regional)
   const storageEnabled = useScenarioStore((s) => s.storageEnabled)
+  const longContextFraction = useScenarioStore((s) => s.longContextFraction)
+  const copilotPricing = useScenarioStore((s) => s.copilotPricing)
   return useMemo(
     () => ({
       batchFraction: batchEnabled ? batchFraction : 0,
       batchDiscount: BATCH_DISCOUNT,
       regionalSurcharge: regional ? REGIONAL_SURCHARGE : 1,
       storageEnabled,
+      longContextFraction,
+      copilotPricing,
     }),
-    [batchEnabled, batchFraction, regional, storageEnabled],
+    [batchEnabled, batchFraction, regional, storageEnabled, longContextFraction, copilotPricing],
   )
 }
 

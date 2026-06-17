@@ -1,5 +1,5 @@
 import { useFormat, useStrings } from '../../i18n/hooks'
-import { offersRegional, storageCategory } from '../../data'
+import { offersLongContext, offersRegional, storageCategory } from '../../data'
 import { useScenarioStore } from '../../store/useScenarioStore'
 
 /** Badges de los modificadores activos junto a los resultados (CA-08.1) */
@@ -11,6 +11,8 @@ export function ModifierBadges() {
   const batchFraction = useScenarioStore((s) => s.batchFraction)
   const regional = useScenarioStore((s) => s.regional)
   const storageEnabled = useScenarioStore((s) => s.storageEnabled)
+  const longContextFraction = useScenarioStore((s) => s.longContextFraction)
+  const copilotPricing = useScenarioStore((s) => s.copilotPricing)
   const priceOverrides = useScenarioStore((s) => s.priceOverrides)
 
   const hasOverrides = Object.keys(priceOverrides).length > 0
@@ -20,6 +22,11 @@ export function ModifierBadges() {
   // El recargo regional solo aplica si el proveedor activo lo ofrece
   if (regional && offersRegional(providerId)) badges.push(t.badges.regional)
   if (storageEnabled && storageCategory(providerId)) badges.push(t.badges.storage)
+  // El contexto largo solo afecta al coste de familias con modelos elegibles
+  if (longContextFraction > 0 && offersLongContext(providerId)) {
+    const pct = formatPercent(longContextFraction)
+    badges.push(copilotPricing ? t.badges.longContextCopilot(pct) : t.badges.longContext(pct))
+  }
   if (hasOverrides) badges.push(t.badges.pricesEdited)
 
   if (badges.length === 0) return null

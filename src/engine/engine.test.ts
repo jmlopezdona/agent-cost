@@ -184,6 +184,59 @@ describe('modificadores por proveedor', () => {
   })
 })
 
+describe('modificador de contexto largo', () => {
+  const tokens = { inputK: 40, cacheReadM: 10, outputK: 200 }
+  const gpt = openai.models['gpt-5.5']
+
+  it('GPT-5.5 al 50% mezcla tarifa estándar y de contexto largo nativa', () => {
+    const std = hourlyRate(tokens, gpt, openai)
+    const full = hourlyRate(tokens, gpt, openai, { longContextFraction: 1 })
+    const half = hourlyRate(tokens, gpt, openai, { longContextFraction: 0.5 })
+    expect(half).toBeCloseTo((std + full) / 2, 10)
+    // El tramo nativo encarece: input 5→8, output 30→36
+    expect(full).toBeGreaterThan(std)
+  })
+
+  it('Copilot aplica una tarifa de contexto largo más alta que la nativa', () => {
+    const native = hourlyRate(tokens, gpt, openai, { longContextFraction: 1 })
+    const copilot = hourlyRate(tokens, gpt, openai, {
+      longContextFraction: 1,
+      copilotPricing: true,
+    })
+    expect(copilot).toBeGreaterThan(native)
+  })
+
+  it('Copilot sin fracción de contexto largo es neutro', () => {
+    const off = hourlyRate(tokens, gpt, openai)
+    const copilotNoFraction = hourlyRate(tokens, gpt, openai, { copilotPricing: true })
+    expect(copilotNoFraction).toBeCloseTo(off, 10)
+  })
+
+  it('modelo no elegible (GPT-5.4 nano) ignora el contexto largo', () => {
+    const nano = openai.models['gpt-5.4-nano']
+    const off = hourlyRate(tokens, nano, openai)
+    const on = hourlyRate(tokens, nano, openai, { longContextFraction: 1, copilotPricing: true })
+    expect(on).toBeCloseTo(off, 10)
+  })
+
+  it('Anthropic es inerte: el caso dorado P2 no cambia ni al 100% de contexto largo', () => {
+    const base = computeResults(P2, pricingTable)
+    const long = computeResults(P2, pricingTable, {
+      longContextFraction: 1,
+      copilotPricing: true,
+    })
+    expect(long.blendedRate).toBeCloseTo(base.blendedRate, 12)
+    expect(long.weightedMonthlyUSD).toBeCloseTo(base.weightedMonthlyUSD, 12)
+  })
+
+  it('fracción 0 es neutra en una familia elegible (OpenAI)', () => {
+    const O = presets.find((p) => p.id === 'O2')!
+    const base = computeResults(scenarioFromPreset(O), pricingTable)
+    const zero = computeResults(scenarioFromPreset(O), pricingTable, { longContextFraction: 0 })
+    expect(zero.blendedRate).toBeCloseTo(base.blendedRate, 12)
+  })
+})
+
 describe('escalado y desglose', () => {
   it('pasar de 1 a 5 agentes multiplica techo y ponderado por 5', () => {
     const base = computeResults(P2, pricingTable)

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { SliderInput } from './SliderInput'
 import { HelpTip } from './HelpTip'
 import { useFormat, useStrings } from '../../i18n/hooks'
-import { offersRegional, pricingTable, storageCategory } from '../../data'
+import { offersLongContext, offersRegional, pricingTable, storageCategory } from '../../data'
 import { modelId, PROVIDER_IDS, type ProviderId } from '../../engine/types'
 import { RANGES } from '../../lib/ranges'
 import { useScenarioStore } from '../../store/useScenarioStore'
@@ -90,6 +90,10 @@ export function AdvancedConfigSection() {
   const setRegional = useScenarioStore((s) => s.setRegional)
   const storageEnabled = useScenarioStore((s) => s.storageEnabled)
   const setStorageEnabled = useScenarioStore((s) => s.setStorageEnabled)
+  const longContextFraction = useScenarioStore((s) => s.longContextFraction)
+  const setLongContextFraction = useScenarioStore((s) => s.setLongContextFraction)
+  const copilotPricing = useScenarioStore((s) => s.copilotPricing)
+  const setCopilotPricing = useScenarioStore((s) => s.setCopilotPricing)
   const fx = useScenarioStore((s) => s.fx)
   const setFx = useScenarioStore((s) => s.setFx)
   const employerMultiplier = useScenarioStore((s) => s.employerMultiplier)
@@ -111,11 +115,123 @@ export function AdvancedConfigSection() {
 
   const providerOffersRegional = offersRegional(activeProvider)
   const providerOffersStorage = storageCategory(activeProvider) !== undefined
+  // El contexto largo es global y se muestra siempre; solo impacta en el coste de familias elegibles
+  const longContextEnabled = longContextFraction > 0
+  const longContextApplies = offersLongContext(activeProvider)
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Tabla de precios editable por familia */}
-      <div>
+      {/* Modificadores de coste globales: aplican a la familia activa (selector superior).
+          La tabla de precios editable por familia, con sus pestañas, va al final del panel para
+          no confundir esas pestañas con el selector de familia ni con el modificador de contexto largo. */}
+
+      {/* Batch API (todos los proveedores) */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5">
+          <Toggle checked={batchEnabled} onChange={setBatchEnabled} label={t.batchTitle} />
+          <HelpTip label={t.batchToggle} text={t.batchHelp} />
+        </div>
+        {batchEnabled && (
+          <SliderInput
+            label={t.batchFractionLabel}
+            unit={t.batchUnit}
+            value={Math.round(batchFraction * 100)}
+            min={RANGES.batchFraction.min * 100}
+            max={RANGES.batchFraction.max * 100}
+            onChange={(v) => setBatchFraction(v / 100)}
+          />
+        )}
+      </div>
+
+      {/* Contexto largo (global): visible en las tres familias; solo afecta a las elegibles */}
+      <div className="flex flex-col gap-2 border-t border-line pt-4">
+        <div className="flex items-center gap-1.5">
+          <Toggle
+            checked={longContextEnabled}
+            onChange={(v) => setLongContextFraction(v ? 0.5 : 0)}
+            label={t.longContextTitle}
+          />
+          <HelpTip label={t.longContextToggle} text={t.longContextHelp} />
+        </div>
+        {longContextEnabled && (
+          <>
+            <SliderInput
+              label={t.longContextFractionLabel}
+              unit={t.longContextUnit}
+              value={Math.round(longContextFraction * 100)}
+              min={RANGES.longContextFraction.min * 100}
+              max={RANGES.longContextFraction.max * 100}
+              onChange={(v) => setLongContextFraction(v / 100)}
+            />
+            {longContextApplies ? (
+              <div className="flex items-center gap-1.5">
+                <Toggle
+                  checked={copilotPricing}
+                  onChange={setCopilotPricing}
+                  label={t.copilotToggle}
+                />
+                <HelpTip label={t.copilotToggle} text={t.copilotHelp} />
+              </div>
+            ) : (
+              <p className="text-xs text-muted">{t.longContextNotApplicable}</p>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Recargo regional: las tres familias lo ofrecen; deshabilitado por defecto */}
+      {providerOffersRegional && (
+        <div className="flex items-center gap-1.5 border-t border-line pt-4">
+          <Toggle checked={regional} onChange={setRegional} label={t.regionalTitle} />
+          <HelpTip label={t.regionalToggle} text={t.regionalHelp} />
+        </div>
+      )}
+
+      {/* Almacenamiento de caché: solo en proveedores con categoría storage (Google) */}
+      {providerOffersStorage && (
+        <div className="flex flex-col gap-2 border-t border-line pt-4">
+          <div className="flex items-center gap-1.5">
+            <Toggle checked={storageEnabled} onChange={setStorageEnabled} label={t.storageTitle} />
+            <HelpTip label={t.storageToggle} text={t.storageHelp} />
+          </div>
+          {storageEnabled && <p className="text-xs text-muted">{t.storageDisclaimer}</p>}
+        </div>
+      )}
+
+      {/* Tipo de cambio, multiplicador y horas efectivas */}
+      <div className="flex flex-col gap-3 border-t border-line pt-4">
+        <NumberField
+          label={`${t.fxLabel} (${formatFx(fx)})`}
+          value={fx}
+          min={RANGES.fx.min}
+          max={RANGES.fx.max}
+          step={0.01}
+          unit={t.fxUnit}
+          onChange={setFx}
+        />
+        <NumberField
+          label={t.employerMultiplierLabel}
+          value={employerMultiplier}
+          min={RANGES.employerMultiplier.min}
+          max={RANGES.employerMultiplier.max}
+          step={0.05}
+          onChange={setEmployerMultiplier}
+          help={t.employerMultiplierHelp}
+        />
+        <NumberField
+          label={t.effectiveHoursLabel}
+          value={effectiveHours}
+          min={RANGES.effectiveHours.min}
+          max={RANGES.effectiveHours.max}
+          step={10}
+          onChange={setEffectiveHours}
+          help={t.effectiveHoursHelp}
+        />
+      </div>
+
+      {/* Tabla de precios editable por familia (al final del panel): sus pestañas SOLO eligen qué
+          familia editas aquí; no cambian la familia activa ni afectan a los modificadores de arriba. */}
+      <div className="border-t border-line pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-xs font-semibold text-muted">{t.pricingTitle}</h3>
           <button
@@ -206,74 +322,6 @@ export function AdvancedConfigSection() {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Batch API (todos los proveedores) */}
-      <div className="flex flex-col gap-2 border-t border-line pt-4">
-        <div className="flex items-center gap-1.5">
-          <Toggle checked={batchEnabled} onChange={setBatchEnabled} label={t.batchTitle} />
-          <HelpTip label={t.batchToggle} text={t.batchHelp} />
-        </div>
-        {batchEnabled && (
-          <SliderInput
-            label={t.batchFractionLabel}
-            unit={t.batchUnit}
-            value={Math.round(batchFraction * 100)}
-            min={RANGES.batchFraction.min * 100}
-            max={RANGES.batchFraction.max * 100}
-            onChange={(v) => setBatchFraction(v / 100)}
-          />
-        )}
-      </div>
-
-      {/* Recargo regional: las tres familias lo ofrecen; deshabilitado por defecto */}
-      {providerOffersRegional && (
-        <div className="flex items-center gap-1.5 border-t border-line pt-4">
-          <Toggle checked={regional} onChange={setRegional} label={t.regionalTitle} />
-          <HelpTip label={t.regionalToggle} text={t.regionalHelp} />
-        </div>
-      )}
-
-      {/* Almacenamiento de caché: solo en proveedores con categoría storage (Google) */}
-      {providerOffersStorage && (
-        <div className="flex flex-col gap-2 border-t border-line pt-4">
-          <div className="flex items-center gap-1.5">
-            <Toggle checked={storageEnabled} onChange={setStorageEnabled} label={t.storageTitle} />
-            <HelpTip label={t.storageToggle} text={t.storageHelp} />
-          </div>
-          {storageEnabled && <p className="text-xs text-muted">{t.storageDisclaimer}</p>}
-        </div>
-      )}
-
-      {/* Tipo de cambio, multiplicador y horas efectivas */}
-      <div className="flex flex-col gap-3 border-t border-line pt-4">
-        <NumberField
-          label={`${t.fxLabel} (${formatFx(fx)})`}
-          value={fx}
-          min={RANGES.fx.min}
-          max={RANGES.fx.max}
-          step={0.01}
-          unit={t.fxUnit}
-          onChange={setFx}
-        />
-        <NumberField
-          label={t.employerMultiplierLabel}
-          value={employerMultiplier}
-          min={RANGES.employerMultiplier.min}
-          max={RANGES.employerMultiplier.max}
-          step={0.05}
-          onChange={setEmployerMultiplier}
-          help={t.employerMultiplierHelp}
-        />
-        <NumberField
-          label={t.effectiveHoursLabel}
-          value={effectiveHours}
-          min={RANGES.effectiveHours.min}
-          max={RANGES.effectiveHours.max}
-          step={10}
-          onChange={setEffectiveHours}
-          help={t.effectiveHoursHelp}
-        />
       </div>
     </div>
   )
